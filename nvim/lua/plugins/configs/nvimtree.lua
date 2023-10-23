@@ -30,6 +30,7 @@ local options = {
   actions = {
     open_file = {
       resize_window = true,
+      quit_on_open = true,
     },
   },
   renderer = {
