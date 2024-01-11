@@ -1,0 +1,123 @@
+set relativenumber number
+set which-key
+set notimeout
+" search for actions: :actionlist <patter>
+
+set hlsearch                      " highlight search occurrences
+set ignorecase                    " ignore case in search patterns
+set smartcase                     " no ignore case when pattern is uppercase
+set incsearch                     " show search results while typing
+set wrapscan                      " searches wrap around the end of the file
+
+set gdefault                      " substitute all occurrences in line per default
+set history=10000                 " keep x lines of command line history
+set scrolloff=30 sidescrolloff=10  " keep some lines before and after the cursor visible
+" set clipboard=unnamedplus,unnamed,ideaput " integrate with system clipboard
+
+
+" https://github.com/JetBrains/ideavim/wiki/%22set%22-commands
+set multiple-cursors
+set commentary
+set surround                      " emulate vim-surround plugin
+set ideajoin
+set ideastatusicon=disabled
+
+
+" set <leader> to <space>
+let mapleader = " "
+
+" edit ideavim config
+nmap <leader>vv :e ~/.ideavimrc<CR>
+nmap <leader>vr :source ~/.ideavimrc<CR>
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" NEO-Layout
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Fix some vim annoyances
+
+" make Y behave like D and C, yanking till end of line
+nmap Y y$
+
+" don't overwrite register when pasting over selection
+" vmap p pgvy
+
+" don't lose selection when indenting
+vmap < <gv
+vmap > >gv
+vmap = =gv
+
+nmap <leader>y "+y
+nmap <leader>p "_dP
+nmap <C-d> <C-d>zz
+nmap <C-u> <C-u>zz
+nmap n nzz
+nmap N Nzz
+nmap * *zz
+nmap # #zz
+nmap g* g*zz
+nmap g# g#zz
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Custom bindings
+
+" clear search highlighting
+nmap <esc> :nohls<return><esc>
+
+" " TODO: toggle chars at end of line
+nmap <leader>, mZA,<Esc>`Z
+nmap <leader>; mZA;<Esc>`Z
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+" IDEA specific
+map <leader><leader> :action GotoAction<CR>
+
+" change font size
+nmap = :action EditorIncreaseFontSize<CR>
+nmap - :action EditorDecreaseFontSize<CR>
+nmap <leader>= :action EditorResetFontSize<CR>
+
+" code navigation
+
+" https://youtrack.jetbrains.com/issue/VIM-44
+nmap <C-o> <Action>(Back)zz
+nmap <C-i> <Action>(Forward)zz
+
+nmap <leader>e :action GotoFile<CR>
+nmap <leader>a :action FindInPath<CR>
+nmap gr :action ShowUsages<CR>
+nmap gi :action GotoImplementation<CR>
+nmap gs :action GotoSuperMethod<CR>
+
+nmap [[ :action MethodUp<CR>
+nmap ]] :action MethodDown<CR>
+
+nmap <C-p> :action ParameterInfo<CR>
+imap <C-p> <C-o>:action ParameterInfo<CR>
+nmap <leader>n :action GotoNextError<CR>
+map gh <Action>(ShowErrorDescription)
+
+
+nmap <leader>ri :action Inline<CR>
+nmap <leader>rr :action RenameElement<CR>
+nmap <leader>rev :action IntroduceVariable<CR>
+vmap <leader>rev :action IntroduceVariable<CR>
+nmap <leader>rem :action ExtractMethod<CR>
+vmap <leader>rem :action ExtractMethod<CR>
+nmap <leader>rm :action Move<CR>
+nmap <leader>ro :action OptimizeImports<CR>
+nmap <leader>rG :action Generate<CR>
+
+nmap g; :action JumpToLastChange<CR>
+nmap g, :action JumpToNextChange<CR>
+
+nmap gq  :action ReformatCode<CR>
+nmap gqip vip:action ReformatCode<CR>
+nmap gqap vap:action ReformatCode<CR>
+vmap gq  :action ReformatCode<CR>
+
+
+nmap <, :action MoveElementLeft<CR>
+nmap >, :action MoveElementRight<CR>

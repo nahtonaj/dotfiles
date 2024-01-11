@@ -2,3 +2,12 @@
 .git
 .undo
 .github
+.classpath
+.factorypath
+.project
+.settings
+build
+.DSStore
+tags
+.vscode
+.bemol
