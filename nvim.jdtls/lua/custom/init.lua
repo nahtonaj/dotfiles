@@ -44,6 +44,7 @@ opt.signcolumn = 'yes' -- keep 1 column for coc.vim  check
 opt.modelines = 0
 opt.showcmd = true -- display command in bottom bar
 opt.relativenumber = true
+opt.scrolloff = 20
 
 -- backup and undo
 opt.backup = true
@@ -62,6 +63,5 @@ opt.smartindent = true
 opt.expandtab = true -- expand tab to spaces
 opt.smarttab = true
 opt.wrap = false
--- opt.scrolloff = 999
 -- opt.shiftwidth = 4
 -- opt.tabstop = 4
