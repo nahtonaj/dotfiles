@@ -6,8 +6,9 @@ set notimeout
 set hlsearch                      " highlight search occurrences
 set ignorecase                    " ignore case in search patterns
 set smartcase                     " no ignore case when pattern is uppercase
-set incsearch                     " show search results while typing
 set wrapscan                      " searches wrap around the end of the file
+set visualbell
+set showmode
 
 set gdefault                      " substitute all occurrences in line per default
 set history=10000                 " keep x lines of command line history
@@ -73,6 +74,7 @@ nmap <leader>; mZA;<Esc>`Z
 """"""""""""""""""""""""""""""""""""""""""""""""""""
 " IDEA specific
 map <leader><leader> :action GotoAction<CR>
+map <leader>ff :action SearchEverywhere<CR>
 
 " change font size
 nmap = :action EditorIncreaseFontSize<CR>
@@ -84,6 +86,10 @@ nmap <leader>= :action EditorResetFontSize<CR>
 " https://youtrack.jetbrains.com/issue/VIM-44
 nmap <C-o> <Action>(Back)zz
 nmap <C-i> <Action>(Forward)zz
+nmap <C-h> <C-w>h
+nmap <C-j> <C-w>j
+nmap <C-k> <C-w>k
+nmap <C-l> <C-w>l
 
 nmap <leader>e :action GotoFile<CR>
 nmap <leader>a :action FindInPath<CR>
@@ -93,12 +99,21 @@ nmap gs :action GotoSuperMethod<CR>
 
 nmap [[ :action MethodUp<CR>
 nmap ]] :action MethodDown<CR>
+vmap [[ :action MethodUp<CR>
+vmap ]] :action MethodDown<CR>
+nmap ]c :action VcsShowNextChangeMarker<CR>
+nmap [c :action VcsShowPrevChangeMarker<CR>
+nmap ]e <Action>(GotoNextError)
+nmap [e <Action>(GotoPreviousError)
+
+nmap <leader>p "+p
 
 nmap <C-p> :action ParameterInfo<CR>
 imap <C-p> <C-o>:action ParameterInfo<CR>
-nmap <leader>n :action GotoNextError<CR>
 map gh <Action>(ShowErrorDescription)
 
+nmap <leader>a :action ShowIntentionActions<CR>
+nmap <leader>c :action CloseEditor<CR>
 
 nmap <leader>ri :action Inline<CR>
 nmap <leader>rr :action RenameElement<CR>
@@ -121,3 +136,5 @@ vmap gq  :action ReformatCode<CR>
 
 nmap <, :action MoveElementLeft<CR>
 nmap >, :action MoveElementRight<CR>
+
+nmap <C-w>r :action MoveEditorToOppositeTabGroup<CR>
