@@ -11,3 +11,6 @@ build
 tags
 .vscode
 .bemol
+node_modules
+.config/iterm2/AppSupport
+.config/raycast/extensions
