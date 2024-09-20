@@ -1,0 +1,12 @@
+execution:
+  default_operator_group:
+    host: aws-default
+  inferred_frontend_region_name:
+    "": us-west-2
+    china: cn-north-1
+    prod: us-west-2
+    us-gov: us-gov-west-1
+  trust_ssh_tools:
+    prod:
+    - host/*
+stack: prod
