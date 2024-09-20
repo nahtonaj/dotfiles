@@ -79,8 +79,8 @@ plugins=(
   zsh-vi-mode
   # zsh-autosuggestions
   zsh-syntax-highlighting
-  zsh-fzf-history-search
   zsh-autocomplete
+  zsh-fzf-history-search
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -136,8 +136,9 @@ PROMPT="
 ${hg_info}\
 ${git_info}\
  \
-%{$fg[white]%}[%W %*] $exit_code 
-%{$terminfo[bold]$fg[red]%}%% %{$reset_color%}"
+%{$fg[white]%}[%W %*] $exit_code\
+%{$terminfo[bold]$fg[red]%}%% %{$reset_color%}
+> "
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
@@ -334,3 +335,9 @@ export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
     shift
   done
 } emacs viins vicmd
+
+zstyle ':autocomplete:*' widget-style menu-select
+bindkey -M menuselect '\r' accept-line
+
+zstyle ':autocomplete:*' list-lines 7
+

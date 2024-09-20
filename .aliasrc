@@ -108,6 +108,52 @@ infradb() {
     mysql -A --skip-secure-auth -h infra-mysql-query.db.corp.amazon.com -u${user} -p${pass} infra "$@"
 }
 
+function d() {
+  REGION=$1
+  TABLE_NAME=$2; shift; shift;
+  local scan
+  local leadingKey
+  local trailingKey
+  local jsoncatoptions
+  local grepstring
+  local oflag
+  local tflag
+  while getopts l:t:o:g: flag; do
+      case $flag in
+          l) leadingKey="--leading-key ${OPTARG}" ;;
+          t) trailingKey="--trailing-key ${OPTARG}" ;;
+          o) jsoncatoptions="${OPTARG}" ;;
+          g) grepstring="${OPTARG}" ;;
+      esac
+  done
+  outputCommand=jsoncat
+  if [[ -n $jsoncatoptions ]]; then
+      oflag="-o"
+      tflag="-t"
+  fi
+
+  if [[ -z $leadingKey && -z $trailingKey ]]; then
+  scan="--scan"
+  fi
+
+  if [[ -n $grepstring ]]; then
+    eval "ddb $REGION tools tableDumper --tableName $TABLE_NAME $scan $leadingKey $trailingKey | grep $grepstring | $outputCommand $tflag $oflag $jsoncatoptions"
+  else
+    eval "ddb $REGION tools tableDumper --tableName $TABLE_NAME $scan $leadingKey $trailingKey | $outputCommand $tflag $oflag $jsoncatoptions"
+  fi
+}
+
+
+function t() {
+  REGION=$1; shift
+  ddb $REGION tools taskViewer -i
+}
+
+function e() {
+  REGION=$1; shift
+  ddb $REGION tools eventSteward 
+}
+
 function y() {
 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
 	yazi "$@" --cwd-file="$tmp"
