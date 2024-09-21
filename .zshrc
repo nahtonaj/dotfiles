@@ -128,7 +128,6 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 [ -f "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh" ] && source "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh"
 
 export PATH=$HOME/.toolbox/bin:$PATH
-source ~/.aliasrc
 
 # if you wish to use IMDS set AWS_EC2_METADATA_DISABLED=false
 
@@ -333,4 +332,4 @@ function y() {
 	rm -f -- "$tmp"
 }
 
-
+source ~/.aliasrc
