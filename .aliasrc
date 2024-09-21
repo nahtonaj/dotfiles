@@ -13,7 +13,6 @@ export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
 
 
 alias bb=brazil-build
-alias ll='ls -al'
 
 alias bba='brazil-build apollo-pkg'
 alias bre='brazil-runtime-exec'
@@ -31,24 +30,11 @@ alias bbra='bbr apollo-pkg'
 alias kw="kinit -f && mwinit -o -s"
 alias barkd="bark -cf=/home/$USER/.barkDub"
 alias ic="isengardcli"
-alias jp="/home/linuxbrew/.linuxbrew/bin/python3 -m jupyterlab --no-browser"
 alias sshy="ssh -o StrictHostKeyChecking=no"
 alias bbmysql="sudo mysql -S /tmp/mysql45691.sock -uroot -proot"
 alias bbvisualizewatch="brazil-build visualize & brazil-build visualize-watch && fg"
 alias lptvc="/apollo/env/CatalystResourceCreationClientTools/bin/LptVerifierCli --lpt-verifier-action static_analysis --lpt-app-def build/application_definition.json"
-alias lg=lazygit
-alias mwcurl='/apollo/env/envImprovement/bin/curl --post302 --location-trusted -b sentry_braveheart=1 -c ~/.midway/cookie -b ~/.midway/cookie --capath /apollo/env/SDETools/etc/cacerts'
-alias tmux1="tmux new-session -A -s amazon-ssh-tmux1"
-alias tmux2="tmux new-session -A -s amazon-ssh-tmux2"
-alias tmux3="tmux new-session -A -s amazon-ssh-tmux3"
-alias tmux4="tmux new-session -A -s amazon-ssh-tmux4"
-alias tmux5="tmux new-session -A -s amazon-ssh-tmux5"
-alias vim=nvim
 alias setuptestruntime='./testbin/setup-test-runtime -s -b -n -e /local/home/jonatgao/workplace/bigbirdstoragenode/src/BigBirdStorageNode/build/private/tmp/BigBirdStorageNode'
-
-today() {
-    date -I -d "-8 hours"
-}
 
 shttp() {
     share-http $1 8787 --bind $(hostname)
@@ -56,15 +42,6 @@ shttp() {
 
 checkintestrunner() {
     sudo /apollo/env/BigBirdCheckinTestRunner/bin/checkin_test.py --root $(pwd -P | cut -d/ -f1-6) --init $1 --poll
-}
-
-separator() {
-    if [[ -z $COLUMNS ]]; then
-        COLUMNS=$(tput cols)
-    fi
-    lengthOfTitle=$((${#1}+2))
-    numberOfCharacters=$(( ($COLUMNS - $lengthOfTitle)/2 ))
-    printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf " ${1} "; printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf "\n"
 }
 
 code() {
@@ -83,6 +60,7 @@ localcmd() {
 	local PROGRAMPATH="/Users/jonatgao/.toolbox/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 	ssh -p 20202 jonatgao@localhost "export PATH=$PATH:$PROGRAMPATH; cd $FILEPATH; "${@:1}""
 }
+
 mkcd () {
   case "$1" in
     */..|*/../) cd -- "$1";; # that doesn't make any sense unless the directory already exists
@@ -154,11 +132,3 @@ function e() {
   ddb $REGION tools eventSteward 
 }
 
-function y() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-	yazi "$@" --cwd-file="$tmp"
-	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-		builtin cd -- "$cwd"
-	fi
-	rm -f -- "$tmp"
-}

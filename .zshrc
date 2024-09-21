@@ -289,3 +289,48 @@ bindkey -M menuselect '\r' accept-line
 
 zstyle ':autocomplete:*' list-lines 7
 
+# useful aliases and functions
+alias ll='ls -al'
+alias jp="/home/linuxbrew/.linuxbrew/bin/python3 -m jupyterlab --no-browser"
+alias lg=lazygit
+alias mwcurl='/apollo/env/envImprovement/bin/curl --post302 --location-trusted -b sentry_braveheart=1 -c ~/.midway/cookie -b ~/.midway/cookie --capath /apollo/env/SDETools/etc/cacerts'
+alias vim=nvim
+
+# get current date in Pacific time
+today() {
+    date -I -d "-8 hours"
+}
+
+# nifty seperator for your terminal
+separator() {
+    if [[ -z $COLUMNS ]]; then
+        COLUMNS=$(tput cols)
+    fi
+    lengthOfTitle=$((${#1}+2))
+    numberOfCharacters=$(( ($COLUMNS - $lengthOfTitle)/2 ))
+    printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf " ${1} "; printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf "\n"
+}
+
+# mkdir and cd into it
+mkcd () {
+  case "$1" in
+    */..|*/../) cd -- "$1";; # that doesn't make any sense unless the directory already exists
+    /*/../*) (cd "${1%/../*}/.." && mkdir -p "./${1##*/../}") && cd -- "$1";;
+    /*) mkdir -p "$1" && cd "$1";;
+    */../*) (cd "./${1%/../*}/.." && mkdir -p "./${1##*/../}") && cd "./$1";;
+    ../*) (cd .. && mkdir -p "${1#.}") && cd "$1";;
+    *) mkdir -p "./$1" && cd "./$1";;
+  esac
+}
+
+# Yazi helper for changing current working directory
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
+
+
