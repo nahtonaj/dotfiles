@@ -295,6 +295,11 @@ alias lg=lazygit
 alias mwcurl='/apollo/env/envImprovement/bin/curl --post302 --location-trusted -b sentry_braveheart=1 -c ~/.midway/cookie -b ~/.midway/cookie --capath /apollo/env/SDETools/etc/cacerts'
 alias vim=nvim
 
+export DEVDSK="dev-dsk-jonatgao-2a-331408bc.us-west-2.amazon.com"
+export DEVDSK2="dev-dsk-jonatgao-2c-de4f6a1e.us-west-2.amazon.com"
+export DEVDSK3="dev-dsk-jonatgao-2b-716106e9.us-west-2.amazon.com"
+alias cdsk="ssh -L 8080:localhost:8080 $DEVDSK"
+
 # get current date in Pacific time
 today() {
     date -I -d "-8 hours"

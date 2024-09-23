@@ -1,0 +1,41 @@
+" General Settings
+set update.lastchecktime 1722961000879
+set update.nag true
+set update.nagwait 7
+set update.lastnaggedversion 1.14.0
+set update.checkintervalsecs 86400
+set configversion 2.0
+set editorcmd /opt/homebrew/bin/neovide
+
+" Binds
+unbind --mode=ex <Space>
+bind --mode=ex <Enter> ex.accept_line
+bind --mode=ex <C-Enter> ex.execute_ex_on_completion
+bind --mode=ex <C-j> ex.accept_line
+bind --mode=ex <C-m> ex.accept_line
+bind --mode=ex <Escape> ex.hide_and_clear
+bind --mode=ex <C-[> ex.hide_and_clear
+bind --mode=ex <ArrowUp> ex.prev_history
+bind --mode=ex <ArrowDown> ex.next_history
+bind --mode=ex <A-b> text.backward_word
+bind --mode=ex <A-f> text.forward_word
+bind --mode=ex <C-e> text.end_of_line
+bind --mode=ex <A-d> text.kill_word
+bind --mode=ex <S-Backspace> ex.execute_ex_on_completion_args tabclose
+bind --mode=ex <C-u> text.backward_kill_line
+bind --mode=ex <C-k> text.kill_line
+bind --mode=ex <C-f> ex.complete
+bind --mode=ex <Tab> ex.next_completion
+bind --mode=ex <S-Tab> ex.prev_completion
+bind --mode=ex <C-Space> ex.insert_space
+bind --mode=ex <C-o>yy ex.execute_ex_on_completion_args clipboard yank
+bind --mode=ex <C-o>t ex.execute_ex_on_completion_args tabopen -b
+bind --mode=ex <C-o>w ex.execute_ex_on_completion_args winopen
+
+" Autocmds
+autocmd DocStart localhost:8888 mode ignore
+autocmd DocLoad ^https://github.com/tridactyl/tridactyl/issues/new$ issue
+autocmd TriStart .* source_quiet
+
+" For syntax highlighting see https://github.com/tridactyl/vim-tridactyl
+" vim: set filetype=tridactyl
