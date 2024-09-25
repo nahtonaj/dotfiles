@@ -42,7 +42,8 @@ yabai -m rule --add app="^Archive Utility$" manage=off
 yabai -m rule --add app="^Stickies$" manage=off
 yabai -m rule --add app="^Music$" manage=off
 yabai -m rule --add app="^eqMac$" manage=off
+yabai -m rule --add app="^borders$" manage=off
 
-# borders active_color=0xe1f1e100 inactive_color=0xff494d64 width=15.0 &
+borders active_color=0xe1f1e100 inactive_color=0xff494d64 width=15.0 &
 
 echo "yabai configuration loaded.."
