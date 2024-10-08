@@ -341,3 +341,5 @@ function y() {
 source ~/.aliasrc
 
 alias startgui="python3 ~/dcv-cdd.py --debug connect $DEVDSK --wssh"
+
+export PATH=$PATH:/Users/jonatgao/.spicetify
