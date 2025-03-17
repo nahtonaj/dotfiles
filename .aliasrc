@@ -8,6 +8,7 @@ export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PAT
 export PATH=$PATH:/apollo/env/envImprovement/bin
 export PATH=/home/jonatgao/.cargo/bin:$PATH
 export PATH=/home/jonatgao/.sdkman/candidates/java/current/bin:$PATH
+export PATH=~/.rodar/bin:$PATH
 export EDITOR=nvim
 export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
 
@@ -34,7 +35,16 @@ alias sshy="ssh -o StrictHostKeyChecking=no"
 alias bbmysql="sudo mysql -S /tmp/mysql45691.sock -uroot -proot"
 alias bbvisualizewatch="brazil-build visualize & brazil-build visualize-watch && fg"
 alias lptvc="/apollo/env/CatalystResourceCreationClientTools/bin/LptVerifierCli --lpt-verifier-action static_analysis --lpt-app-def build/application_definition.json"
-alias setuptestruntime='./testbin/setup-test-runtime -s -b -n -e /local/home/jonatgao/workplace/bigbirdstoragenode/src/BigBirdStorageNode/build/private/tmp/BigBirdStorageNode'
+export TEST_RUNTIME=/local/home/jonatgao/workplace/bigbirdstoragenode/src/BigBirdStorageNode/build/private/tmp/BigBirdStorageNode
+export LN_TEST_STORAGENODE=/local/home/jonatgao/workplace/ddblognode/src/BigBirdStorageNode/build/private/tmp/BigBirdStorageNode
+export LN_TEST_RUNTIME=/local/home/jonatgao/workplace/ddblognode/src/DdbLogNodeTest/build/private/tmp/BigBirdStorageNode
+alias setuptestruntime="./testbin/setup-test-runtime -s -b -n -e ${TEST_RUNTIME}"
+alias setuplntestruntime="./testbin/setup-test-runtime -s -b -n -e ${LN_TEST_RUNTIME}"
+
+# get current date in Pacific time
+today() {
+    date -I -d "-8 hours"
+}
 
 shttp() {
     share-http $1 8787 --bind $(hostname)
@@ -71,8 +81,12 @@ mkcd () {
     *) mkdir -p "./$1" && cd "./$1";;
   esac
 }
-alias scratch="mkcd /home/jonatgao/workplace/ddblogservicepythontools/src/DdbLogServicePythonTools/scratchpad/$(today)"
-alias sc="scratch"
+
+scratch() {
+  mkcd /home/jonatgao/workplace/ddblogservicepythontools/src/DdbLogServicePythonTools/scratchpad/$(today)
+}
+
+alias sc="scratch && pwd"
 
 
 mksc() {
@@ -131,4 +145,11 @@ function e() {
   REGION=$1; shift
   ddb $REGION tools eventSteward 
 }
+
+function utcdate() {
+  date -d "@$(($1/1000))"
+}
+
+# Enables autocompletion for the ddb command - Installed by MechanicBigBirdCli
+[ -f "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh" ] && source "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh"
 

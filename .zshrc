@@ -1,3 +1,5 @@
+# Amazon Q pre block. Keep at the top of this file.
+[[ -f "${HOME}/.local/share/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/.local/share/amazon-q/shell/zshrc.pre.zsh"
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH=/home/linuxbrew/.linuxbrew/bin/:$PATH
@@ -26,11 +28,11 @@ ZSH_THEME="jonatgao" # set by `omz`
 
 # Uncomment one of the following lines to change the auto-update behavior
 # zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
+zstyle ':omz:update' mode auto      # update automatically without asking
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
+zstyle ':omz:update' frequency 13
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS="true"
@@ -48,7 +50,7 @@ ZSH_THEME="jonatgao" # set by `omz`
 # You can also set it to another string to have that shown instead of the default red dots.
 # e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 # Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
+COMPLETION_WAITING_DOTS="true"
 
 # Uncomment the following line if you want to disable marking untracked files
 # under VCS as dirty. This makes repository status check for large repositories
@@ -78,9 +80,9 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=28'
 plugins=(
   git
   zsh-vi-mode
-  zsh-autosuggestions
   zsh-syntax-highlighting
-  zsh-autocomplete
+  # zsh-autocomplete
+  # zsh-autosuggestions
   zsh-fzf-history-search
 )
 
@@ -124,9 +126,6 @@ ssh() {
 
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
-
-# Enables autocompletion for the ddb command - Installed by MechanicBigBirdCli
-[ -f "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh" ] && source "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh"
 
 export PATH=$HOME/.toolbox/bin:$PATH
 
@@ -274,21 +273,6 @@ eval "$(zoxide init zsh)"
 
 export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
 
-() {
-  while (( ARGC )); do
-    bindkey -M $1 '^[OA' up-line-or-history
-    bindkey -M $1 '^[[A' up-line-or-history
-    bindkey -M $1 '^[OB' down-line-or-history
-    bindkey -M $1 '^[[B' down-line-or-history
-    shift
-  done
-} emacs viins vicmd
-
-zstyle ':autocomplete:*' widget-style menu-select
-bindkey -M menuselect '\r' accept-line
-
-zstyle ':autocomplete:*' list-lines 7
-
 # useful aliases and functions
 alias ll='ls -al'
 alias jp="/home/linuxbrew/.linuxbrew/bin/python3 -m jupyterlab --no-browser"
@@ -300,11 +284,6 @@ export DEVDSK="dev-dsk-jonatgao-2a-331408bc.us-west-2.amazon.com"
 export DEVDSK2="dev-dsk-jonatgao-2c-de4f6a1e.us-west-2.amazon.com"
 export DEVDSK3="dev-dsk-jonatgao-2b-716106e9.us-west-2.amazon.com"
 alias cdsk="ssh -L 8080:localhost:8080 -L 8888:localhost:8888 $DEVDSK"
-
-# get current date in Pacific time
-today() {
-    date -I -d "-8 hours"
-}
 
 # nifty seperator for your terminal
 separator() {
@@ -329,17 +308,41 @@ mkcd () {
 }
 
 # Yazi helper for changing current working directory
-function y() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-	yazi "$@" --cwd-file="$tmp"
-	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-		builtin cd -- "$cwd"
-	fi
-	rm -f -- "$tmp"
-}
+# function y() {
+# 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+# 	yazi "$@" --cwd-file="$tmp"
+# 	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+# 		builtin cd -- "$cwd"
+# 	fi
+# 	rm -f -- "$tmp"
+# }
 
 source ~/.aliasrc
 
 alias startgui="python3 ~/dcv-cdd.py --debug connect $DEVDSK --wssh"
 
-export PATH=$PATH:/Users/jonatgao/.spicetify
+# () {
+#   while (( ARGC )); do
+#     bindkey -M $1 '^[OA' up-line-or-history
+#     bindkey -M $1 '^[[A' up-line-or-history
+#     bindkey -M $1 '^[OB' down-line-or-history
+#     bindkey -M $1 '^[[B' down-line-or-history
+#
+#     bindkey -M $1 '^I' menu-select
+#     bindkey -M $1 "$terminfo[kcbt]" menu-select
+#     shift
+#   done
+# } emacs viins vicmd
+#
+# zstyle ':autocomplete:*' widget-style menu-select
+# bindkey -M menuselect '\r' accept-line
+# bindkey -M menuselect              '^I'         menu-complete
+# bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
+# # zstyle ':autocomplete:*' default-context history-incremental-search-backward
+#
+# zstyle ':autocomplete:*' list-lines 7
+#
+# zstyle ':completion:*:*' matcher-list 'm:{[:lower:]-}={[:upper:]_}' '+r:|[.]=**'
+
+# Amazon Q post block. Keep at the bottom of this file.
+[[ -f "${HOME}/.local/share/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/.local/share/amazon-q/shell/zshrc.post.zsh"
