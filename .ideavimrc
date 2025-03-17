@@ -97,6 +97,13 @@ nmap gr :action ShowUsages<CR>
 nmap gi :action GotoImplementation<CR>
 nmap gs :action GotoSuperMethod<CR>
 
+nmap <leader>df :action RunClass<CR>
+nmap <leader>dF :action RunClass<CR>
+nmap <leader>dr :action Rerun<CR>
+
+nmap <leader>w :action SaveAll<CR>
+nmap <leader>c :action CloseActiveTab<CR>
+
 nmap [[ :action MethodUp<CR>
 nmap ]] :action MethodDown<CR>
 vmap [[ :action MethodUp<CR>
@@ -133,6 +140,9 @@ nmap gqip vip:action ReformatCode<CR>
 nmap gqap vap:action ReformatCode<CR>
 vmap gq  :action ReformatCode<CR>
 
+nmap <S-\> :action SplitVertically<CR>
+nmap \ :action SplitHorizontally<CR>
+nmap <C-w><leader> :action ChangeSplitOrientation<CR>
 
 nmap <, :action MoveElementLeft<CR>
 nmap >, :action MoveElementRight<CR>
