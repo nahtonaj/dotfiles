@@ -1,0 +1,10 @@
+[Unit]
+Description=Homebrew generated unit for emacs
+
+[Install]
+WantedBy=default.target
+
+[Service]
+Type=simple
+ExecStart="/home/linuxbrew/.linuxbrew/opt/emacs/bin/emacs" "--fg-daemon"
+Restart=always

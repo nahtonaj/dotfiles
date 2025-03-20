@@ -34,6 +34,8 @@ alias ic="isengardcli"
 alias sshy="ssh -o StrictHostKeyChecking=no"
 alias bbmysql="sudo mysql -S /tmp/mysql45691.sock -uroot -proot"
 alias bbvisualizewatch="brazil-build visualize & brazil-build visualize-watch && fg"
+alias ta="tmux a"
+alias emacs="emacsclient -c -a 'emacs'"
 alias lptvc="/apollo/env/CatalystResourceCreationClientTools/bin/LptVerifierCli --lpt-verifier-action static_analysis --lpt-app-def build/application_definition.json"
 export TEST_RUNTIME=/local/home/jonatgao/workplace/bigbirdstoragenode/src/BigBirdStorageNode/build/private/tmp/BigBirdStorageNode
 export LN_TEST_STORAGENODE=/local/home/jonatgao/workplace/ddblognode/src/BigBirdStorageNode/build/private/tmp/BigBirdStorageNode
