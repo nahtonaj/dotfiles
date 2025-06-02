@@ -6,11 +6,11 @@ local settings = require("settings")
 -- the cpu load data, which is fired every 2.0 seconds.
 sbar.exec("killall cpu_load >/dev/null; $CONFIG_DIR/helpers/event_providers/cpu_load/bin/cpu_load cpu_update 2.0")
 
-local cpu = sbar.add("graph", "widgets.cpu" , 42, {
+local cpu = sbar.add("graph", "widgets.cpu" , 63, { -- Increased from 42 by factor of 1.5
   position = "right",
   graph = { color = colors.blue },
   background = {
-    height = 22,
+    height = 33, -- Increased from 22 by factor of 1.5
     color = { alpha = 0 },
     border_color = { alpha = 0 },
     drawing = true,
@@ -21,14 +21,14 @@ local cpu = sbar.add("graph", "widgets.cpu" , 42, {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 14.0, -- Increased from 9.0 by factor of ~1.5
     },
     align = "right",
     padding_right = 0,
     width = 0,
-    y_offset = 4
+    y_offset = 6 -- Increased from 4 by factor of 1.5
   },
-  padding_right = settings.paddings + 6
+  padding_right = settings.paddings + 9 -- Increased from 6 by factor of 1.5
 })
 
 cpu:subscribe("cpu_update", function(env)

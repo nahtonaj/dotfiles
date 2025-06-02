@@ -7,7 +7,7 @@ local front_app = sbar.add("item", "front_app", {
   label = {
     font = {
       style = settings.font.style_map["Black"],
-      size = 12.0,
+      size = 18.0, -- Increased from 12.0 by factor of 1.5
     },
   },
   updates = true,

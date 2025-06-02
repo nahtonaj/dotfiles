@@ -6,17 +6,17 @@ local settings = require("settings")
 -- for the network interface "en0", which is fired every 2.0 seconds.
 sbar.exec("killall network_load >/dev/null; $CONFIG_DIR/helpers/event_providers/network_load/bin/network_load en0 network_update 2.0")
 
-local popup_width = 250
+local popup_width = 375 -- Increased from 250 by factor of 1.5
 
 local wifi_up = sbar.add("item", "widgets.wifi1", {
   position = "right",
-  padding_left = -5,
+  padding_left = -8, -- Increased from -5 by factor of ~1.5
   width = 0,
   icon = {
     padding_right = 0,
     font = {
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 14.0, -- Increased from 9.0 by factor of ~1.5
     },
     string = icons.wifi.upload,
   },
@@ -24,22 +24,22 @@ local wifi_up = sbar.add("item", "widgets.wifi1", {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 14.0, -- Increased from 9.0 by factor of ~1.5
     },
     color = colors.red,
     string = "??? Bps",
   },
-  y_offset = 4,
+  y_offset = 6, -- Increased from 4 by factor of 1.5
 })
 
 local wifi_down = sbar.add("item", "widgets.wifi2", {
   position = "right",
-  padding_left = -5,
+  padding_left = -8, -- Increased from -5 by factor of ~1.5
   icon = {
     padding_right = 0,
     font = {
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 14.0, -- Increased from 9.0 by factor of ~1.5
     },
     string = icons.wifi.download,
   },
@@ -47,12 +47,12 @@ local wifi_down = sbar.add("item", "widgets.wifi2", {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 9.0,
+      size = 14.0, -- Increased from 9.0 by factor of ~1.5
     },
     color = colors.blue,
     string = "??? Bps",
   },
-  y_offset = -4,
+  y_offset = -6, -- Increased from -4 by factor of 1.5
 })
 
 local wifi = sbar.add("item", "widgets.wifi.padding", {
@@ -67,7 +67,7 @@ local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {
   wifi_down.name
 }, {
   background = { color = colors.bg1 },
-  popup = { align = "center", height = 30 }
+  popup = { align = "center", height = 45 } -- Increased from 30 by factor of 1.5
 })
 
 local ssid = sbar.add("item", {
@@ -82,16 +82,16 @@ local ssid = sbar.add("item", {
   align = "center",
   label = {
     font = {
-      size = 15,
+      size = 23, -- Increased from 15 by factor of ~1.5
       style = settings.font.style_map["Bold"]
     },
     max_chars = 18,
     string = "????????????",
   },
   background = {
-    height = 2,
+    height = 3, -- Increased from 2 by factor of 1.5
     color = colors.grey,
-    y_offset = -15
+    y_offset = -23 -- Increased from -15 by factor of ~1.5
   }
 })
 

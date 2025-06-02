@@ -11,27 +11,27 @@ for i = 1, 10, 1 do
     icon = {
       font = { family = settings.font.numbers },
       string = i,
-      padding_left = 15,
-      padding_right = 8,
+      padding_left = 23, -- Increased from 15 by factor of ~1.5
+      padding_right = 12, -- Increased from 8 by factor of 1.5
       color = colors.white,
       highlight_color = colors.red,
     },
     label = {
-      padding_right = 20,
+      padding_right = 30, -- Increased from 20 by factor of 1.5
       color = colors.grey,
       highlight_color = colors.white,
-      font = "sketchybar-app-font:Regular:16.0",
-      y_offset = -1,
+      font = "sketchybar-app-font:Regular:24.0", -- Increased from 16.0 by factor of 1.5
+      y_offset = -2, -- Adjusted from -1 by factor of ~1.5
     },
-    padding_right = 1,
-    padding_left = 1,
+    padding_right = 2, -- Increased from 1 by factor of ~1.5
+    padding_left = 2, -- Increased from 1 by factor of ~1.5
     background = {
       color = colors.bg1,
-      border_width = 1,
-      height = 26,
+      border_width = 2, -- Increased from 1 by factor of ~1.5
+      height = 39, -- Increased from 26 by factor of 1.5
       border_color = colors.black,
     },
-    popup = { background = { border_width = 5, border_color = colors.black } }
+    popup = { background = { border_width = 8, border_color = colors.black } } -- Increased from 5 by factor of ~1.5
   })
 
   spaces[i] = space
@@ -41,8 +41,8 @@ for i = 1, 10, 1 do
     background = {
       color = colors.transparent,
       border_color = colors.bg2,
-      height = 28,
-      border_width = 2
+      height = 42, -- Increased from 28 by factor of 1.5
+      border_width = 3 -- Increased from 2 by factor of 1.5
     }
   })
 
@@ -55,13 +55,13 @@ for i = 1, 10, 1 do
 
   local space_popup = sbar.add("item", {
     position = "popup." .. space.name,
-    padding_left= 5,
+    padding_left= 8, -- Increased from 5 by factor of ~1.5
     padding_right= 0,
     background = {
       drawing = true,
       image = {
-        corner_radius = 9,
-        scale = 0.2
+        corner_radius = 14, -- Increased from 9 by factor of ~1.5
+        scale = 0.3 -- Increased from 0.2 by factor of 1.5
       }
     }
   })
@@ -100,18 +100,18 @@ local space_window_observer = sbar.add("item", {
 })
 
 local spaces_indicator = sbar.add("item", {
-  padding_left = -3,
+  padding_left = -5, -- Increased from -3 by factor of ~1.5
   padding_right = 0,
   icon = {
-    padding_left = 8,
-    padding_right = 9,
+    padding_left = 12, -- Increased from 8 by factor of 1.5
+    padding_right = 14, -- Increased from 9 by factor of ~1.5
     color = colors.grey,
     string = icons.switch.on,
   },
   label = {
     width = 0,
     padding_left = 0,
-    padding_right = 8,
+    padding_right = 12, -- Increased from 8 by factor of 1.5
     string = "Spaces",
     color = colors.bg1,
   },
