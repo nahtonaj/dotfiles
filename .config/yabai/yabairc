@@ -15,12 +15,12 @@ yabai -m config external_bar all:$(sketchybar --query bar | jq .height):0 \
                 window_zoom_persist        off            \
                 window_origin_display      default        \
                 window_placement           second_child   \
-                window_topmost             off            \
+                window_topmost             on             \
                 window_shadow              on             \
-                window_opacity             off            \
+                window_opacity             off             \
                 window_opacity_duration    0.2            \
                 active_window_opacity      1.0            \
-                normal_window_opacity      0.8            \
+                normal_window_opacity      0.9            \
                 window_animation_duration  0.1            \
                 window_animation_easing    ease_out_quint \
                 insert_feedback_color      0xff9dd274     \
@@ -37,8 +37,10 @@ yabai -m config external_bar all:$(sketchybar --query bar | jq .height):0 \
                 right_padding              2              \
                 window_gap                 3
 
-yabai -m signal --add app='^Ghostty$' event=window_created action='yabai -m space --layout bsp'
-yabai -m signal --add app='^Ghostty$' event=window_destroyed action='yabai -m space --layout bsp'
+yabai -m signal --add app='^Amazon Chime$' event=window_created action='yabai -m space --layout bsp'
+yabai -m signal --add app='^Amazon Chime$' event=window_destroyed action='yabai -m space --layout bsp'
+yabai -m signal --add app='^Amazon Chime$' event=window_minimized action='yabai -m space --layout bsp'
+yabai -m signal --add app='^Amazon Chime$' event=window_deminimized action='yabai -m space --layout bsp'
 
 yabai -m rule --add app=".*" sub-layer=normal
 
@@ -50,12 +52,15 @@ yabai -m rule --add app="^Music$" manage=off
 yabai -m rule --add app="^eqMac$" manage=off
 yabai -m rule --add app="^borders$" manage=off
 yabai -m rule --add app="^Cisco AnyConnect Secure Mobility Client$" manage=off
-yabai -m rule --add app="^Amazon Chime$" manage=off
+yabai -m rule --add app="^Cisco Secure Client$" manage=off
+# yabai -m rule --add app="^Amazon Chime$" manage=off
 yabai -m rule --add title="^Picture in Picture$" manage=off
 yabai -m rule --add title="^Picture-in-Picture$" manage=off
-yabai -m rule --add title="^Amazon Chime: Meeting Controls$" manage=off
-yabai -m rule --add title="^Amazon Chime: Screen Share Border$" manage=off
-yabai -m rule --add title="^Amazon Chime: Screen Share Border$" manage=off
+yabai -m rule --add app="^Amazon Chime$" title="^Amazon Chime: Meeting Controls$" manage=off
+yabai -m rule --add app="^Amazon Chime$" title="^Amazon Chime: Screen Share Border$" manage=off
+yabai -m rule --add app="^Amazon Chime$" title="^Window$" manage=off
+yabai -m rule --add app="^Amazon Chime$" title="^*Border$" manage=off
+yabai -m rule --add app="^BetterDisplay$" manage=off
 # yabai -m rule --add title="^$" manage=off
 
 # borders active_color=0xe1f1e100 inactive_color=0xff494d64 width=15.0 &

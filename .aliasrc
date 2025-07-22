@@ -10,7 +10,6 @@ export PATH=/home/jonatgao/.cargo/bin:$PATH
 export PATH=/home/jonatgao/.sdkman/candidates/java/current/bin:$PATH
 export PATH=~/.rodar/bin:$PATH
 export EDITOR=nvim
-export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
 
 
 alias bb=brazil-build

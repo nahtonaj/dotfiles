@@ -1,5 +1,5 @@
 # Amazon Q pre block. Keep at the top of this file.
-[[ -f "${HOME}/.local/share/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/.local/share/amazon-q/shell/zshrc.pre.zsh"
+[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH=/home/linuxbrew/.linuxbrew/bin/:$PATH
@@ -82,8 +82,6 @@ plugins=(
   git
   zsh-vi-mode
   zsh-syntax-highlighting
-  # zsh-autocomplete
-  # zsh-autosuggestions
   zsh-fzf-history-search
 )
 
@@ -125,10 +123,13 @@ ssh() {
     set-title $HOST;
 }
 
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+# test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
 
-export PATH=$HOME/.toolbox/bin:$PATH
+# Enables autocompletion for the ddb command - Installed by MechanicBigBirdCli
+[ -f "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh" ] && source "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh"
+
+export PATH=$PATH:$HOME/.toolbox/bin
 
 # if you wish to use IMDS set AWS_EC2_METADATA_DISABLED=false
 
@@ -272,7 +273,20 @@ fi
 #
 eval "$(zoxide init zsh)"
 
-export ITERM_ENABLE_SHELL_INTEGRATION_WITH_TMUX=YES
+() {
+  while (( ARGC )); do
+    bindkey -M $1 '^[OA' up-line-or-history
+    bindkey -M $1 '^[[A' up-line-or-history
+    bindkey -M $1 '^[OB' down-line-or-history
+    bindkey -M $1 '^[[B' down-line-or-history
+    shift
+  done
+} emacs viins vicmd
+
+zstyle ':autocomplete:*' widget-style menu-select
+bindkey -M menuselect '\r' accept-line
+
+zstyle ':autocomplete:*' list-lines 7
 
 # useful aliases and functions
 alias ll='ls -al'
@@ -284,7 +298,8 @@ alias vim=nvim
 export DEVDSK="dev-dsk-jonatgao-2a-331408bc.us-west-2.amazon.com"
 export DEVDSK2="dev-dsk-jonatgao-2c-de4f6a1e.us-west-2.amazon.com"
 export DEVDSK3="dev-dsk-jonatgao-2b-716106e9.us-west-2.amazon.com"
-alias cdsk="ssh -L 8080:localhost:8080 -L 8888:localhost:8888 $DEVDSK"
+alias cdsk="ssh -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 -R 8989:localhost:8989 -L 8801:localhost:8801 -L 8800:localhost:8800 -L 8880:localhost:8880 -L 8881:localhost:8881 -R 20202:localhost:20202 $DEVDSK"
+alias wcdsk="warp_ssh_helper -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 $DEVDSK"
 
 # nifty seperator for your terminal
 separator() {
@@ -318,32 +333,11 @@ mkcd () {
 # 	rm -f -- "$tmp"
 # }
 
-source ~/.aliasrc
-
 alias startgui="python3 ~/dcv-cdd.py --debug connect $DEVDSK --wssh"
 
-# () {
-#   while (( ARGC )); do
-#     bindkey -M $1 '^[OA' up-line-or-history
-#     bindkey -M $1 '^[[A' up-line-or-history
-#     bindkey -M $1 '^[OB' down-line-or-history
-#     bindkey -M $1 '^[[B' down-line-or-history
-#
-#     bindkey -M $1 '^I' menu-select
-#     bindkey -M $1 "$terminfo[kcbt]" menu-select
-#     shift
-#   done
-# } emacs viins vicmd
-#
-# zstyle ':autocomplete:*' widget-style menu-select
-# bindkey -M menuselect '\r' accept-line
-# bindkey -M menuselect              '^I'         menu-complete
-# bindkey -M menuselect "$terminfo[kcbt]" reverse-menu-complete
-# # zstyle ':autocomplete:*' default-context history-incremental-search-backward
-#
-# zstyle ':autocomplete:*' list-lines 7
-#
-# zstyle ':completion:*:*' matcher-list 'm:{[:lower:]-}={[:upper:]_}' '+r:|[.]=**'
+export PATH=$PATH:/Users/jonatgao/.spicetify
 
 # Amazon Q post block. Keep at the bottom of this file.
-[[ -f "${HOME}/.local/share/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/.local/share/amazon-q/shell/zshrc.post.zsh"
+[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
+
+[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"

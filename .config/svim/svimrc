@@ -1,0 +1,2 @@
+nmap <C-k> <Esc>:m .+1<CR>==gn
+nmap <C-l> <Esc>:m .-2<CR>==gn

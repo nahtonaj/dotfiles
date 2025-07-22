@@ -49,7 +49,7 @@ alt - p : yabai -m window --toggle float;\
           yabai -m window --grid 20:20:12:12:18:18 \
           yabai -m window --toggle sticky
 
-alt - m : yabai -m window --toggle float
+alt - m : yabai -m window --minimize
 
 # toggle window split type
 alt - e : yabai -m window --toggle split
@@ -70,8 +70,8 @@ shift + alt - 9 : yabai -m window --space 9 && yabai -m space --focus 9;
 # alt - up : yabai -m window south --resize top:0:-100 2> /dev/null || yabai -m window --resize top:0:-100
 # alt - right : yabai -m window east --resize left:100:0 2> /dev/null || yabai -m window --resize left:100:0
 
-ctrl + alt - h : yabai -m window --space prev; yabai -m space --focus prev
-ctrl + alt - l : yabai -m window --space next; yabai -m space --focus next
+ctrl + alt - h : yabai -m window --space prev; yabai -m space --focus prev; yabai -m window --focus recent
+ctrl + alt - l : yabai -m window --space next; yabai -m space --focus next; yabai -m window --focus recent
 
 # create desktop, move window and follow focus - uses jq for parsing json (brew install jq)
 shift + alt - n : yabai -m space --create && \
@@ -79,6 +79,6 @@ shift + alt - n : yabai -m space --create && \
                    yabai -m window --space "${index}" && \
                    yabai -m space --focus "${index}"
 
-ctrl + alt - r: yabai --restart-service
+ctrl + alt - r: sketchybar --reload && yabai --restart-service
 
 alt - b : yabai -m query --windows --window | jq -re '.["is-topmost"]' | xargs -I {} bash -c "if [[ '{}' = 'true' ]]; then yabai -m window --sub-layer normal; elif [[ '{}' = 'false' ]]; then yabai -m window --sub-layer above; fi" 
