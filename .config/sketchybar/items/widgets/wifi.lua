@@ -2,21 +2,23 @@ local icons = require("icons")
 local colors = require("colors")
 local settings = require("settings")
 
+local scale = settings.scale_factor
+
 -- Execute the event provider binary which provides the event "network_update"
 -- for the network interface "en0", which is fired every 2.0 seconds.
 sbar.exec("killall network_load >/dev/null; $CONFIG_DIR/helpers/event_providers/network_load/bin/network_load en0 network_update 2.0")
 
-local popup_width = 375 -- Increased from 250 by factor of 1.5
+local popup_width = 250 * scale
 
 local wifi_up = sbar.add("item", "widgets.wifi1", {
   position = "right",
-  padding_left = -8, -- Increased from -5 by factor of ~1.5
+  padding_left = -5 * scale,
   width = 0,
   icon = {
     padding_right = 0,
     font = {
       style = settings.font.style_map["Bold"],
-      size = 14.0, -- Increased from 9.0 by factor of ~1.5
+      size = 9.0 * scale,
     },
     string = icons.wifi.upload,
   },
@@ -24,22 +26,22 @@ local wifi_up = sbar.add("item", "widgets.wifi1", {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 14.0, -- Increased from 9.0 by factor of ~1.5
+      size = 9.0 * scale,
     },
     color = colors.red,
     string = "??? Bps",
   },
-  y_offset = 6, -- Increased from 4 by factor of 1.5
+  y_offset = 4 * scale,
 })
 
 local wifi_down = sbar.add("item", "widgets.wifi2", {
   position = "right",
-  padding_left = -8, -- Increased from -5 by factor of ~1.5
+  padding_left = -5 * scale,
   icon = {
     padding_right = 0,
     font = {
       style = settings.font.style_map["Bold"],
-      size = 14.0, -- Increased from 9.0 by factor of ~1.5
+      size = 9.0 * scale,
     },
     string = icons.wifi.download,
   },
@@ -47,12 +49,12 @@ local wifi_down = sbar.add("item", "widgets.wifi2", {
     font = {
       family = settings.font.numbers,
       style = settings.font.style_map["Bold"],
-      size = 14.0, -- Increased from 9.0 by factor of ~1.5
+      size = 9.0 * scale,
     },
     color = colors.blue,
     string = "??? Bps",
   },
-  y_offset = -6, -- Increased from -4 by factor of 1.5
+  y_offset = -4 * scale,
 })
 
 local wifi = sbar.add("item", "widgets.wifi.padding", {
@@ -67,7 +69,7 @@ local wifi_bracket = sbar.add("bracket", "widgets.wifi.bracket", {
   wifi_down.name
 }, {
   background = { color = colors.bg1 },
-  popup = { align = "center", height = 45 } -- Increased from 30 by factor of 1.5
+  popup = { align = "center", height = 30 * scale }
 })
 
 local ssid = sbar.add("item", {
@@ -82,16 +84,16 @@ local ssid = sbar.add("item", {
   align = "center",
   label = {
     font = {
-      size = 23, -- Increased from 15 by factor of ~1.5
+      size = 15 * scale,
       style = settings.font.style_map["Bold"]
     },
     max_chars = 18,
     string = "????????????",
   },
   background = {
-    height = 3, -- Increased from 2 by factor of 1.5
+    height = 2 * scale,
     color = colors.grey,
-    y_offset = -23 -- Increased from -15 by factor of ~1.5
+    y_offset = -15 * scale
   }
 })
 
@@ -152,7 +154,7 @@ local router = sbar.add("item", {
   },
 })
 
-sbar.add("item", { position = "right", width = settings.group_paddings })
+sbar.add("item", { position = "right", width = settings.group_paddings * scale })
 
 wifi_up:subscribe("network_update", function(env)
   local up_color = (env.upload == "000 Bps") and colors.grey or colors.red

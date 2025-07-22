@@ -2,12 +2,14 @@ local icons = require("icons")
 local colors = require("colors")
 local settings = require("settings")
 
+local scale = settings.scale_factor
+
 local battery = sbar.add("item", "widgets.battery", {
   position = "right",
   icon = {
     font = {
       style = settings.font.style_map["Regular"],
-      size = 29.0, -- Increased from 19.0 by factor of ~1.5
+      size = 19.0 * scale,
     }
   },
   label = { font = { family = settings.font.numbers } },
@@ -19,12 +21,12 @@ local remaining_time = sbar.add("item", {
   position = "popup." .. battery.name,
   icon = {
     string = "Time remaining:",
-    width = 150, -- Increased from 100 by factor of 1.5
+    width = 100 * scale,
     align = "left"
   },
   label = {
     string = "??:??h",
-    width = 150, -- Increased from 100 by factor of 1.5
+    width = 100 * scale,
     align = "right"
   },
 })
@@ -96,5 +98,5 @@ sbar.add("bracket", "widgets.battery.bracket", { battery.name }, {
 
 sbar.add("item", "widgets.battery.padding", {
   position = "right",
-  width = settings.group_paddings
+  width = settings.group_paddings * scale
 })

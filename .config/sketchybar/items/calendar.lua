@@ -1,33 +1,35 @@
 local settings = require("settings")
 local colors = require("colors")
 
+local scale = settings.scale_factor
+
 -- Padding item required because of bracket
-sbar.add("item", { position = "right", width = settings.group_paddings })
+sbar.add("item", { position = "right", width = settings.group_paddings * scale })
 
 local cal = sbar.add("item", {
   icon = {
     color = colors.white,
-    padding_left = 12, -- Increased from 8 by factor of 1.5
+    padding_left = 8 * scale,
     font = {
       style = settings.font.style_map["Black"],
-      size = 18.0, -- Increased from 12.0 by factor of 1.5
+      size = 12.0 * scale,
     },
   },
   label = {
     color = colors.white,
-    padding_right = 12, -- Increased from 8 by factor of 1.5
-    width = 119, -- Increased from 79 by factor of 1.5
+    padding_right = 8 * scale,
+    width = 79 * scale,
     align = "right",
     font = { family = settings.font.numbers },
   },
   position = "right",
   update_freq = 30,
-  padding_left = 2, -- Increased from 1 by factor of ~1.5
-  padding_right = 2, -- Increased from 1 by factor of ~1.5
+  padding_left = math.max(1, math.floor(1 * scale)),
+  padding_right = math.max(1, math.floor(1 * scale)),
   background = {
     color = colors.bg2,
     border_color = colors.black,
-    border_width = 2 -- Increased from 1 by factor of ~1.5
+    border_width = math.max(1, math.floor(1 * scale))
   },
   click_script = "open -a 'Calendar'"
 })
@@ -36,13 +38,13 @@ local cal = sbar.add("item", {
 sbar.add("bracket", { cal.name }, {
   background = {
     color = colors.transparent,
-    height = 45, -- Increased from 30 by factor of 1.5
+    height = 30 * scale,
     border_color = colors.grey,
   }
 })
 
 -- Padding item required because of bracket
-sbar.add("item", { position = "right", width = settings.group_paddings })
+sbar.add("item", { position = "right", width = settings.group_paddings * scale })
 
 cal:subscribe({ "forced", "routine", "system_woke" }, function(env)
  cal:set({ icon = os.date("%a. %b. %d"), label = os.date("%I:%M %p") })
