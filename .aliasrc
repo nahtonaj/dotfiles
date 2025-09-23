@@ -9,6 +9,8 @@ export PATH=$PATH:/apollo/env/envImprovement/bin
 export PATH=/home/jonatgao/.cargo/bin:$PATH
 export PATH=/home/jonatgao/.sdkman/candidates/java/current/bin:$PATH
 export PATH=~/.rodar/bin:$PATH
+export PATH=/apollo/sbin:$PATH
+export PATH="$PATH:$HOME/workplace/dotfiles/scripts"
 export EDITOR=nvim
 
 
@@ -154,3 +156,91 @@ function utcdate() {
 # Enables autocompletion for the ddb command - Installed by MechanicBigBirdCli
 [ -f "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh" ] && source "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh"
 
+
+# Add AmazonAwsCli bin directory to PATH for isengard command
+export PATH=$PATH:/apollo/env/AmazonAwsCli/bin
+
+# GTAS local server helper function
+gtas() {
+    creds=$(isengard get 398173856169 Admin)
+    access_key=$(echo "$creds" | grep AWS_ACCESS_KEY_ID | cut -d '"' -f2)
+    secret_key=$(echo "$creds" | grep AWS_SECRET_ACCESS_KEY | cut -d '"' -f2)
+    session_token=$(echo "$creds" | grep AWS_SESSION_TOKEN | cut -d '"' -f2)
+    `isengard get 601134390254 GTASLocalServer | tr -d "\""`;export workflowAwsAccessKeyId=$access_key && export workflowAwsSecretAccessKey=$secret_key && export workflowAwsSessionToken=$session_token;brazil-build server
+}
+
+# GTAS DUB local server helper function
+gtas_dub() {
+    creds=$(isengard get 398173856169 Admin)
+    access_key=$(echo "$creds" | grep AWS_ACCESS_KEY_ID | cut -d '"' -f2)
+    secret_key=$(echo "$creds" | grep AWS_SECRET_ACCESS_KEY | cut -d '"' -f2)
+    session_token=$(echo "$creds" | grep AWS_SESSION_TOKEN | cut -d '"' -f2)
+    `isengard get 210665712600 GTASLocalServer | tr -d "\""`;export workflowAwsAccessKeyIdDub=$access_key && export workflowAwsSecretAccessKeyDub=$secret_key && export workflowAwsSessionTokenDub=$session_token;bb server-dub
+}
+# Q Chat alias with comprehensive read-only tools
+qc() {
+    # Built-in read-only tools (removed execute_bash)
+    local readonly_tools="fs_read,@report_issue/report_issue,use_aws"
+    
+    # amzn_mcp read-only tools
+    readonly_tools+=",@amzn_mcp/andes_provider,@amzn_mcp/andes_search,@amzn_mcp/andes_table"
+    readonly_tools+=",@amzn_mcp/cradle_get_job_details,@amzn_mcp/cradle_get_job_run_details,@amzn_mcp/cradle_get_profile"
+    readonly_tools+=",@amzn_mcp/cradle_list_job_runs,@amzn_mcp/cradle_list_jobs,@amzn_mcp/cradle_list_profiles"
+    readonly_tools+=",@amzn_mcp/cradle_search_jobs,@amzn_mcp/cradle_search_profiles"
+    readonly_tools+=",@amzn_mcp/datanet_reader,@amzn_mcp/datanet_search"
+    readonly_tools+=",@amzn_mcp/eureka_web_search,@amzn_mcp/fetch_oncall_rotations,@amzn_mcp/fetch_oncall_schedule"
+    readonly_tools+=",@amzn_mcp/g2s2_get,@amzn_mcp/g2s2_list_stage_version"
+    readonly_tools+=",@amzn_mcp/genai_poweruser_agent_script_get,@amzn_mcp/genai_poweruser_agent_script_list"
+    readonly_tools+=",@amzn_mcp/genai_poweruser_agent_script_search,@amzn_mcp/genai_poweruser_get_knowledge_metadata"
+    readonly_tools+=",@amzn_mcp/genai_poweruser_get_knowledge_structure,@amzn_mcp/genai_poweruser_list_knowledge"
+    readonly_tools+=",@amzn_mcp/genai_poweruser_read_knowledge,@amzn_mcp/genai_poweruser_search_knowledge"
+    readonly_tools+=",@amzn_mcp/get_folder_quip,@amzn_mcp/get_katal_component,@amzn_mcp/get_recent_messages_quip"
+    readonly_tools+=",@amzn_mcp/get_thread_folders_quip,@amzn_mcp/imr_costs_get_fleet_summary,@amzn_mcp/imr_costs_search_fleet"
+    readonly_tools+=",@amzn_mcp/jira_config_helper,@amzn_mcp/jira_get_attachment,@amzn_mcp/jira_get_issue"
+    readonly_tools+=",@amzn_mcp/jira_search_issues,@amzn_mcp/list_katal_components,@amzn_mcp/lookup_team_code_resource"
+    readonly_tools+=",@amzn_mcp/lookup_user_coding_activity_summary,@amzn_mcp/mermaid,@amzn_mcp/mosaic_list_controls"
+    readonly_tools+=",@amzn_mcp/mosaic_list_risks,@amzn_mcp/mox_console,@amzn_mcp/oncall_compass_get_report"
+    readonly_tools+=",@amzn_mcp/oncall_compass_query_reports,@amzn_mcp/orca_get_latest_error_details,@amzn_mcp/orca_list_runs"
+    readonly_tools+=",@amzn_mcp/overleaf_read_file,@amzn_mcp/pipeline_current_blockers,@amzn_mcp/pippin_get_artifact"
+    readonly_tools+=",@amzn_mcp/pippin_get_project,@amzn_mcp/pippin_list_artifacts,@amzn_mcp/pippin_list_projects"
+    readonly_tools+=",@amzn_mcp/pippin_sync_project_to_local,@amzn_mcp/plantuml,@amzn_mcp/policy_engine_get_risk"
+    readonly_tools+=",@amzn_mcp/policy_engine_get_user_dashboard,@amzn_mcp/prompt_farm_prompt_content,@amzn_mcp/prompt_farm_search_prompts"
+    readonly_tools+=",@amzn_mcp/read_coe,@amzn_mcp/read_internal_website,@amzn_mcp/read_kingpin_goal"
+    readonly_tools+=",@amzn_mcp/read_orr,@amzn_mcp/read_permissions,@amzn_mcp/read_quip"
+    readonly_tools+=",@amzn_mcp/rtla_fetch_logs,@amzn_mcp/rtla_fetch_single_request_logs,@amzn_mcp/sage_get_tag_details"
+    readonly_tools+=",@amzn_mcp/sage_search_tags,@amzn_mcp/search_acronym_central,@amzn_mcp/search_ags_confluence_website"
+    readonly_tools+=",@amzn_mcp/search_datapath,@amzn_mcp/search_eventstream,@amzn_mcp/search_internal_code"
+    readonly_tools+=",@amzn_mcp/search_internal_issues,@amzn_mcp/search_internal_websites,@amzn_mcp/search_katal_components"
+    readonly_tools+=",@amzn_mcp/search_people,@amzn_mcp/search_products,@amzn_mcp/search_quip"
+    readonly_tools+=",@amzn_mcp/search_sable,@amzn_mcp/search_symphony,@amzn_mcp/sfdc_account_lookup"
+    readonly_tools+=",@amzn_mcp/sfdc_contact_lookup,@amzn_mcp/sfdc_list_tasks_activity,@amzn_mcp/sfdc_opportunity_lookup"
+    readonly_tools+=",@amzn_mcp/sfdc_territory_lookup,@amzn_mcp/sfdc_user_lookup,@amzn_mcp/sim_get_folders"
+    readonly_tools+=",@amzn_mcp/sim_get_issue,@amzn_mcp/sim_search_issues,@amzn_mcp/taskei_get_room_identities"
+    readonly_tools+=",@amzn_mcp/taskei_get_rooms,@amzn_mcp/taskei_get_sprints,@amzn_mcp/taskei_get_task"
+    readonly_tools+=",@amzn_mcp/tod_download_logs"
+    
+    # builder_mcp read-only tools
+    readonly_tools+=",@builder_mcp/GetDogmaClassification,@builder_mcp/GetDogmaRecommendations"
+    readonly_tools+=",@builder_mcp/InternalCodeSearch,@builder_mcp/InternalSearch"
+    readonly_tools+=",@builder_mcp/OncallReadActions,@builder_mcp/PipelineTool"
+    readonly_tools+=",@builder_mcp/ReadInternalWebsites,@builder_mcp/ReadRemoteTestRunLogs"
+    readonly_tools+=",@builder_mcp/SearchAcronymCentral,@builder_mcp/TaskeiGetRooms"
+    readonly_tools+=",@builder_mcp/TaskeiGetTask,@builder_mcp/TaskeiListTasks"
+    readonly_tools+=",@builder_mcp/TicketingReadActions,@builder_mcp/WorkspaceGitDetails"
+    readonly_tools+=",@builder_mcp/WorkspaceSearch,@builder_mcp/CheckFilepathForCAZ"
+    
+    # genai_power_users read-only tools
+    readonly_tools+=",@genai_power_users/agent_script_get,@genai_power_users/agent_script_list"
+    readonly_tools+=",@genai_power_users/agent_script_search,@genai_power_users/get_knowledge_metadata"
+    readonly_tools+=",@genai_power_users/get_knowledge_structure,@genai_power_users/list_knowledge"
+    readonly_tools+=",@genai_power_users/read_knowledge,@genai_power_users/search_knowledge"
+    
+    # wasabi read-only tools
+    readonly_tools+=",@wasabi/InternalSearch,@wasabi/OncallReadActions"
+    readonly_tools+=",@wasabi/PipelineTool,@wasabi/ReadInternalWebsites,@wasabi/ReadRemoteTestRunLogs"
+    readonly_tools+=",@wasabi/SearchAcronymCentral,@wasabi/TaskeiGetRooms,@wasabi/TaskeiGetTask"
+    readonly_tools+=",@wasabi/TaskeiListTasks,@wasabi/TicketingReadActions,@wasabi/WorkspaceGitDetails"
+    readonly_tools+=",@wasabi/WorkspaceSearch,@wasabi/CheckFilepathForCAZ"
+    
+    q chat --trust-tools="$readonly_tools" "$@"
+}

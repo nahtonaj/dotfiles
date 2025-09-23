@@ -3,7 +3,6 @@
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
 export PATH=/home/linuxbrew/.linuxbrew/bin/:$PATH
-export PATH=~/.emacs.d/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -290,7 +289,7 @@ zstyle ':autocomplete:*' list-lines 7
 
 # useful aliases and functions
 alias ll='ls -al'
-alias jp="/home/linuxbrew/.linuxbrew/bin/python3 -m jupyterlab --no-browser"
+alias jp="jupyter-lab --no-browser"
 alias lg=lazygit
 alias mwcurl='/apollo/env/envImprovement/bin/curl --post302 --location-trusted -b sentry_braveheart=1 -c ~/.midway/cookie -b ~/.midway/cookie --capath /apollo/env/SDETools/etc/cacerts'
 alias vim=nvim
@@ -324,18 +323,23 @@ mkcd () {
 }
 
 # Yazi helper for changing current working directory
-# function y() {
-# 	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-# 	yazi "$@" --cwd-file="$tmp"
-# 	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-# 		builtin cd -- "$cwd"
-# 	fi
-# 	rm -f -- "$tmp"
-# }
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+	yazi "$@" --cwd-file="$tmp"
+	if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+		builtin cd -- "$cwd"
+	fi
+	rm -f -- "$tmp"
+}
 
 alias startgui="python3 ~/dcv-cdd.py --debug connect $DEVDSK --wssh"
 
 export PATH=$PATH:/Users/jonatgao/.spicetify
+
+# Amazon Q completion
+if [ -f ~/.q/zsh_completion ]; then
+    . ~/.q/zsh_completion
+fi
 
 # Amazon Q post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
