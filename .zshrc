@@ -298,7 +298,7 @@ alias vim=nvim
 export DEVDSK="dev-dsk-jonatgao-2a-331408bc.us-west-2.amazon.com"
 export DEVDSK2="dev-dsk-jonatgao-2c-de4f6a1e.us-west-2.amazon.com"
 export DEVDSK3="dev-dsk-jonatgao-2b-716106e9.us-west-2.amazon.com"
-alias cdsk="ssh -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 -R 8989:localhost:8989 -L 8801:localhost:8801 -L 8800:localhost:8800 -L 8880:localhost:8880 -L 8881:localhost:8881 -R 20202:localhost:20202 $DEVDSK"
+alias cdsk="ssh -q -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 -R 8989:localhost:8989 -L 8801:localhost:8801 -L 8800:localhost:8800 -L 8880:localhost:8880 -L 8881:localhost:8881 -R 20202:localhost:20202 $DEVDSK"
 alias wcdsk="warp_ssh_helper -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 $DEVDSK"
 
 # nifty seperator for your terminal

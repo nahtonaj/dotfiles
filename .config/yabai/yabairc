@@ -24,23 +24,27 @@ yabai -m config external_bar all:$(sketchybar --query bar | jq .height):0 \
                 window_animation_duration  0.1            \
                 window_animation_easing    ease_out_quint \
                 insert_feedback_color      0xff9dd274     \
-                split_ratio                0.66           \
-                auto_balance               on             \
-                mouse_modifier             alt            \
+                split_ratio                0.6           \
+                auto_balance               off             \
+                mouse_modifier             ctrl           \
                 mouse_action1              move           \
                 mouse_action2              resize         \
                 mouse_drop_action          swap           \
                                                           \
-                top_padding                2              \
-                bottom_padding             2              \
-                left_padding               2              \
-                right_padding              2              \
-                window_gap                 3
+                top_padding                10              \
+                bottom_padding             10              \
+                left_padding               10              \
+                right_padding              10              \
+                window_gap                 10
 
-yabai -m signal --add app='^Amazon Chime$' event=window_created action='yabai -m space --layout bsp'
-yabai -m signal --add app='^Amazon Chime$' event=window_destroyed action='yabai -m space --layout bsp'
-yabai -m signal --add app='^Amazon Chime$' event=window_minimized action='yabai -m space --layout bsp'
-yabai -m signal --add app='^Amazon Chime$' event=window_deminimized action='yabai -m space --layout bsp'
+## If I close the active window, focus on any other visible window.
+yabai -m signal --add event=window_destroyed action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
+yabai -m signal --add event=application_terminated action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
+
+# yabai -m signal --add app='^Amazon Chime$' event=window_created action='yabai -m space --layout bsp'
+# yabai -m signal --add app='^Amazon Chime$' event=window_destroyed action='yabai -m space --layout bsp'
+# yabai -m signal --add app='^Amazon Chime$' event=window_minimized action='yabai -m space --layout bsp'
+# yabai -m signal --add app='^Amazon Chime$' event=window_deminimized action='yabai -m space --layout bsp'
 
 yabai -m rule --add app=".*" sub-layer=normal
 

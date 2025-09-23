@@ -34,7 +34,7 @@ alt - u : yabai -m window --focus recent
 alt - f : yabai -m window --toggle zoom-fullscreen
 
 # alt - s : yabai -m window --toggle
-alt - s : yabai -m window --toggle sticky;\
+ctrl + alt - s : yabai -m window --toggle sticky;\
           yabai -m window --toggle pip
 
 # toggle padding and gap
@@ -79,6 +79,6 @@ shift + alt - n : yabai -m space --create && \
                    yabai -m window --space "${index}" && \
                    yabai -m space --focus "${index}"
 
-ctrl + alt - r: sketchybar --reload && yabai --restart-service
+ctrl + alt - r: sketchybar --reload && yabai --restart-service && killall Dock
 
 alt - b : yabai -m query --windows --window | jq -re '.["is-topmost"]' | xargs -I {} bash -c "if [[ '{}' = 'true' ]]; then yabai -m window --sub-layer normal; elif [[ '{}' = 'false' ]]; then yabai -m window --sub-layer above; fi" 
