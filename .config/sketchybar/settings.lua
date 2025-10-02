@@ -22,7 +22,8 @@ local function get_display_scale()
                             display_info:match("Built%-in Retina") ~= nil
   
   -- Determine scale factor
-  local scale = (is_macbook_display and is_retina) and 1.5 or 0.7
+  -- local scale = (is_macbook_display and is_retina) and 1.5 or 0.7
+  local scale = 1
   
   -- Log the detection results
   log:write("Built-in display detected: " .. tostring(is_macbook_display) .. "\n")

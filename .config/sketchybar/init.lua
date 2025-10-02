@@ -10,7 +10,7 @@ sbar.exec("pkill -f 'display_detector/display_watcher.sh' || true")
 
 -- Start the display change detector in the background
 -- Use the new more reliable watcher script
-sbar.exec("$CONFIG_DIR/helpers/display_detector/display_watcher.sh &")
+sbar.exec("$HOME/.config/sketchybar/helpers/display_detector/display_watcher.sh &")
 
 -- Bundle the entire initial configuration into a single message to sketchybar
 sbar.begin_config()
