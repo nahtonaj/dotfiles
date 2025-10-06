@@ -2,7 +2,6 @@
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH=/home/linuxbrew/.linuxbrew/bin/:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -11,7 +10,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="jonatgao" # set by `omz`
+ZSH_THEME="databricks" # set by `omz`
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -82,6 +81,8 @@ plugins=(
   zsh-vi-mode
   zsh-syntax-highlighting
   zsh-fzf-history-search
+  zsh-autocomplete
+  zsh-autosuggestions
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -122,27 +123,12 @@ ssh() {
     set-title $HOST;
 }
 
-# test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-
-
-# Enables autocompletion for the ddb command - Installed by MechanicBigBirdCli
-[ -f "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh" ] && source "/apollo/env/MechanicBigBirdCli/bin/mechanic-autocomplete.sh"
-
-export PATH=$PATH:$HOME/.toolbox/bin
-
-# if you wish to use IMDS set AWS_EC2_METADATA_DISABLED=false
-
-export AWS_EC2_METADATA_DISABLED=true
-
-# Set up fzf key bindings and fuzzy completion
-eval "$(fzf --zsh)"
-
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
 # Created by `pipx` on 2024-06-24 19:28:32
-export PATH="$PATH:/local/home/jonatgao/.local/bin"
+export PATH="$PATH:$HOME/.local/bin"
 # shellcheck shell=bash
 
 # =============================================================================
@@ -291,14 +277,7 @@ zstyle ':autocomplete:*' list-lines 7
 alias ll='ls -al'
 alias jp="jupyter-lab --no-browser"
 alias lg=lazygit
-alias mwcurl='/apollo/env/envImprovement/bin/curl --post302 --location-trusted -b sentry_braveheart=1 -c ~/.midway/cookie -b ~/.midway/cookie --capath /apollo/env/SDETools/etc/cacerts'
 alias vim=nvim
-
-export DEVDSK="dev-dsk-jonatgao-2a-331408bc.us-west-2.amazon.com"
-export DEVDSK2="dev-dsk-jonatgao-2c-de4f6a1e.us-west-2.amazon.com"
-export DEVDSK3="dev-dsk-jonatgao-2b-716106e9.us-west-2.amazon.com"
-alias cdsk="ssh -q -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 -R 8989:localhost:8989 -L 8801:localhost:8801 -L 8800:localhost:8800 -L 8880:localhost:8880 -L 8881:localhost:8881 -R 20202:localhost:20202 $DEVDSK"
-alias wcdsk="warp_ssh_helper -L 8080:localhost:8080 -L 8888:localhost:8888 -L 8787:localhost:8787 $DEVDSK"
 
 # nifty seperator for your terminal
 separator() {
@@ -332,16 +311,8 @@ function y() {
 	rm -f -- "$tmp"
 }
 
-alias startgui="python3 ~/dcv-cdd.py --debug connect $DEVDSK --wssh"
-
-export PATH=$PATH:/Users/jonatgao/.spicetify
-
-# Amazon Q completion
-if [ -f ~/.q/zsh_completion ]; then
-    . ~/.q/zsh_completion
-fi
-
-# Amazon Q post block. Keep at the bottom of this file.
-[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
-
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
