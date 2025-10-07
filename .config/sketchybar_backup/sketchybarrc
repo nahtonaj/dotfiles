@@ -1,0 +1,36 @@
+#!/usr/bin/env lua
+
+-- Load the sketchybar-package and prepare the helper binaries
+require("helpers")
+require("init")
+
+-- Add a display change event handler to reload sketchybar when display changes
+sbar.exec("sketchybar --add event display_change --subscribe display_change display_change")
+
+-- Subscribe to display change events to reload sketchybar when switching displays
+sbar.add("item", "display_change_handler", {
+  drawing = false,
+  updates = true,
+})
+
+sbar.subscribe("display_change", function(env)
+  -- Force a reload when display change event is triggered
+  sbar.exec("echo 'Display change event received, reloading...' >> /tmp/sketchybar_display.log")
+  sbar.exec("sketchybar --reload")
+end)
+
+local function update_aerospace_workspaces()
+  local handle = io.popen("aerospace list-workspaces --focused")
+  local focused_workspace = handle:read("*a"):gsub("%s+", "")
+  handle:close()
+  -- Display focused workspace name in Sketchybar
+  sbar.bar():set({
+    label = { string = "Workspace: " .. focused_workspace }
+  })
+end
+
+-- Subscribe to Aerospace workspace change events. You may need to use event pipes or triggers if available.
+sbar.bar():subscribe("space_change", update_aerospace_workspaces)
+
+-- Initial update
+update_aerospace_workspaces()

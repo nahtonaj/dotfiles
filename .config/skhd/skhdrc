@@ -1,8 +1,8 @@
 # focus window
-alt - h : yabai -m window --focus west || yabai -m display --focus west
+alt - h : yabai -m window --focus west || yabai -m window --focus stack.prev || yabai -m display --focus west
 alt - j : yabai -m window --focus south || yabai -m display --focus south
 alt - k : yabai -m window --focus north || yabai -m display --focus north
-alt - l : yabai -m window --focus east || yabai -m display --focus east
+alt - l : yabai -m window --focus east || yabai -m window --focus stack.next || yabai -m display --focus east
 
 # swap managed window
 shift + alt - h : yabai -m window --swap west || $(yabai -m window --display west; yabai -m display --focus west)
@@ -78,4 +78,16 @@ shift + alt - n : yabai -m space --create && \
 
 ctrl + alt - r: sketchybar --reload && yabai --restart-service && killall Dock
 
-alt - b : yabai -m query --windows --window | jq -re '.["is-topmost"]' | xargs -I {} bash -c "if [[ '{}' = 'true' ]]; then yabai -m window --sub-layer normal; elif [[ '{}' = 'false' ]]; then yabai -m window --sub-layer above; fi" 
+# alt - b : yabai -m query --windows --window | jq -re '.["is-topmost"]' | xargs -I {} bash -c "if [[ '{}' = 'true' ]]; then yabai -m window --sub-layer normal; elif [[ '{}' = 'false' ]]; then yabai -m window --sub-layer above; fi" 
+alt - b : yabai -m space --layout $(yabai -m query --spaces --space | jq -r '.type' | grep -q bsp && echo stack || echo bsp)
+
+# Application launchers
+alt + shift - c : open -a "Google Chrome"
+alt + shift - g : open -a "Gmail"
+alt + shift - a : open -a "Google Calendar"
+alt + shift - i : open -a "iTerm"
+alt + shift - x : open -a "Cursor"
+alt + shift - p : open -a "Comet"
+alt + shift - s : open -a "Slack"
+alt + shift - o : open -a "Obsidian"
+
