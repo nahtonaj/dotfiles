@@ -206,7 +206,7 @@ space_window_observer:subscribe("aerospace_focus_change", function(env)
                 no_app = false
                 local app_name = app["app-name"]
                 local lookup = app_icons[app_name]
-                local icon = ((lookup == nil) and app_icons["default"] or lookup)
+                local icon = ((lookup == nil) and app_icons["Default"] or lookup)
                 icon_line = icon_line .. " " .. icon
             end
 
