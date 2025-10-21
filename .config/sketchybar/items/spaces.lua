@@ -2,7 +2,12 @@ local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
 local app_icons = require("helpers.app_icons")
+local display = require("helpers.display_settings")
 
+local scale = display.get_scale()
+-- Create scaled icon font string (e.g., "sketchybar-app-font:Regular:16.0" -> "sketchybar-app-font:Regular:32.8")
+local icon_font_size = 16.0 * scale
+local scaled_icon_font = "sketchybar-app-font:Regular:" .. icon_font_size
 local spaces = {}
 
 local workspaces = get_workspaces()
@@ -24,31 +29,31 @@ for i, workspace in ipairs(workspaces) do
                 family = settings.font.numbers
             },
             string = i,
-            padding_left = settings.items.padding.left,
-            padding_right = settings.items.padding.left / 2,
+            padding_left = settings.items.padding.left * scale,
+            padding_right = (settings.items.padding.left / 2) * scale,
             color = settings.items.default_color(i),
             highlight_color = settings.items.highlight_color(i),
             highlight = selected
         },
         label = {
-            padding_right = settings.items.padding.right,
+            padding_right = settings.items.padding.right * scale,
             color = settings.items.default_color(i),
             highlight_color = settings.items.highlight_color(i),
-            font = settings.icons,
-            y_offset = -1,
+            font = scaled_icon_font,
+            y_offset = -1 * scale,
             highlight = selected
         },
-        padding_right = 1,
-        padding_left = 1,
+        padding_right = math.max(1, math.floor(1 * scale)),
+        padding_left = math.max(1, math.floor(1 * scale)),
         background = {
             color = settings.items.colors.background,
-            border_width = 1,
-            height = settings.items.height,
+            border_width = math.max(1, math.floor(1 * scale)),
+            height = settings.items.height * scale,
             border_color = selected and settings.items.highlight_color(i) or settings.items.default_color(i)
         },
         popup = {
             background = {
-                border_width = 5,
+                border_width = 5 * scale,
                 border_color = colors.black
             }
         }
@@ -82,19 +87,19 @@ for i, workspace in ipairs(workspaces) do
     -- Padding space between each item
     sbar.add("item", "item." .. i .. "padding", {
         script = "",
-        width = settings.items.gap
+        width = settings.items.gap * scale
     })
 
     -- Item popup
     local space_popup = sbar.add("item", {
         position = "popup." .. space.name,
-        padding_left = 5,
+        padding_left = 5 * scale,
         padding_right = 0,
         background = {
             drawing = true,
             image = {
-                corner_radius = 9,
-                scale = 0.2
+                corner_radius = 9 * scale,
+                scale = 0.2 * scale
             }
         }
     })
@@ -149,18 +154,18 @@ local space_window_observer = sbar.add("item", {
 
 -- Handles the small icon indicator for spaces / menus changes
 local spaces_indicator = sbar.add("item", {
-    padding_left = -3,
+    padding_left = -3 * scale,
     padding_right = 0,
     icon = {
-        padding_left = 8,
-        padding_right = 9,
+        padding_left = 8 * scale,
+        padding_right = 9 * scale,
         color = colors.grey,
         string = icons.switch.on
     },
     label = {
         width = 0,
         padding_left = 0,
-        padding_right = 8,
+        padding_right = 8 * scale,
         string = "Spaces",
         color = colors.bg1
     },

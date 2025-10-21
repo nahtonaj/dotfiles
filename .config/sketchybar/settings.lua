@@ -2,8 +2,20 @@ local colors = require("colors")
 local icons = require("icons")
 
 return {
+    -- Display scaling configuration
+    displays = {
+        builtin = 1.6,      -- Built-in retina display scale
+        external = 1.0,     -- Default external display scale
+        -- You can add specific display scales by resolution:
+        -- ["3840x2160"] = 1.2,  -- Example for 4K display
+        -- ["2560x1440"] = 1.0,  -- Example for 1440p display
+    },
+    builtin_scale = 1.6,  -- Fallback for compatibility
+
+    -- Base dimensions (external display)
     paddings = 3,
     group_paddings = 5,
+    calendar_width = 80,
     modes = {
         main = {
             icon = icons.apple,
@@ -15,7 +27,7 @@ return {
         }
     },
     bar = {
-        height = 36,
+        height = 36,                   -- External display height
         padding = {
             x = 10,
             y = 0

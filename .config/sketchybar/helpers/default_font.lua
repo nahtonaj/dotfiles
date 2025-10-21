@@ -9,5 +9,11 @@ return {
     ["Bold"] = "Bold",
     ["Heavy"] = "Heavy",
     ["Black"] = "Black",
+  },
+
+  -- Base font sizes (external display)
+  size = {
+    icon = 14.0,
+    label = 13.0,
   }
 }

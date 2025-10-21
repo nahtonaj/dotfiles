@@ -1,24 +1,27 @@
 local settings = require("settings")
 local colors = require("colors")
+local display = require("helpers.display_settings")
+
+local scale = display.get_scale()
 
 -- Padding item required because of bracket
 sbar.add("item", {
     position = "right",
-    width = settings.group_paddings
+    width = settings.group_paddings * scale
 })
 
 local cal = sbar.add("item", {
     icon = {
         color = colors.white,
-        padding_left = 8,
+        padding_left = 8 * scale,
         font = {
-            size = 13.0
+            size = 13.0 * scale
         }
     },
     label = {
         color = colors.white,
-        padding_right = 8,
-        width = 80,
+        padding_right = 8 * scale,
+        width = 80 * scale,
         align = "right",
         font = {
             family = settings.icons
@@ -26,11 +29,11 @@ local cal = sbar.add("item", {
     },
     position = "right",
     update_freq = 30,
-    padding_left = 1,
-    padding_right = 1,
+    padding_left = math.max(1, math.floor(1 * scale)),
+    padding_right = math.max(1, math.floor(1 * scale)),
     background = {
         color = colors.bg2,
-        border_width = 1
+        border_width = math.max(1, math.floor(1 * scale))
     }
 })
 
@@ -46,7 +49,7 @@ local cal = sbar.add("item", {
 -- Padding item required because of bracket
 sbar.add("item", {
     position = "right",
-    width = settings.group_paddings
+    width = settings.group_paddings * scale
 })
 
 cal:subscribe({ "forced", "routine", "system_woke" }, function(env)

@@ -1,6 +1,9 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
+local display = require("helpers.display_settings")
+
+local scale = display.get_scale()
 
 local menu_watcher = sbar.add("item", {
     drawing = false,
@@ -16,8 +19,8 @@ local max_items = 15
 local menu_items = {}
 for i = 1, max_items, 1 do
     local menu = sbar.add("item", "menu." .. i, {
-        padding_left = settings.paddings,
-        padding_right = settings.paddings,
+        padding_left = settings.paddings * scale,
+        padding_right = settings.paddings * scale,
         drawing = false,
         icon = {
             drawing = false
@@ -26,8 +29,8 @@ for i = 1, max_items, 1 do
             font = {
                 style = settings.font.style_map[i == 1 and "Heavy" or "Semibold"]
             },
-            padding_left = 6,
-            padding_right = 6
+            padding_left = 6 * scale,
+            padding_right = 6 * scale
         },
         click_script = "$CONFIG_DIR/helpers/menus/bin/menus -s " .. i
     })
@@ -43,7 +46,7 @@ sbar.add("bracket", {'/menu\\..*/'}, {
 
 local menu_padding = sbar.add("item", "menu.padding", {
     drawing = false,
-    width = 5
+    width = 5 * scale
 })
 
 local function update_menus(env)

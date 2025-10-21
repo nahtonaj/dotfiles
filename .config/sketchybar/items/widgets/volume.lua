@@ -1,8 +1,10 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
+local display = require("helpers.display_settings")
 
-local popup_width = 250
+local scale = display.get_scale()
+local popup_width = 250 * scale
 
 local volume_percent = sbar.add("item", "widgets.volume1", {
     position = "right",
@@ -11,7 +13,7 @@ local volume_percent = sbar.add("item", "widgets.volume1", {
     },
     label = {
         string = "??%",
-        padding_left = -1,
+        padding_left = -1 * scale,
         font = {
             family = settings.font.numbers
         }
@@ -20,7 +22,7 @@ local volume_percent = sbar.add("item", "widgets.volume1", {
 
 local volume_icon = sbar.add("item", "widgets.volume2", {
     position = "right",
-    padding_right = -1,
+    padding_right = -1 * scale,
     icon = {
         string = icons.volume._100,
         width = 0,
@@ -28,15 +30,15 @@ local volume_icon = sbar.add("item", "widgets.volume2", {
         color = colors.grey,
         font = {
             style = settings.font.style_map["Regular"],
-            size = 14.0
+            size = 14.0 * scale
         }
     },
     label = {
-        width = 25,
+        width = 25 * scale,
         align = "left",
         font = {
             style = settings.font.style_map["Regular"],
-            size = 14.0
+            size = 14.0 * scale
         }
     }
 })
@@ -44,7 +46,7 @@ local volume_icon = sbar.add("item", "widgets.volume2", {
 local volume_bracket = sbar.add("bracket", "widgets.volume.bracket", {volume_icon.name, volume_percent.name}, {
     background = {
         color = colors.bg1,
-        border_width = 1
+        border_width = math.max(1, math.floor(1 * scale))
     },
     popup = {
         align = "center"
@@ -53,7 +55,7 @@ local volume_bracket = sbar.add("bracket", "widgets.volume.bracket", {volume_ico
 
 sbar.add("item", "widgets.volume.padding", {
     position = "right",
-    width = settings.group_paddings
+    width = settings.group_paddings * scale
 })
 
 local volume_slider = sbar.add("slider", popup_width, {
@@ -61,8 +63,8 @@ local volume_slider = sbar.add("slider", popup_width, {
     slider = {
         highlight_color = colors.blue,
         background = {
-            height = 6,
-            corner_radius = 3,
+            height = 6 * scale,
+            corner_radius = 3 * scale,
             color = colors.bg2
         },
         knob = {
@@ -72,8 +74,8 @@ local volume_slider = sbar.add("slider", popup_width, {
     },
     background = {
         color = colors.bg1,
-        height = 2,
-        y_offset = -20
+        height = 2 * scale,
+        y_offset = -20 * scale
     },
     click_script = 'osascript -e "set volume output volume $PERCENTAGE"'
 })

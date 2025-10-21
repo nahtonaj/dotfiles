@@ -1,0 +1,102 @@
+;; Kanata Configuration with Bilateral Home Row Mods and Combos
+;; Based on kenkyo configuration
+;; https://github.com/argenkiwi/kenkyo
+
+;; Configuration variables
+(defcfg
+  process-unmapped-keys yes
+  log-layer-changes no
+)
+
+;; Timing variables for home row mods and combos
+(defvar
+  tap-timeout 200
+  hold-timeout 500
+  chord-timeout 50
+)
+
+;; Template for home row mods with bilateral combinations
+;; This creates tap-hold keys that act as modifiers when held
+(defalias
+  ;; Left hand home row mods (GACS: GUI/Alt/Ctrl/Shift)
+  a (tap-hold-release $tap-timeout $hold-timeout a lsft)
+  s (tap-hold-release $tap-timeout $hold-timeout s lmet)
+  d (tap-hold-release $tap-timeout $hold-timeout d lalt)
+  f (tap-hold-release $tap-timeout $hold-timeout f lctl)
+
+  ;; Right hand home row mods (GACS: Shift/Ctrl/Alt/GUI)
+  j (tap-hold-release $tap-timeout $hold-timeout j rctl)
+  k (tap-hold-release $tap-timeout $hold-timeout k ralt)
+  l (tap-hold-release $tap-timeout $hold-timeout l rmet)
+  ; (tap-hold-release $tap-timeout $hold-timeout ; rsft)
+
+  ;; Caps lock as tap-hold: tap for escape, hold for control
+  cap (tap-hold-release $tap-timeout $hold-timeout esc lctl)
+
+  ;; Layer switches
+  spc (tap-hold-release 200 200 spc (layer-while-held extend))
+  ;; tab (tap-hold-release 200 200 tab (layer-while-held fumbol)) ;; Disabled fumbol layer
+)
+
+;; Source layer - standard QWERTY
+(defsrc
+  esc  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lalt lmet           spc            rmet ralt rctl
+)
+
+;; Main layer with home row mods
+(deflayer main
+  esc  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  @cap @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lalt lmet           @spc           rmet ralt rctl
+)
+
+;; Bilateral combos - these only trigger when keys from opposite hands are pressed
+;; DISABLED - Uncomment when ready to use
+;; ;; Top row bilateral combos (left hand)
+;; (defchords mtl $chord-timeout
+;;   (w e) esc
+;; )
+;;
+;; ;; Top row bilateral combos (right hand)
+;; (defchords mtr $chord-timeout
+;;   (i o) bspc
+;; )
+;;
+;; ;; Bottom row bilateral combos (left hand)
+;; (defchords mbl $chord-timeout
+;;   (x c) tab
+;;   (z x) lctl
+;; )
+;;
+;; ;; Bottom row bilateral combos (right hand)
+;; (defchords mbr $chord-timeout
+;;   (, .) ret
+;;   (. /) rctl
+;; )
+
+;; Extend layer - Navigation and media keys
+;; Activated by holding space
+(deflayer extend
+  _    f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12  _
+  _    _    _    _    _    _    _    pgup up   pgdn _    _    _    _
+  _    lsft lmet lalt lctl _    home left down rght end  _    _
+  _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _              _              _    _    _
+)
+
+;; Function/Symbol layer - F-keys and numbers
+;; Activated by holding tab
+;; DISABLED - Uncomment when ready to use
+;; (deflayer fumbol
+;;   _    _    _    _    _    _    _    _    _    _    _    _    _    _
+;;   _    !    @    #    $    %    ^    &    *    S-9  S-0  _    _    _
+;;   _    1    2    3    4    5    6    7    8    9    0    _    _
+;;   _    _    _    _    _    _    -    =    [    ]    \    _
+;;   _    _    _              _              _    _    _
+;; )
