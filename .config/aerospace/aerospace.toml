@@ -12,7 +12,7 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=5.0']
+after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=10.0']
 exec-on-workspace-change = ['/bin/bash', '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | awk "{print $1}")',
 ]
@@ -20,7 +20,7 @@ exec-on-workspace-change = ['/bin/bash', '-c',
 # See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
 on-focus-changed = [
   'exec-and-forget sketchybar --trigger aerospace_focus_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
-  'move-mouse window-lazy-center'
+  'move-mouse window-force-center'
 ]
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']

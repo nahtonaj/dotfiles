@@ -7,7 +7,8 @@ return {
         builtin = 1.6,      -- Built-in retina display scale
         external = 1.0,     -- Default external display scale
         -- You can add specific display scales by resolution:
-        -- ["3840x2160"] = 1.2,  -- Example for 4K display
+        ["3840x2160"] = 1.0,  -- Example for 4K display
+        ["3456x2234"] = 1.6,
         -- ["2560x1440"] = 1.0,  -- Example for 1440p display
     },
     builtin_scale = 1.6,  -- Fallback for compatibility

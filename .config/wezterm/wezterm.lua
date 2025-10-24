@@ -19,6 +19,21 @@ config.color_scheme = "ForestBlue"
 
 config.hyperlink_rules = wezterm.default_hyperlink_rules()
 
+-- Make URLs with line breaks work better in tmux
+-- This improves detection of URLs that wrap across lines
+table.insert(config.hyperlink_rules, {
+  -- Match URLs that might be wrapped across lines
+  -- Matches common URL patterns more aggressively
+  regex = [[(https?://[^\s,\)'"]+)]],
+  format = '$1',
+})
+
+-- Match URLs without the protocol
+table.insert(config.hyperlink_rules, {
+  regex = [[\b[a-z0-9-]+\.[a-z]{2,}(?:[/?#][^\s,\)'"]*)?]],
+  format = 'https://$0',
+})
+
 -- Example: Match file paths with line numbers (common in stack traces)
 table.insert(config.hyperlink_rules, {
 regex = [[\b\w+\.(\w+):(\d+)\b]],
@@ -28,6 +43,15 @@ format = 'file://$0',
 -- Configure mouse behavior in tmux
 -- By default, Shift+Click opens links when tmux has mouse mode enabled
 config.bypass_mouse_reporting_modifiers = 'SHIFT'
+
+-- Improve URL detection for wrapped text
+-- This helps wezterm recognize URLs that span multiple visual lines
+config.quick_select_patterns = {
+  -- Match URLs more aggressively
+  'https?://\\S+',
+  -- Match common URL patterns without protocol
+  '[a-z0-9-]+\\.[a-z]{2,}[/\\w\\-._~:/?#\\[\\]@!$&\'()*+,;=]*',
+}
 
 -- Optional: Require Ctrl+Click instead of Shift+Click
 -- Uncomment if you prefer Ctrl as the modifier:
