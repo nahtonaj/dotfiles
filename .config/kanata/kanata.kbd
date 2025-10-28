@@ -6,29 +6,55 @@
 (defcfg
   process-unmapped-keys yes
   log-layer-changes no
+
+  ;; Debounce settings to prevent double inputs
+  ;; This delays key press/release events to filter out switch bounce
+  macos-dev-names-include (
+    "Apple Internal Keyboard / Trackpad"
+  )
 )
 
 ;; Timing variables for home row mods and combos
+;; Aggressive timeouts for bilateral-only mods (60% of original values)
+;; Bilateral activation prevents accidental triggers during same-hand rolling
+;; Reduced tap-timeout for better double-tap repeat behavior
 (defvar
-  tap-timeout 150
-  hold-timeout 200
+  tap-timeout 100
+  hold-timeout 150
   chord-timeout 50
+
+  ;; Individual finger timeouts (slower fingers get longer timeouts)
+  tap-timeout-pinky 110
+  hold-timeout-pinky 180
+  tap-timeout-index 90
+  hold-timeout-index 132
 )
 
 ;; Template for home row mods with bilateral combinations
 ;; This creates tap-hold keys that act as modifiers when held
+;; Using individual finger timeouts and tap-hold-release-keys for better accuracy
 (defalias
-  ;; Left hand home row mods (GACS: GUI/Alt/Ctrl/Shift)
-  a (tap-hold-release $tap-timeout $hold-timeout a lsft)
-  s (tap-hold-release $tap-timeout $hold-timeout s lmet)
-  d (tap-hold-release $tap-timeout $hold-timeout d lalt)
-  f (tap-hold-release $tap-timeout $hold-timeout f lctl)
+  ;; Left hand home row mods (GACS: GUI/Alt/Ctrl/Shift) - BILATERAL ONLY
+  ;; Only activates when pressing right hand keys
+  ;; Pinky (shift) - longer timeout as pinkies are slower
+  a (tap-hold-release-keys $tap-timeout-pinky $hold-timeout-pinky a lsft (6 7 8 9 0 - = y u i o p [ ] \ h j k l ; ' n m , . / bspc ret up down left rght pgup pgdn home end))
+  ;; Ring (meta/cmd) - longer timeout to avoid accidental cmd activation
+  s (tap-hold-release-keys $tap-timeout $hold-timeout s lmet (6 7 8 9 0 - = y u i o p [ ] \ h j k l ; ' n m , . / bspc ret up down left rght pgup pgdn home end))
+  ;; Middle (alt) - longer timeout to avoid accidental alt activation
+  d (tap-hold-release-keys $tap-timeout $hold-timeout d lalt (6 7 8 9 0 - = y u i o p [ ] \ h j k l ; ' n m , . / bspc ret up down left rght pgup pgdn home end))
+  ;; Index (ctrl) - shorter timeout as index is faster
+  f (tap-hold-release-keys $tap-timeout-index $hold-timeout-index f lctl (6 7 8 9 0 - = y u i o p [ ] \ h j k l ; ' n m , . / bspc ret up down left rght pgup pgdn home end))
 
-  ;; Right hand home row mods (GACS: Shift/Ctrl/Alt/GUI)
-  j (tap-hold-release $tap-timeout $hold-timeout j rctl)
-  k (tap-hold-release $tap-timeout $hold-timeout k ralt)
-  l (tap-hold-release $tap-timeout $hold-timeout l rmet)
-  ; (tap-hold-release $tap-timeout $hold-timeout ; rsft)
+  ;; Right hand home row mods (GACS: Shift/Ctrl/Alt/GUI) - BILATERAL ONLY
+  ;; Only activates when pressing left hand keys
+  ;; Index (ctrl) - shorter timeout
+  j (tap-hold-release-keys $tap-timeout-index $hold-timeout-index j rctl (1 2 3 4 5 grv q w e r t a s d f g z x c v b esc tab))
+  ;; Middle (alt) - standard timeout
+  k (tap-hold-release-keys $tap-timeout $hold-timeout k ralt (1 2 3 4 5 grv q w e r t a s d f g z x c v b esc tab))
+  ;; Ring (meta/cmd) - longer timeout
+  l (tap-hold-release-keys $tap-timeout $hold-timeout l rmet (1 2 3 4 5 grv q w e r t a s d f g z x c v b esc tab))
+  ;; Pinky (shift) - longer timeout
+  ; (tap-hold-release-keys $tap-timeout-pinky $hold-timeout-pinky ; rsft (1 2 3 4 5 grv q w e r t a s d f g z x c v b esc tab))
 
   ;; Caps lock as tap-hold: tap for escape, hold for control
   cap (tap-hold-release $tap-timeout $hold-timeout esc lctl)
