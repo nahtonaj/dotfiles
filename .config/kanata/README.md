@@ -2,6 +2,23 @@
 
 This configuration implements home row modifiers with bilateral combo support, inspired by the [kenkyo configuration](https://github.com/argenkiwi/kenkyo).
 
+## ⚠️ Multi-Modifier Support
+
+**Note:** The default `kanata.kbd` uses bilateral home row mods which **do not support same-hand multi-modifier combinations** (like Shift+Cmd+Key). If you need multi-mod support, see:
+
+📖 **[MULTI_MODIFIER_SOLUTIONS.md](MULTI_MODIFIER_SOLUTIONS.md)** for alternative configurations:
+- `kanata-bilateral-multimod.kbd` 🌟 - **BEST**: Bilateral + multi-mod (advanced)
+- `kanata-hybrid.kbd` ⭐ - **SIMPLE**: Multi-mod support with longer timeouts
+- `kanata-tap-hold-press.kbd` - Fast multi-mod response
+
+Choose based on your needs:
+- **Current config** = Maximum safety, no same-hand multi-mods
+- **Bilateral-multimod** = Best of both worlds (bilateral + multi-mod) 🌟
+- **Hybrid config** = Multi-mod support with good safety ⭐
+- **Tap-hold-press** = Fast multi-mod response, requires discipline
+
+📖 Read **[BILATERAL_MULTIMOD_EXPLAINED.md](BILATERAL_MULTIMOD_EXPLAINED.md)** for details on the advanced config!
+
 ## Installation
 
 ### macOS
@@ -39,21 +56,29 @@ mkdir -p ~/Library/LaunchAgents
 
 The home row keys act as modifiers when held, and as regular keys when tapped:
 
-### Left Hand
-- **A** = Tap: a | Hold: Command (⌘)
-- **S** = Tap: s | Hold: Option (⌥)
-- **D** = Tap: d | Hold: Shift (⇧)
+### Left Hand (activates ONLY when pressing right-hand keys)
+- **A** = Tap: a | Hold: Shift (⇧)
+- **S** = Tap: s | Hold: Command (⌘)
+- **D** = Tap: d | Hold: Option (⌥)
 - **F** = Tap: f | Hold: Control (⌃)
 
-### Right Hand
+### Right Hand (activates ONLY when pressing left-hand keys)
 - **J** = Tap: j | Hold: Control (⌃)
-- **K** = Tap: k | Hold: Shift (⇧)
-- **L** = Tap: l | Hold: Option (⌥)
-- **;** = Tap: ; | Hold: Command (⌘)
+- **K** = Tap: k | Hold: Option (⌥)
+- **L** = Tap: l | Hold: Command (⌘)
+- **;** = Tap: ; | Hold: Shift (⇧)
 
-### Timing
-- **Tap timeout**: 200ms - If you release within 200ms, it's a tap
-- **Hold timeout**: 500ms - If you hold longer than 200ms, it becomes a modifier
+### Bilateral Activation (KEY FEATURE)
+**This configuration uses bilateral home row mods**, which means:
+- Modifiers ONLY activate when you press keys from the **opposite hand**
+- Same-hand key rolls (like "as", "df", "jk") will NOT trigger modifiers
+- This dramatically reduces accidental modifier activation during fast typing
+- Example: Holding 'a' + pressing 'y' = Shift+Y, but 'a'+'s' = just "as"
+
+### Timing (Optimized to Reduce Accidents)
+- **Tap timeout**: 200ms (220ms for pinkies, 180ms for index fingers)
+- **Hold timeout**: 200ms (220ms for pinkies, 180ms for index fingers)
+- These increased timeouts reduce false modifier triggers during normal typing
 
 ## Bilateral Combos
 
@@ -113,12 +138,28 @@ Edit `~/.config/kanata/kanata.kbd` to customize:
 - Check that no other keyboard customization software is running (like Karabiner)
 
 ### Accidental Modifier Activation
-- Increase the `tap-timeout` value (try 250ms)
-- Decrease the `hold-timeout` value (try 400ms)
+If you're still getting accidental modifiers:
+- **Increase both timeout values together** (try tap: 250ms, hold: 250ms)
+- The bilateral activation should prevent most same-hand false triggers
+- Check that you're not pressing keys from opposite hands unintentionally
+- For pinkies, increase `tap-timeout-pinky` and `hold-timeout-pinky` further
+
+### Slow Modifier Response
+If modifiers feel too slow to activate:
+- **Decrease both timeout values together** (try tap: 150ms, hold: 150ms)
+- Don't go below 150ms or you'll get more false triggers
+- Index fingers can use shorter timeouts (they're faster and more accurate)
+
+### Double Key Presses / Key Chatter
+If you experience repeated characters when pressing once:
+- This is a hardware issue (mechanical switch bounce)
+- Your keyboard might need cleaning or switch replacement
+- Software debounce in kanata has limited effectiveness for this
 
 ### Combos Not Triggering
 - Increase the `chord-timeout` value (try 100ms)
 - Practice pressing both keys more simultaneously
+- Make sure bilateral combos are uncommented in the config
 
 ## References
 

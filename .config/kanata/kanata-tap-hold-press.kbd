@@ -1,0 +1,99 @@
+;; Kanata Configuration - Using tap-hold-press for Multi-Modifier Support
+;; tap-hold-press activates modifiers immediately when another key is pressed
+;; This makes multi-mod combos very responsive (like A+S+C for Shift+Cmd+C)
+;; Trade-off: More aggressive activation - requires careful timing tuning
+
+(defcfg
+  process-unmapped-keys yes
+  log-layer-changes no
+  danger-enable-cmd yes
+  sequence-timeout 2000
+  
+  macos-dev-names-include (
+    "Apple Internal Keyboard / Trackpad"
+  )
+)
+
+;; Timing values for tap-hold-press
+;; tap-timeout: if released before timeout = tap, otherwise = hold
+;; hold-timeout: minimum time before hold can activate (not used in tap-hold-press)
+(defvar
+  tap-timeout 200      ;; Time window to complete a tap
+  hold-timeout 50      ;; Not really used in tap-hold-press, but required
+  chord-timeout 50
+
+  ;; Per-finger adjustments
+  tap-timeout-pinky 220
+  hold-timeout-pinky 50
+  tap-timeout-index 180
+  hold-timeout-index 50
+)
+
+;; Home row mods using tap-hold-press
+;; Activates modifier immediately when next key is pressed
+;; Perfect for multi-mod combinations
+(defalias
+  ;; Left hand home row mods (Shift/Meta/Alt/Ctrl)
+  a (tap-hold-press $tap-timeout-pinky $hold-timeout-pinky a lsft)
+  s (tap-hold-press $tap-timeout $hold-timeout s lmet)
+  d (tap-hold-press $tap-timeout $hold-timeout d lalt)
+  f (tap-hold-press $tap-timeout-index $hold-timeout-index f lctl)
+
+  ;; Right hand home row mods (Ctrl/Alt/Meta/Shift)
+  j (tap-hold-press $tap-timeout-index $hold-timeout-index j rctl)
+  k (tap-hold-press $tap-timeout $hold-timeout k ralt)
+  l (tap-hold-press $tap-timeout $hold-timeout l rmet)
+  ; (tap-hold-press $tap-timeout-pinky $hold-timeout-pinky ; rsft)
+
+  ;; Caps lock as tap-hold
+  cap (tap-hold-press $tap-timeout $hold-timeout esc lctl)
+
+  ;; Live reload config
+  rld lrld
+
+  ;; Layer switches
+  spc (tap-hold-press 200 50 spc (layer-while-held extend))
+  tab (tap-hold-press 200 50 tab (layer-while-held fumbol))
+)
+
+;; Source layer - standard QWERTY
+(defsrc
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lalt lmet           spc            rmet ralt rctl
+)
+
+;; Main layer with home row mods
+(deflayer main
+  esc  brdn brup C-up M-spc f5   f6   prev pp   next mute vold volu
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  @tab q    w    e    r    t    y    u    i    o    p    [    ]    \
+  @cap @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lalt lmet           @spc           rmet ralt rctl
+)
+
+;; Extend layer - Vim-style navigation
+(deflayer extend
+  _    f1   f2   f3    f4   f5   f6   f7   f8   f9   f10  f11  f12
+  _    _    _    _     _    _    _    _    _    _    _    _    _    _
+  _    _    _    _     @rld _    _    _    bck  fwd  _    _    _    _
+  _    _    _    _     _    home left down up   rght end  _    _
+  _    _    _    C-S-c _    _    _    _    _    _    _    _
+  _    _    _               _              _    _    _
+)
+
+;; Function/Symbol layer
+(deflayer fumbol
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    S-1  S-2  S-3  S-4  S-5  S-6  S-7  S-8  S-9  S-0  _    _    _
+  _    1    2    3    4    5    6    7    8    9    0    _    _    _
+  _    _    _    _    _    _    -    =    [    ]    \    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _              _              _    _    _
+)
+
+

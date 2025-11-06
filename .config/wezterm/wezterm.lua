@@ -14,7 +14,7 @@ config.use_fancy_tab_bar = false
 config.tab_bar_at_bottom = true
 config.window_decorations = "RESIZE"
 config.window_background_opacity = 0.9
-config.macos_window_background_blur = 10
+config.macos_window_background_blur = 60
 config.color_scheme = "ForestBlue"
 
 config.hyperlink_rules = wezterm.default_hyperlink_rules()
@@ -53,36 +53,38 @@ config.quick_select_patterns = {
   '[a-z0-9-]+\\.[a-z]{2,}[/\\w\\-._~:/?#\\[\\]@!$&\'()*+,;=]*',
 }
 
--- Optional: Require Ctrl+Click instead of Shift+Click
--- Uncomment if you prefer Ctrl as the modifier:
--- config.mouse_bindings = {
---   {
---     event = { Up = { streak = 1, button = 'Left' } },
---     mods = 'CTRL',
---     action = wezterm.action.OpenLinkAtMouseCursor,
---   },
--- }
-    
+-- Customize word boundary for smarter word selection
+-- This defines what characters separate words when double-clicking
+config.selection_word_boundary = " \t\n{}[]()\"'`,;:│"
 
--- config.mouse_bindings = {
---
---   -- Change the default click behavior so that it only selects
---   -- text and doesn't open hyperlinks
---   {
---     event = { Up = { streak = 1, button = 'Left' } },
---     mods = 'NONE',
---     action = act.CompleteSelection 'ClipboardAndPrimarySelection',
---   },
---
---   -- and make CTRL-Click open hyperlinks
---   {
---     event = { Up = { streak = 1, button = 'Left' } },
---     mods = 'CTRL',
---     action = act.OpenLinkAtMouseCursor,
---   },
---   -- NOTE that binding only the 'Up' event can give unexpected behaviors.
---   -- Read more below on the gotcha of binding an 'Up' event only.
--- }
+-- Configure mouse selection behavior
+config.mouse_bindings = {
+  -- Double-click to select word
+  {
+    event = { Down = { streak = 2, button = 'Left' } },
+    mods = 'NONE',
+    action = act.SelectTextAtMouseCursor 'Word',
+  },
+  -- Triple-click for smart selection (semantic zone)
+  -- This intelligently selects command output, quoted strings, bracketed content, etc.
+  {
+    event = { Down = { streak = 3, button = 'Left' } },
+    mods = 'NONE',
+    action = act.SelectTextAtMouseCursor 'SemanticZone',
+  },
+  -- Shift + Click to extend selection
+  {
+    event = { Down = { streak = 1, button = 'Left' } },
+    mods = 'SHIFT',
+    action = act.ExtendSelectionToMouseCursor 'Cell',
+  },
+  -- Ctrl + Click to open hyperlinks
+  {
+    event = { Up = { streak = 1, button = 'Left' } },
+    mods = 'CTRL',
+    action = act.OpenLinkAtMouseCursor,
+  },
+}
 
 -- Finally, return the configuration to wezterm
 return config

@@ -1,0 +1,154 @@
+;; Kanata Configuration with Bilateral Home Row Mods and Combos
+;; Based on kenkyo configuration
+;; https://github.com/argenkiwi/kenkyo
+
+;; Configuration variables
+(defcfg
+  process-unmapped-keys yes
+  log-layer-changes no
+
+  ;; Debounce settings to prevent double inputs (in milliseconds)
+  ;; Press: delay before registering key press (prevents bounce on press)
+  ;; Release: delay before registering key release (prevents bounce on release)
+  ;; Increase these values if experiencing key chatter/double inputs
+  danger-enable-cmd yes
+  sequence-timeout 2000
+  
+  macos-dev-names-include (
+    "Apple Internal Keyboard / Trackpad"
+  )
+)
+
+;; Timing variables for home row mods and combos
+;; Optimized timeouts to reduce accidental activations
+;; tap-timeout: time window for tap vs hold decision
+;; hold-timeout: minimum hold time before modifier activates
+;; Higher values = less accidental mods, but slower to activate
+(defvar
+  tap-timeout 200     ;; Increased from 100 to reduce false modifier triggers
+  hold-timeout 200    ;; Increased from 150 for more deliberate holds
+  chord-timeout 50
+
+  ;; Individual finger timeouts (slower fingers get longer timeouts)
+  tap-timeout-pinky 220    ;; Increased from 110
+  hold-timeout-pinky 220   ;; Increased from 180
+  tap-timeout-index 180    ;; Increased from 90
+  hold-timeout-index 180   ;; Increased from 132
+  
+  ;; Define left and right hand keys for bilateral mods
+  ;; This prevents accidental mod activation during same-hand rolls
+  left-hand-keys (
+    q w e r t
+    a s d f g
+    z x c v b
+  )
+  right-hand-keys (
+    y u i o p
+    h j k l ;
+    n m , . /
+  )
+)
+
+;; Bilateral home row mods with tap-hold-release-keys
+;; This prevents accidental modifier activation during same-hand typing
+;; Modifiers only activate when opposite hand keys are pressed
+;; tap-hold-release-keys: (timeout timeout action action keys)
+(defalias
+  ;; Left hand home row mods (Shift/Meta/Alt/Ctrl)
+  ;; Only activate modifiers when right-hand keys are pressed
+  ;; Pinky (shift) - longer timeout as pinkies are slower
+  a (tap-hold-release-keys $tap-timeout-pinky $hold-timeout-pinky a lsft $right-hand-keys)
+  ;; Ring (meta/cmd) - prevents accidental cmd during fast typing
+  s (tap-hold-release-keys $tap-timeout $hold-timeout s lmet $right-hand-keys)
+  ;; Middle (alt)
+  d (tap-hold-release-keys $tap-timeout $hold-timeout d lalt $right-hand-keys)
+  ;; Index (ctrl)
+  f (tap-hold-release-keys $tap-timeout-index $hold-timeout-index f lctl $right-hand-keys)
+
+  ;; Right hand home row mods (Ctrl/Alt/Meta/Shift)
+  ;; Only activate modifiers when left-hand keys are pressed
+  ;; Index (ctrl)
+  j (tap-hold-release-keys $tap-timeout-index $hold-timeout-index j rctl $left-hand-keys)
+  ;; Middle (alt)
+  k (tap-hold-release-keys $tap-timeout $hold-timeout k ralt $left-hand-keys)
+  ;; Ring (meta/cmd)
+  l (tap-hold-release-keys $tap-timeout $hold-timeout l rmet $left-hand-keys)
+  ;; Pinky (shift)
+  ; (tap-hold-release-keys $tap-timeout-pinky $hold-timeout-pinky ; rsft $left-hand-keys)
+
+  ;; Caps lock as tap-hold: tap for escape, hold for control
+  cap (tap-hold-release $tap-timeout $hold-timeout esc lctl)
+
+  ;; Live reload config (bind to a key in extend layer)
+  rld lrld
+
+  ;; Layer switches
+  spc (tap-hold-release 200 200 spc (layer-while-held extend))
+  tab (tap-hold-release 200 200 tab (layer-while-held fumbol))
+)
+
+;; Source layer - standard QWERTY
+(defsrc
+  esc  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  tab  q    w    e    r    t    y    u    i    o    p    [    ]    \
+  caps a    s    d    f    g    h    j    k    l    ;    '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lalt lmet           spc            rmet ralt rctl
+)
+
+;; Main layer with home row mods
+(deflayer main
+  esc  brdn brup C-up M-spc f5   f6   prev pp   next mute vold volu
+  grv  1    2    3    4    5    6    7    8    9    0    -    =    bspc
+  @tab q    w    e    r    t    y    u    i    o    p    [    ]    \
+  @cap @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
+  lsft z    x    c    v    b    n    m    ,    .    /    rsft
+  lctl lalt lmet           @spc           rmet ralt rctl
+)
+
+;; Bilateral combos - these only trigger when keys from opposite hands are pressed
+;; DISABLED - Uncomment when ready to use
+;; ;; Top row bilateral combos (left hand)
+;; (defchords mtl $chord-timeout
+;;   (w e) esc
+;; )
+;;
+;; ;; Top row bilateral combos (right hand)
+;; (defchords mtr $chord-timeout
+;;   (i o) bspc
+;; )
+;;
+;; ;; Bottom row bilateral combos (left hand)
+;; (defchords mbl $chord-timeout
+;;   (x c) tab
+;;   (z x) lctl
+;; )
+;;
+;; ;; Bottom row bilateral combos (right hand)
+;; (defchords mbr $chord-timeout
+;;   (, .) ret
+;;   (. /) rctl
+;; )
+
+;; Extend layer - Vim-style navigation and media keys
+;; Activated by holding space (h=left, j=down, k=up, l=right, i=back, o=forward, r=reload)
+(deflayer extend
+  _    f1   f2   f3    f4   f5   f6   f7   f8   f9   f10  f11  f12
+  _    _    _    _     _    _    _    _    _    _    _    _    _    _
+  _    _    _    _     @rld _    _    _    bck  fwd  _    _    _    _
+  _    _    _    _     _    home left down up   rght end  _    _
+  _    _    _    C-S-c _    _    _    _    _    _    _    _
+  _    _    _               _              _    _    _
+)
+
+;; Function/Symbol layer - F-keys and numbers
+;; Activated by holding tab
+(deflayer fumbol
+  _    _    _    _    _    _    _    _    _    _    _    _    _
+  _    S-1  S-2  S-3  S-4  S-5  S-6  S-7  S-8  S-9  S-0  _    _    _
+  _    1    2    3    4    5    6    7    8    9    0    _    _    _
+  _    _    _    _    _    _    -    =    [    ]    \    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _
+  _    _    _              _              _    _    _
+)
