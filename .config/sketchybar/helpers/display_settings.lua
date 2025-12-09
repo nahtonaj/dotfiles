@@ -151,6 +151,82 @@ local function get_average_scale()
     return total_scale / #displays
 end
 
+-- Apply default configuration per display with appropriate scaling
+local function apply_defaults_per_display()
+    local displays = get_all_displays()
+    local colors = require("colors")
+
+    for display_id, display in pairs(displays) do
+        local s = get_scale_for_display(display_id)
+
+        -- Calculate scaled values for this display
+        local icon_size = 14.0 * s
+        local label_size = 13.0 * s
+        local corner_radius = settings.items.corner_radius * s
+        local bg_height = settings.items.height * s
+        local border_width = math.max(1, math.floor(2 * s))
+        local border_width_small = math.max(1, math.floor(1 * s))
+        local padding = settings.paddings * s
+
+        -- Apply defaults for this display
+        sbar.default({
+            display = display_id,
+            updates = "when_shown",
+            icon = {
+                font = {
+                    family = settings.font.text,
+                    style = settings.font.style_map["Bold"],
+                    size = icon_size
+                },
+                color = colors.white,
+                padding_left = padding,
+                padding_right = padding,
+                background = {
+                    image = {
+                        corner_radius = corner_radius
+                    }
+                }
+            },
+            label = {
+                font = {
+                    family = settings.font.text,
+                    style = settings.font.style_map["Semibold"],
+                    size = label_size
+                },
+                color = colors.white,
+                padding_left = padding,
+                padding_right = padding
+            },
+            background = {
+                height = bg_height,
+                corner_radius = corner_radius,
+                border_width = border_width,
+                border_color = colors.bg2,
+                image = {
+                    corner_radius = corner_radius,
+                    border_color = colors.grey,
+                    border_width = border_width_small
+                }
+            },
+            popup = {
+                background = {
+                    border_width = border_width,
+                    corner_radius = corner_radius,
+                    border_color = colors.popup.border,
+                    color = colors.popup.bg,
+                    shadow = {
+                        drawing = true
+                    }
+                },
+                blur_radius = 50 * s
+            },
+            padding_left = 5 * s,
+            padding_right = 5 * s,
+            scroll_texts = true
+        })
+    end
+end
+
 return {
     get_display_info = get_display_info,
     get_all_displays = get_all_displays,
@@ -161,5 +237,6 @@ return {
     scale = scale,
     get_item_settings = get_item_settings,
     get_font_sizes = get_font_sizes,
-    get_paddings = get_paddings
+    get_paddings = get_paddings,
+    apply_defaults_per_display = apply_defaults_per_display
 }

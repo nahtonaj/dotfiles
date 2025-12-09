@@ -87,13 +87,15 @@ outer.right =      10
 # See: https://nikitabobko.github.io/AeroSpace/commands#exec-and-forget
 # Application launchers
 
-# alt-i = 'exec-and-forget open -a "WezTerm"'
-# alt-s = 'exec-and-forget open -a "Slack"'
-# # alt-m = 'exec-and-forget open -a "Gmail"'
-# # alt-c = 'exec-and-forget open -a "Google Calendar"'
-# alt-o = 'exec-and-forget open -a "Obsidian"'
-# alt-x = 'exec-and-forget open -a "Cursor"'
-# alt-p = 'exec-and-forget open -a "Comet" --args --profile-directory="Default"'
+alt-i = 'exec-and-forget open -a "WezTerm"'
+alt-m = 'exec-and-forget open -a "Slack"'
+# alt-m = 'exec-and-forget open -a "Gmail"'
+alt-c = 'exec-and-forget open -a "Google Calendar"'
+alt-o = 'exec-and-forget open -a "Obsidian"'
+alt-x = 'exec-and-forget open -a "Cursor"'
+alt-p = 'exec-and-forget open -a "Comet"'
+alt-b = 'exec-and-forget open -a "Google Chrome"'
+
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#layout
 alt-slash = 'layout tiles horizontal vertical'
@@ -209,6 +211,23 @@ alt-shift-0 = ['move-node-to-workspace 10', 'workspace 10']
 # See: https://nikitabobko.github.io/AeroSpace/commands#mode
 alt-shift-semicolon = 'mode service'
 
+ctrl-shift-h = [
+  'move-workspace-to-monitor left',
+  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
+]
+ctrl-shift-j = [
+  'move-workspace-to-monitor down',
+  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
+]
+ctrl-shift-k = [
+  'move-workspace-to-monitor up',
+  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
+]
+ctrl-shift-l = [
+  'move-workspace-to-monitor right',
+  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
+]
+
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.service.binding]
@@ -223,22 +242,6 @@ alt-shift-j = ['join-with down', 'mode main']
 alt-shift-k = ['join-with up', 'mode main']
 alt-shift-l = ['join-with right', 'mode main']
 
-ctrl-alt-h = [
-  'move-workspace-to-monitor left',
-  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
-]
-ctrl-alt-j = [
-  'move-workspace-to-monitor down',
-  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
-]
-ctrl-alt-k = [
-  'move-workspace-to-monitor up',
-  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
-]
-ctrl-alt-l = [
-  'move-workspace-to-monitor right',
-  'exec-and-forget sketchybar --trigger aerospace_monitor_change TARGET_MONITOR=$(aerospace list-monitors --focused --format "%{monitor-appkit-nsscreen-screens-id}") FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)',
-]
 # [[on-window-detected]]
 # if.app-id = 'com.google.Chrome'
 # run = "move-node-to-workspace 1"
