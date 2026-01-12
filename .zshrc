@@ -283,6 +283,7 @@ alias ll='ls -al'
 alias jp="jupyter-lab --no-browser"
 alias lg=lazygit
 alias vim=nvim
+alias ass="arca ssh -t 'tmux -CC new-session -A -s main'"
 
 # nifty seperator for your terminal
 separator() {
@@ -321,3 +322,6 @@ function y() {
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+

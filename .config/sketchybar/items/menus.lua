@@ -83,20 +83,14 @@ space_menu_swap:subscribe("swap_menus_and_spaces", function(env)
         sbar.set("/menu\\..*/", {
             drawing = false
         })
-        sbar.set("/item\\..*/", {
-            drawing = true
-        })
-        sbar.set("front_app", {
+        sbar.set("/space\\..*/", {
             drawing = true
         })
     else
         menu_watcher:set({
             updates = true
         })
-        sbar.set("/item\\..*/", {
-            drawing = false
-        })
-        sbar.set("front_app", {
+        sbar.set("/space\\..*/", {
             drawing = false
         })
         update_menus()

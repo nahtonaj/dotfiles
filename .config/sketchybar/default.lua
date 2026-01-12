@@ -36,7 +36,8 @@ sbar.default({
         font = {
             family = settings.font.text,
             style = settings.font.style_map["Semibold"],
-            size = label_size
+            size = label_size,
+            features = "tnum"  -- Tabular numbers for aligned digits
         },
         color = colors.white,
         padding_left = padding,

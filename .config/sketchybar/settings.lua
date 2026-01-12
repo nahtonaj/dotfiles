@@ -4,13 +4,13 @@ local icons = require("icons")
 return {
     -- Display scaling configuration
     displays = {
-        builtin = 1.6,      -- Built-in retina display scale
+        builtin = 1.0,      -- Built-in retina display scale
         external = 1.0,     -- Default external display scale
         -- You can add specific display scales by resolution:
-        ["3840x2160"] = 1.0,  -- Example for 4K display
-        ["2160x3840"] = 1.0,  -- Example for 4K display
-        ["3456x2234"] = 1.6,
-        ["2560x1440"] = 1.0,  -- Example for 1440p display
+        -- ["3840x2160"] = 1.6,  -- Example for 4K display
+        -- ["2160x3840"] = 1.6,  -- Example for 4K display
+        -- ["3456x2234"] = 1.6,
+        -- ["2560x1440"] = 1.6,  -- Example for 1440p display
     },
     builtin_scale = 1.0,  -- Fallback for compatibility
 
@@ -30,6 +30,8 @@ return {
     },
     bar = {
         height = 36,                   -- External display height
+        notch_height = 37,             -- Height for notched MacBook displays (matches notch)
+        notch_offset = 0,              -- Horizontal offset from notch center (0 = centered)
         padding = {
             x = 10,
             y = 0

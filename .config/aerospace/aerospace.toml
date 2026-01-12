@@ -12,7 +12,7 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=10.0']
+# after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=10.0']
 exec-on-workspace-change = ['/bin/bash', '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | awk "{print $1}")',
 ]
@@ -61,7 +61,7 @@ inner.horizontal = 10
 inner.vertical =   10
 outer.left =       10
 outer.bottom =     10
-outer.top =        [{ monitor.'^Built-in display$' = 0 }, 40]
+outer.top =        [{ monitor.'built' = 0 }, 40]
 outer.right =      10
 
 # 'main' binding mode declaration
@@ -87,13 +87,13 @@ outer.right =      10
 # See: https://nikitabobko.github.io/AeroSpace/commands#exec-and-forget
 # Application launchers
 
-alt-i = 'exec-and-forget open -a "WezTerm"'
+alt-i = 'exec-and-forget open -a "iTerm"'
 alt-m = 'exec-and-forget open -a "Slack"'
 # alt-m = 'exec-and-forget open -a "Gmail"'
 alt-c = 'exec-and-forget open -a "Google Calendar"'
 alt-o = 'exec-and-forget open -a "Obsidian"'
 alt-x = 'exec-and-forget open -a "Cursor"'
-alt-p = 'exec-and-forget open -a "Comet"'
+alt-p = 'exec-and-forget open -a "Zen"'
 alt-b = 'exec-and-forget open -a "Google Chrome"'
 
 
@@ -285,14 +285,9 @@ alt-shift-l = ['join-with right', 'mode main']
 # if.window-title-regex-substring = 'Picture in Picture'
 # run = 'layout floating'
 # check-further-callbacks = true
-# [workspace-to-monitor-force-assignment]
-# 1 = 1
-# 2 = 1
-# 3 = 1
-# 4 = 1
-# 5 = 1
-# 6 = 2
-# 7 = 2
-# 8 = 2
-# 9 = 2
-# 10 = 2
+
+# Workspace to monitor assignment
+# Workspace 10 will be assigned to monitor 2 when available
+# When monitor 2 is not present, aerospace will automatically assign it to available monitors
+[workspace-to-monitor-force-assignment]
+10 = 'secondary'  # Assign to secondary monitor, falls back to primary if unavailable

@@ -9,6 +9,7 @@
                 "rules": [
                     {
                         "description": "use tab as modifier, and map tab+hjkl to vim arrow",
+                        "enabled": false,
                         "manipulators": [
                             {
                                 "from": { "key_code": "tab" },
@@ -83,6 +84,7 @@
                     },
                     {
                         "description": "Tap Caps Lock for ESC or Hold for Control",
+                        "enabled": false,
                         "manipulators": [
                             {
                                 "from": {
@@ -116,6 +118,7 @@
                     },
                     {
                         "description": "Home row mods - shift, ctrl, opt, cmd",
+                        "enabled": false,
                         "manipulators": [
                             {
                                 "from": {
