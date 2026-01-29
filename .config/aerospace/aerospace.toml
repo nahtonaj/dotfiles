@@ -16,7 +16,7 @@ after-login-command = []
 exec-on-workspace-change = ['/bin/bash', '-c',
   'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | awk "{print $1}")',
 ]
-# Notify Sketchybar about focuse change
+# Notify Sketchybar about focus change
 # See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
 on-focus-changed = [
   'exec-and-forget sketchybar --trigger aerospace_focus_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
@@ -88,8 +88,8 @@ outer.right =      10
 # Application launchers
 
 alt-i = 'exec-and-forget open -a "iTerm"'
-alt-m = 'exec-and-forget open -a "Slack"'
-# alt-m = 'exec-and-forget open -a "Gmail"'
+alt-s = 'exec-and-forget open -a "Slack"'
+alt-m = 'exec-and-forget open -a "Gmail"'
 alt-c = 'exec-and-forget open -a "Google Calendar"'
 alt-o = 'exec-and-forget open -a "Obsidian"'
 alt-x = 'exec-and-forget open -a "Cursor"'

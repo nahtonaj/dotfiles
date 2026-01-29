@@ -283,7 +283,7 @@ alias ll='ls -al'
 alias jp="jupyter-lab --no-browser"
 alias lg=lazygit
 alias vim=nvim
-alias ass="arca ssh -t 'tmux -CC new-session -A -s main'"
+alias ass="arca ssh -t 'tmux -CC start-server && sleep 2 && tmux -CC attach-session'"
 
 # nifty seperator for your terminal
 separator() {

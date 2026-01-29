@@ -36,7 +36,14 @@ return {
             x = 10,
             y = 0
         },
-        background = colors.bar.bg
+        background = colors.bar.bg,
+        -- Visual enhancements (floating glass style)
+        blur_radius = 35,              -- Glass blur effect
+        corner_radius = 12,            -- Rounded corners
+        margin = 10,                   -- Space around bar edges (padding below)
+        y_offset = 2,                  -- Float below top edge (smaller = higher)
+        shadow = true,                 -- Drop shadow
+        font_smoothing = true          -- Better text rendering
     },
     items = {
         height = 26,
