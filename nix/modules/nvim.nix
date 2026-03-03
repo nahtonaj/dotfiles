@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, normalNvim, ... }:
 
 {
   programs.neovim = {
@@ -7,9 +7,5 @@
     vimAlias = true;
   };
 
-  # Symlink to NormalNvim (git submodule) using mkOutOfStoreSymlink
-  # so lazy.nvim can write to lazy-lock.json
-  xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/dotfiles/.config/nvim";
+  xdg.configFile."nvim".source = normalNvim;
 }
