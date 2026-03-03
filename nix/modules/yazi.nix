@@ -1,7 +1,10 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  programs.yazi.enable = true;
+  programs.yazi = {
+    enable = true;
+    shellWrapperName = "y";
+  };
 
   xdg.configFile = {
     "yazi/yazi.toml".source = "${flakePath}/.config/yazi/yazi.toml";

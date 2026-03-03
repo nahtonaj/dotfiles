@@ -21,7 +21,7 @@ in
           owner = "jeffreytse";
           repo = "zsh-vi-mode";
           rev = "v0.11.0";
-          sha256 = lib.fakeHash;
+          sha256 = "sha256-xbchXJTFWeABTwq6h4KWLh+EvydDrDzcY9AQVK65RS8=";
         };
       }
       {
@@ -30,7 +30,7 @@ in
           owner = "joshskidmore";
           repo = "zsh-fzf-history-search";
           rev = "d5a9730b5b4cb0b39959f7f1044f9c52e65a2571";
-          sha256 = lib.fakeHash;
+          sha256 = "sha256-o8IQszQ4/PLX1FlUvJpowR2Tev59N8lI20VymZ+Hp4w=";
         };
       }
       {
@@ -39,7 +39,7 @@ in
           owner = "marlonrichert";
           repo = "zsh-autocomplete";
           rev = "24.09.04";
-          sha256 = lib.fakeHash;
+          sha256 = "sha256-o8IQszQ4/PLX1FlUvJpowR2Tev59N8lI20VymZ+Hp4w=";
         };
       }
     ];
@@ -77,99 +77,101 @@ in
       NVM_DIR = "$HOME/.nvm";
     };
 
-    initExtraFirst = ''
-      # PATH setup
-      export PATH=/home/linuxbrew/.linuxbrew/bin:$PATH
-      export PATH=$HOME/bin:/usr/local/bin:$PATH
-      export PATH=$HOME/.local/share/coursier/bin:$PATH
-      export PATH=$HOME/.local/bin:$PATH
+    initContent = lib.mkMerge [
+      (lib.mkBefore ''
+        # PATH setup
+        export PATH=/home/linuxbrew/.linuxbrew/bin:$PATH
+        export PATH=$HOME/bin:/usr/local/bin:$PATH
+        export PATH=$HOME/.local/share/coursier/bin:$PATH
+        export PATH=$HOME/.local/bin:$PATH
 
-      # Java configuration for Metals
-      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-      export PATH=$JAVA_HOME/bin:$PATH
-    '';
+        # Java configuration for Metals
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export PATH=$JAVA_HOME/bin:$PATH
+      '')
 
-    initExtra = ''
-      # Load colors for prompt
-      autoload -U colors && colors
+      ''
+        # Load colors for prompt
+        autoload -U colors && colors
 
-      # Prompt (from databricks.zsh-theme)
-      ${themeFile}
+        # Prompt (from databricks.zsh-theme)
+        ${themeFile}
 
-      # Completion style
-      COMPLETION_WAITING_DOTS="true"
+        # Completion style
+        COMPLETION_WAITING_DOTS="true"
 
-      # Vi-mode arrow key fix
-      () {
-        while (( ARGC )); do
-          bindkey -M $1 '^[OA' up-line-or-history
-          bindkey -M $1 '^[[A' up-line-or-history
-          bindkey -M $1 '^[OB' down-line-or-history
-          bindkey -M $1 '^[[B' down-line-or-history
-          shift
-        done
-      } emacs viins vicmd
+        # Vi-mode arrow key fix
+        () {
+          while (( ARGC )); do
+            bindkey -M $1 '^[OA' up-line-or-history
+            bindkey -M $1 '^[[A' up-line-or-history
+            bindkey -M $1 '^[OB' down-line-or-history
+            bindkey -M $1 '^[[B' down-line-or-history
+            shift
+          done
+        } emacs viins vicmd
 
-      # Autocomplete settings
-      zstyle ':autocomplete:*' widget-style menu-select
-      bindkey -M menuselect '\r' accept-line
-      zstyle ':autocomplete:*' list-lines 7
+        # Autocomplete settings
+        zstyle ':autocomplete:*' widget-style menu-select
+        bindkey -M menuselect '\r' accept-line
+        zstyle ':autocomplete:*' list-lines 7
 
-      # Custom functions
-      set-title() {
-          echo -e "\e]0;$*\007"
-      }
+        # Custom functions
+        set-title() {
+            echo -e "\e]0;$*\007"
+        }
 
-      ssh() {
-          set-title $*;
-          /usr/bin/ssh -2 $*;
-          set-title $HOST;
-      }
+        ssh() {
+            set-title $*;
+            /usr/bin/ssh -2 $*;
+            set-title $HOST;
+        }
 
-      separator() {
-          if [[ -z $COLUMNS ]]; then
-              COLUMNS=$(tput cols)
+        separator() {
+            if [[ -z $COLUMNS ]]; then
+                COLUMNS=$(tput cols)
+            fi
+            lengthOfTitle=$((''${#1}+2))
+            numberOfCharacters=$(( ($COLUMNS - $lengthOfTitle)/2 ))
+            printf "=%.0s"  $(seq 1 ''${numberOfCharacters}); printf " ''${1} "; printf "=%.0s"  $(seq 1 ''${numberOfCharacters}); printf "\n"
+        }
+
+        mkcd () {
+          case "$1" in
+            */..|*/../) cd -- "$1";;
+            /*/../*) (cd "''${1%/../*}/.." && mkdir -p "./''${1##*/../}") && cd -- "$1";;
+            /*) mkdir -p "$1" && cd "$1";;
+            */../*) (cd "./''${1%/../*}/.." && mkdir -p "./''${1##*/../}") && cd "./$1";;
+            ../*) (cd .. && mkdir -p "''${1#.}") && cd "$1";;
+            *) mkdir -p "./$1" && cd "./$1";;
+          esac
+        }
+
+        # Yazi helper for changing current working directory
+        function y() {
+          local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+          yazi "$@" --cwd-file="$tmp"
+          if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+            builtin cd -- "$cwd"
           fi
-          lengthOfTitle=$((''${#1}+2))
-          numberOfCharacters=$(( ($COLUMNS - $lengthOfTitle)/2 ))
-          printf "=%.0s"  $(seq 1 ''${numberOfCharacters}); printf " ''${1} "; printf "=%.0s"  $(seq 1 ''${numberOfCharacters}); printf "\n"
-      }
+          rm -f -- "$tmp"
+        }
 
-      mkcd () {
-        case "$1" in
-          */..|*/../) cd -- "$1";;
-          /*/../*) (cd "''${1%/../*}/.." && mkdir -p "./''${1##*/../}") && cd -- "$1";;
-          /*) mkdir -p "$1" && cd "$1";;
-          */../*) (cd "./''${1%/../*}/.." && mkdir -p "./''${1##*/../}") && cd "./$1";;
-          ../*) (cd .. && mkdir -p "''${1#.}") && cd "$1";;
-          *) mkdir -p "./$1" && cd "./$1";;
-        esac
-      }
+        # Kiro integration (conditional)
+        [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
 
-      # Yazi helper for changing current working directory
-      function y() {
-        local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-        yazi "$@" --cwd-file="$tmp"
-        if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-          builtin cd -- "$cwd"
+        # SDKMAN (conditional)
+        [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+        # NVM (conditional)
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+        # Auto-start tmux and restore session
+        if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+          exec tmux new-session -A -s main
         fi
-        rm -f -- "$tmp"
-      }
-
-      # Kiro integration (conditional)
-      [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
-
-      # SDKMAN (conditional)
-      [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-      # NVM (conditional)
-      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-      [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-      # Auto-start tmux and restore session
-      if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
-        exec tmux new-session -A -s main
-      fi
-    '';
+      ''
+    ];
   };
 }
