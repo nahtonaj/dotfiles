@@ -29,3 +29,6 @@ node_modules
 monitors.xml
 user-dirs.dirs
 user-dirs.locale
+result
+result-*
+.direnv/
