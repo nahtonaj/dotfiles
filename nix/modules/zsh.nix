@@ -10,8 +10,8 @@ in
       enable = true;
       highlight = "fg=28";
     };
-    # Syntax highlighting loaded as a plugin (after autocomplete) to avoid
-    # "unhandled ZLE widget" warnings from widget ordering conflicts.
+    # Syntax highlighting sourced manually in initContent after registering
+    # autocomplete widget stubs to avoid "unhandled ZLE widget" warnings.
     syntaxHighlighting.enable = false;
 
     plugins = [
@@ -41,12 +41,6 @@ in
           rev = "24.09.04";
           sha256 = "sha256-o8IQszQ4/PLX1FlUvJpowR2Tev59N8lI20VymZ+Hp4w=";
         };
-      }
-      # Must load AFTER autocomplete so its widgets are already registered
-      {
-        name = "zsh-syntax-highlighting";
-        src = pkgs.zsh-syntax-highlighting;
-        file = "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh";
       }
     ];
 
@@ -97,8 +91,23 @@ in
       '')
 
       ''
+        # Register zsh-autocomplete widget stubs so syntax-highlighting
+        # doesn't warn about unhandled ZLE widgets
+        function insert-unambiguous-or-complete() { zle .insert-unambiguous-or-complete 2>/dev/null || zle .expand-or-complete; }
+        function menu-search() { zle .menu-search 2>/dev/null || zle .expand-or-complete; }
+        function recent-paths() { zle .recent-paths 2>/dev/null || zle .expand-or-complete; }
+        zle -N insert-unambiguous-or-complete
+        zle -N menu-search
+        zle -N recent-paths
+
+        # Now safe to source syntax-highlighting (widgets are registered)
+        source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
         # Load colors for prompt
         autoload -U colors && colors
+
+        # Enable prompt substitution (needed for $(git branch ...) in PROMPT)
+        setopt PROMPT_SUBST
 
         # Prompt (from databricks.zsh-theme)
         ${themeFile}
