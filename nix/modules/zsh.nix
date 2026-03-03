@@ -10,10 +10,10 @@ in
       enable = true;
       highlight = "fg=28";
     };
-    syntaxHighlighting.enable = true;
+    # Syntax highlighting loaded as a plugin (after autocomplete) to avoid
+    # "unhandled ZLE widget" warnings from widget ordering conflicts.
+    syntaxHighlighting.enable = false;
 
-    # NOTE: On first build, nix will error with "hash mismatch" and print the
-    # correct sha256. Replace lib.fakeHash with the value from the error output.
     plugins = [
       {
         name = "zsh-vi-mode";
@@ -41,6 +41,12 @@ in
           rev = "24.09.04";
           sha256 = "sha256-o8IQszQ4/PLX1FlUvJpowR2Tev59N8lI20VymZ+Hp4w=";
         };
+      }
+      # Must load AFTER autocomplete so its widgets are already registered
+      {
+        name = "zsh-syntax-highlighting";
+        src = pkgs.zsh-syntax-highlighting;
+        file = "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh";
       }
     ];
 
