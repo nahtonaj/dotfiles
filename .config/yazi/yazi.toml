@@ -1,5 +1,1 @@
-[mgr]
-show_hidden = true
-
-[opener]
-edit = [ { run = 'nvim "$@"', block = true } ]
+/nix/store/8pf4k9kvq0arw59fmi6m4ysyb4p7nvdn-home-manager-files/.config/yazi/yazi.toml
