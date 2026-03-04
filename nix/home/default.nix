@@ -15,6 +15,7 @@
     ../modules/databricks.nix
     ../modules/ideavim.nix
     ../modules/tridactyl.nix
+    ../modules/ssh.nix
   ];
 
   home.username = "jon.gao";
