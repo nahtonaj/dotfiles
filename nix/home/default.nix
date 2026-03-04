@@ -16,6 +16,7 @@
     ../modules/ideavim.nix
     ../modules/tridactyl.nix
     ../modules/ssh.nix
+    ../modules/claude-agents.nix
   ];
 
   home.username = "jon.gao";
