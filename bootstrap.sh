@@ -6,6 +6,26 @@ set -euo pipefail
 # =============================================================================
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MARKER="/tmp/.nix-bootstrap-done-$(id -u)"
+LOCKFILE="/tmp/.nix-bootstrap-$(id -u).lock"
+LOGFILE="$HOME/.nix-bootstrap.log"
+
+# -----------------------------------------------------------------------------
+# Concurrency guard (atomic mkdir)
+# -----------------------------------------------------------------------------
+if ! mkdir "$LOCKFILE" 2>/dev/null; then
+  echo "Another bootstrap is already running (lock: $LOCKFILE). Exiting."
+  exit 0
+fi
+trap 'rmdir "$LOCKFILE" 2>/dev/null' EXIT
+
+# -----------------------------------------------------------------------------
+# Error trap — log failures
+# -----------------------------------------------------------------------------
+on_error() {
+  echo "Bootstrap FAILED at line $1 — see $LOGFILE" >&2
+}
+trap 'on_error $LINENO' ERR
 
 echo "=== Dotfiles Bootstrap ==="
 echo "Dotfiles directory: $DOTFILES_DIR"
@@ -23,7 +43,44 @@ esac
 echo "Platform: $PLATFORM"
 
 # -----------------------------------------------------------------------------
-# 2. Install Nix (if not present)
+# 2. Seed ~/.ssh/rc (before Nix exists, so next SSH triggers bootstrap too)
+# -----------------------------------------------------------------------------
+if [ ! -f "$HOME/.ssh/rc" ]; then
+  mkdir -p "$HOME/.ssh"
+  chmod 700 "$HOME/.ssh"
+  cat > "$HOME/.ssh/rc" << 'SSHRC'
+#!/bin/bash
+MARKER="/tmp/.nix-bootstrap-done-$(id -u)"
+DOTFILES="$HOME/dotfiles"
+LOGFILE="$HOME/.nix-bootstrap.log"
+
+if [ ! -f "$MARKER" ] && [ -f "$DOTFILES/bootstrap.sh" ]; then
+  LOCKFILE="/tmp/.nix-bootstrap-$(id -u).lock"
+  if ! mkdir "$LOCKFILE" 2>/dev/null; then
+    exit 0
+  fi
+  trap 'rmdir "$LOCKFILE" 2>/dev/null' EXIT
+  bash "$DOTFILES/bootstrap.sh" >> "$LOGFILE" 2>&1
+  if [ $? -eq 0 ]; then
+    touch "$MARKER"
+  fi
+fi
+
+# Required: handle X11 forwarding (sshd skips xauth when ~/.ssh/rc exists)
+if read proto cookie && [ -n "$DISPLAY" ]; then
+  if [ "$(echo $DISPLAY | cut -c1-10)" = 'localhost:' ]; then
+    echo "add unix:$(echo $DISPLAY | cut -c11-) $proto $cookie"
+  else
+    echo "add $DISPLAY $proto $cookie"
+  fi | xauth -q -
+fi
+SSHRC
+  chmod 755 "$HOME/.ssh/rc"
+  echo "Seeded ~/.ssh/rc for future SSH sessions"
+fi
+
+# -----------------------------------------------------------------------------
+# 3. Install Nix (if not present)
 # -----------------------------------------------------------------------------
 if ! command -v nix &> /dev/null; then
   echo ""
@@ -40,7 +97,7 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 3. Enable flakes (if not already)
+# 4. Enable flakes (if not already)
 # -----------------------------------------------------------------------------
 NIX_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/nix/nix.conf"
 if ! grep -q "experimental-features.*flakes" "$NIX_CONF" 2>/dev/null && \
@@ -51,7 +108,7 @@ if ! grep -q "experimental-features.*flakes" "$NIX_CONF" 2>/dev/null && \
 fi
 
 # -----------------------------------------------------------------------------
-# 4. Init git submodules (NormalNvim)
+# 5. Init git submodules (NormalNvim)
 # -----------------------------------------------------------------------------
 echo ""
 echo "Initializing git submodules..."
@@ -59,7 +116,7 @@ cd "$DOTFILES_DIR"
 git submodule update --init --recursive
 
 # -----------------------------------------------------------------------------
-# 5. Apply configuration
+# 6. Apply configuration
 # -----------------------------------------------------------------------------
 echo ""
 if [ "$PLATFORM" = "linux" ]; then
@@ -72,7 +129,16 @@ elif [ "$PLATFORM" = "darwin" ]; then
 fi
 
 # -----------------------------------------------------------------------------
-# 6. Install TPM plugins
+# 7. Enable tmux systemd service
+# -----------------------------------------------------------------------------
+echo ""
+echo "Enabling tmux systemd service..."
+systemctl --user daemon-reload
+systemctl --user enable tmux.service
+systemctl --user start tmux.service || true
+
+# -----------------------------------------------------------------------------
+# 8. Install TPM plugins
 # -----------------------------------------------------------------------------
 echo ""
 if [ -d "$HOME/.tmux/plugins/tpm" ]; then
@@ -83,8 +149,10 @@ else
 fi
 
 # -----------------------------------------------------------------------------
-# 7. Done
+# 9. Mark bootstrap complete
 # -----------------------------------------------------------------------------
+touch "$MARKER"
+
 echo ""
 echo "=== Bootstrap complete! ==="
 echo ""
