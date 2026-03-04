@@ -1,4 +1,4 @@
-{ config, pkgs, normalNvim, ... }:
+{ config, pkgs, ... }:
 
 {
   programs.neovim = {
@@ -7,5 +7,7 @@
     vimAlias = true;
   };
 
-  xdg.configFile."nvim".source = normalNvim;
+  # nvim config is the NormalNvim git submodule at dotfiles/.config/nvim.
+  # ~/.config -> ~/dotfiles/.config (legacy symlink), so ~/.config/nvim
+  # already resolves to the writable submodule — no xdg.configFile needed.
 }

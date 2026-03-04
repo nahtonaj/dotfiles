@@ -56,29 +56,11 @@
         "type": "github"
       }
     },
-    "normalNvim": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1759439894,
-        "narHash": "sha256-/SQXT9WVJ574CIyI0G6QK0RaclrScctTXDo6uvcIu5s=",
-        "owner": "nahtonaj",
-        "repo": "NormalNvim",
-        "rev": "a8ac5eafc0bd88f9575219ff1de1bc62c51f88af",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nahtonaj",
-        "repo": "NormalNvim",
-        "rev": "a8ac5eafc0bd88f9575219ff1de1bc62c51f88af",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "home-manager": "home-manager",
         "nix-darwin": "nix-darwin",
-        "nixpkgs": "nixpkgs",
-        "normalNvim": "normalNvim"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
