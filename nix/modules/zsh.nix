@@ -79,6 +79,11 @@ in
 
     initContent = lib.mkMerge [
       (lib.mkBefore ''
+        # Nix profile (ensures nix/home-manager available in all shells)
+        if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+          . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+        fi
+
         # PATH setup
         export PATH=/home/linuxbrew/.linuxbrew/bin:$PATH
         export PATH=$HOME/bin:/usr/local/bin:$PATH
