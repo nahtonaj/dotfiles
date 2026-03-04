@@ -32,3 +32,27 @@ user-dirs.locale
 result
 result-*
 .direnv/
+
+# Auto-generated / machine-specific
+.config/configstore/
+.config/environment.d/
+.config/fish/
+.config/gcloud/
+.config/gh/
+.config/git/
+.config/github-copilot/
+.config/go/telemetry/
+.config/google-chrome/
+.config/goose/
+.config/gopls/
+.config/llm-cli/
+.config/mcp/
+.config/nix/
+.config/nvim.backup/
+.config/ruff/
+.config/systemd/
+.config/tmux/
+.config/zellij/
+.config/yazi/*.backup
+.config/yazi/yazi.toml-*
+.oh-my-zsh/
