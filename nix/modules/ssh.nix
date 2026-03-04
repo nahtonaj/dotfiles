@@ -1,6 +1,15 @@
 { config, pkgs, lib, flakePath, ... }:
 
 {
+  home.file.".ssh/github-config-personal".text = ''
+    Host github.com-personal
+     HostName github.com
+     IdentityFile ~/.ssh/id_rsa
+     IdentitiesOnly yes
+     User git
+     StrictHostKeyChecking accept-new
+  '';
+
   home.file.".ssh/rc" = {
     executable = true;
     text = ''
