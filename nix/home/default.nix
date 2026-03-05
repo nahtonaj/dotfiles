@@ -16,7 +16,6 @@
     ../modules/ideavim.nix
     ../modules/tridactyl.nix
     ../modules/ssh.nix
-    ../modules/claude-agents.nix
     ../modules/claude.nix
     ../modules/ruflo.nix
   ];
