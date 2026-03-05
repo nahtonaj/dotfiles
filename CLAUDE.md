@@ -9,7 +9,9 @@ nix/modules/               — Shared Nix modules (zsh, tmux, git, yazi, etc.)
 nix/modules-darwin/        — macOS-only modules (aerospace, sketchybar, karabiner)
 nix/hosts/                 — Host-specific config (darwin)
 configs/                   — Config source files referenced by Nix modules
-claude-agents/             — Custom Claude agent definitions (deployed via Nix)
+.claude/agents/            — Claude agent definitions (deployed recursively via claude.nix)
+.claude/skills/            — Claude skill definitions (deployed recursively via claude.nix)
+.claude/commands/          — Claude commands (deployed recursively via claude.nix)
 bin/                       — Helper scripts (tmux-osc52-copy, tmux-fzf-url-copy)
 .config/                   — Active configs (sketchybar, karabiner, aerospace, yazi, skhd, yabai, nvim submodule)
 ```
@@ -40,10 +42,11 @@ New config modules follow this pattern:
 2. Nix module in `nix/modules/<tool>.nix` using `home.file` or `programs.<tool>`
 3. Import in `nix/home/default.nix`
 
-Example from `nix/modules/claude-agents.nix`:
+Example from `nix/modules/claude.nix`:
 ```nix
-home.file.".claude/agents/custom/nix-specialist.md" = {
-  source = "${flakePath}/claude-agents/custom/nix-specialist.md";
+home.file.".claude/agents" = {
+  source = "${flakePath}/.claude/agents";
+  recursive = true;
 };
 ```
 

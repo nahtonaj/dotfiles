@@ -1,5 +1,5 @@
 ---
-name: "Skill Builder"
+name: "skill-builder"
 description: "Create new Claude Code Skills with proper YAML frontmatter, progressive disclosure structure, and complete directory organization. Use when you need to build custom skills for specific workflows, generate skill templates, or understand the Claude Skills specification."
 ---
 
@@ -26,7 +26,7 @@ mkdir -p ~/.claude/skills/my-first-skill
 # 2. Create SKILL.md with proper format
 cat > ~/.claude/skills/my-first-skill/SKILL.md << 'EOF'
 ---
-name: "My First Skill"
+name: "my-first-skill"
 description: "Brief description of what this skill does and when Claude should use it. Maximum 1024 characters."
 ---
 
@@ -53,7 +53,7 @@ Every SKILL.md **must** start with YAML frontmatter containing exactly two requi
 
 ```yaml
 ---
-name: "Skill Name"                    # REQUIRED: Max 64 chars
+name: "skill-name"                    # REQUIRED: Max 64 chars
 description: "What this skill does    # REQUIRED: Max 1024 chars
 and when Claude should use it."       # Include BOTH what & when
 ---
@@ -64,9 +64,9 @@ and when Claude should use it."       # Include BOTH what & when
 **`name`** (REQUIRED):
 - **Type**: String
 - **Max Length**: 64 characters
-- **Format**: Human-friendly display name
+- **Format**: kebab-case identifier
 - **Usage**: Shown in skill lists, UI, and loaded into Claude's system prompt
-- **Best Practice**: Use Title Case, be concise and descriptive
+- **Best Practice**: Use kebab-case (e.g., "api-builder"), be concise and descriptive
 - **Examples**:
   - ✅ "API Documentation Generator"
   - ✅ "React Component Builder"
@@ -94,22 +94,22 @@ and when Claude should use it."       # Include BOTH what & when
 ```yaml
 ---
 # ✅ CORRECT: Simple string
-name: "API Builder"
+name: "api-builder"
 description: "Creates REST APIs with Express and TypeScript."
 
 # ✅ CORRECT: Multi-line description
-name: "Full-Stack Generator"
+name: "full-stack-generator"
 description: "Generates full-stack applications with React frontend and Node.js backend. Use when starting new projects or scaffolding applications."
 
 # ✅ CORRECT: Special characters quoted
-name: "JSON:API Builder"
+name: "json-api-builder"
 description: "Creates JSON:API compliant endpoints: pagination, filtering, relationships."
 
 # ❌ WRONG: Missing quotes with special chars
 name: API:Builder  # YAML parse error!
 
 # ❌ WRONG: Extra fields (ignored but discouraged)
-name: "My Skill"
+name: "my-skill"
 description: "My description"
 version: "1.0.0"       # NOT part of spec
 author: "Me"           # NOT part of spec
@@ -193,7 +193,7 @@ Claude Code uses a **3-level progressive disclosure system** to scale to 100+ sk
 
 ```yaml
 ---
-name: "API Builder"                   # 11 chars
+name: "api-builder"                   # 11 chars
 description: "Creates REST APIs..."   # ~50 chars
 ---
 # Total: ~61 chars per skill
@@ -244,7 +244,7 @@ Use template: `resources/templates/api-template.js`
 
 ```markdown
 ---
-name: "Your Skill Name"
+name: "your-skill-name"
 description: "What it does and when to use it"
 ---
 
@@ -561,7 +561,7 @@ Before publishing a skill, verify:
 
 ```markdown
 ---
-name: "My Basic Skill"
+name: "my-basic-skill"
 description: "One sentence what. One sentence when to use."
 ---
 
@@ -595,7 +595,7 @@ description: "One sentence what. One sentence when to use."
 
 ```markdown
 ---
-name: "My Intermediate Skill"
+name: "my-intermediate-skill"
 description: "Detailed what with key features. When to use with specific triggers: scaffolding, generating, building."
 ---
 
@@ -650,7 +650,7 @@ Edit `config.json`:
 
 ```markdown
 ---
-name: "My Advanced Skill"
+name: "my-advanced-skill"
 description: "Comprehensive what with all features and integrations. Use when [trigger 1], [trigger 2], or [trigger 3]. Supports [technology stack]."
 ---
 
@@ -812,7 +812,7 @@ Complete API documentation: [API_REFERENCE.md](docs/API_REFERENCE.md)
 
 ```markdown
 ---
-name: "README Generator"
+name: "readme-generator"
 description: "Generate comprehensive README.md files for GitHub repositories. Use when starting new projects, documenting code, or improving existing READMEs."
 ---
 
@@ -841,7 +841,7 @@ Edit sections in `resources/templates/sections/` before generating.
 
 ```markdown
 ---
-name: "React Component Generator"
+name: "react-component-generator"
 description: "Generate React functional components with TypeScript, hooks, tests, and Storybook stories. Use when creating new components, scaffolding UI, or following component architecture patterns."
 ---
 
