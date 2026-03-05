@@ -213,3 +213,14 @@ Report issues as a checklist with pass/fail indicators.
 6. **Keep definitions focused** — one agent, one clear responsibility.
 7. **Pre-hooks are safety nets** — they should catch missing tools early, not do heavy work.
 8. **Remind about `home-manager switch`** — changes aren't live until deployed.
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```

@@ -124,38 +124,12 @@ To extract and document domain language:
 
 ## Ruflo Integration for Persistence
 
-Store and retrieve domain analysis using ruflo's intelligence stack:
-
-### Store domain maps
-```
-mcp__ruflo__agentdb_hierarchical-store
-  category: "ddd"
-  level: "domain"
-  key: "context-map-<project>"
-  data: { contexts, relationships, classification }
-```
-
-### Store patterns for reuse
-```
-mcp__ruflo__memory_store
-  namespace: "patterns"
-  key: "ddd-<project>-<pattern>"
-  value: { pattern_type, context, description }
-```
-
-### Store discovered DDD patterns
-```
-mcp__ruflo__agentdb_pattern-store
-  pattern: "ddd-<pattern-name>"
-  data: { discovered_contexts, relationships, language }
-```
-
-### Recall prior domain analysis
-```
-mcp__ruflo__memory_search
-  query: "ddd <project-name>"
-  namespace: "patterns"
-```
+> **Note:** You do not call ruflo/agentDB tools directly. Instead, produce structured output in the format below. The coordinator will persist your results using:
+> - `mcp__ruflo__agentdb_hierarchical-store` for domain maps
+> - `mcp__ruflo__agentdb_pattern-store` for discovered patterns
+> - `mcp__ruflo__memory_store` for reusable insights
+>
+> Focus on producing high-quality structured analysis. The coordinator handles persistence.
 
 ## Output Format
 
@@ -166,3 +140,21 @@ When completing a DDD analysis, produce:
 3. **Domain Event Catalog** — events that flow between contexts
 4. **Ubiquitous Language Glossary** — key terms and their definitions per context
 5. **Recommendations** — specific refactoring suggestions to improve domain boundaries
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list]
+- **Key Findings**: [bullets]
+- **Patterns Discovered**: [bullets]
+- **Cross-Team Context**: [bullets]
+
+## DDD ANALYSIS
+- **Bounded Contexts Discovered**: [list with Core/Supporting/Generic classification]
+- **Context Relationships**: [list with relationship type]
+- **Aggregate Roots**: [list with invariants]
+- **Ubiquitous Language**: [key terms and definitions]
+- **Domain Events**: [events between contexts]
+```

@@ -178,3 +178,14 @@ home-manager build --flake .#jon.gao@linux --show-trace 2>&1 | head -80
 5. **Add to imports** — a module file that isn't imported does nothing.
 6. **Follow existing patterns** — look at 2-3 similar modules before writing a new one.
 7. **Keep configs in the repo** — raw config files go in `configs/` or `.config/`, not generated at build time unless necessary.
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```
