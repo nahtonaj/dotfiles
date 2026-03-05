@@ -25,11 +25,11 @@ Automated release coordination and deployment with ruv-swarm orchestration for s
 ```javascript
 // Initialize release management swarm
 mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 6 }
-mcp__claude-flow__agent_spawn { type: "coordinator", name: "Release Coordinator" }
-mcp__claude-flow__agent_spawn { type: "tester", name: "QA Engineer" }
-mcp__claude-flow__agent_spawn { type: "reviewer", name: "Release Reviewer" }
-mcp__claude-flow__agent_spawn { type: "coder", name: "Version Manager" }
-mcp__claude-flow__agent_spawn { type: "analyst", name: "Deployment Analyst" }
+Agent { subagent_type: "coder", name: "Release Coordinator", prompt: "You are a release coordinator. Manage release preparation..." }
+Agent { subagent_type: "tester", name: "QA Engineer", prompt: "You are a QA engineer. Validate release quality..." }
+Agent { subagent_type: "reviewer", name: "Release Reviewer", prompt: "You are a release reviewer. Review release changes..." }
+Agent { subagent_type: "coder", name: "Version Manager", prompt: "You are a version manager. Coordinate version updates..." }
+Agent { subagent_type: "coder", name: "Deployment Analyst", prompt: "You are a deployment analyst. Analyze deployment readiness..." }
 
 // Create release preparation branch
 mcp__github__create_branch {
@@ -178,12 +178,12 @@ This release is production-ready with comprehensive validation and testing.
 [Single Message - Complete Release Management]:
   // Initialize comprehensive release swarm
   mcp__claude-flow__swarm_init { topology: "star", maxAgents: 8 }
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Release Director" }
-  mcp__claude-flow__agent_spawn { type: "tester", name: "QA Lead" }
-  mcp__claude-flow__agent_spawn { type: "reviewer", name: "Senior Reviewer" }
-  mcp__claude-flow__agent_spawn { type: "coder", name: "Version Controller" }
-  mcp__claude-flow__agent_spawn { type: "analyst", name: "Performance Analyst" }
-  mcp__claude-flow__agent_spawn { type: "researcher", name: "Compatibility Checker" }
+  Agent { subagent_type: "coder", name: "Release Director", prompt: "You are a release director. Oversee the complete release pipeline..." }
+  Agent { subagent_type: "tester", name: "QA Lead", prompt: "You are a QA lead. Run comprehensive test validation..." }
+  Agent { subagent_type: "reviewer", name: "Senior Reviewer", prompt: "You are a senior reviewer. Review release quality and standards..." }
+  Agent { subagent_type: "coder", name: "Version Controller", prompt: "You are a version controller. Manage version updates across packages..." }
+  Agent { subagent_type: "coder", name: "Performance Analyst", prompt: "You are a performance analyst. Analyze release performance impact..." }
+  Agent { subagent_type: "researcher", name: "Compatibility Checker", prompt: "You are a compatibility checker. Verify cross-package compatibility..." }
   
   // Create release branch and prepare files using gh CLI
   Bash("gh api repos/:owner/:repo/git/refs --method POST -f ref='refs/heads/release/v1.0.72' -f sha=$(gh api repos/:owner/:repo/git/refs/heads/main --jq '.object.sha')")

@@ -49,11 +49,8 @@ mcp__claude-flow__swarm_init {
   maxAgents: 8
 }
 
-// Spawn specialized agents
-mcp__claude-flow__agent_spawn {
-  type: "<agent-type>",
-  capabilities: ["<capability1>", "<capability2>"]
-}
+// Spawn specialized agent teammates
+Agent { subagent_type: "<agent-type>", prompt: "You are a <agent-type>. <task description>..." }
 
 // Monitor execution
 mcp__claude-flow__swarm_monitor {

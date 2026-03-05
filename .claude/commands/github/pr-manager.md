@@ -30,9 +30,9 @@ Comprehensive pull request management with ruv-swarm coordination for automated 
 ```javascript
 // Initialize review swarm
 mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 4 }
-mcp__claude-flow__agent_spawn { type: "reviewer", name: "Code Quality Reviewer" }
-mcp__claude-flow__agent_spawn { type: "tester", name: "Testing Agent" }
-mcp__claude-flow__agent_spawn { type: "coordinator", name: "PR Coordinator" }
+Agent { subagent_type: "reviewer", name: "Code Quality Reviewer", prompt: "You are a code reviewer. Review PR for code quality..." }
+Agent { subagent_type: "tester", name: "Testing Agent", prompt: "You are a testing agent. Run tests and validate PR changes..." }
+Agent { subagent_type: "coder", name: "PR Coordinator", prompt: "You are a PR coordinator. Manage the PR review and merge workflow..." }
 
 // Create PR and orchestrate review
 mcp__github__create_pull_request {
@@ -101,9 +101,9 @@ mcp__claude-flow__memory_usage {
 [Single Message - Complete PR Management]:
   // Initialize coordination
   mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 5 }
-  mcp__claude-flow__agent_spawn { type: "reviewer", name: "Senior Reviewer" }
-  mcp__claude-flow__agent_spawn { type: "tester", name: "QA Engineer" }
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Merge Coordinator" }
+  Agent { subagent_type: "reviewer", name: "Senior Reviewer", prompt: "You are a senior reviewer. Perform comprehensive code review..." }
+  Agent { subagent_type: "tester", name: "QA Engineer", prompt: "You are a QA engineer. Execute test suite and validate changes..." }
+  Agent { subagent_type: "coder", name: "Merge Coordinator", prompt: "You are a merge coordinator. Manage merge process and validation..." }
   
   // Create and manage PR using gh CLI
   Bash("gh pr create --repo :owner/:repo --title '...' --head '...' --base 'main'")

@@ -46,11 +46,8 @@ mcp__claude-flow__swarm_init {
   maxAgents: 8
 }
 
-// Spawn coordinator agent
-mcp__claude-flow__agent_spawn {
-  type: "coordinator",
-  capabilities: ["task-planning", "resource-management"]
-}
+// Spawn coordinator agent teammate
+Agent { subagent_type: "coder", prompt: "You are a coordinator. Handle task-planning and resource-management for feature development." }
 
 // Orchestrate tasks
 mcp__claude-flow__task_orchestrate {

@@ -25,10 +25,10 @@ Multi-package synchronization and version alignment with ruv-swarm coordination 
 ```javascript
 // Initialize sync coordination swarm
 mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 5 }
-mcp__claude-flow__agent_spawn { type: "coordinator", name: "Sync Coordinator" }
-mcp__claude-flow__agent_spawn { type: "analyst", name: "Dependency Analyzer" }
-mcp__claude-flow__agent_spawn { type: "coder", name: "Integration Developer" }
-mcp__claude-flow__agent_spawn { type: "tester", name: "Validation Engineer" }
+Agent { subagent_type: "coder", name: "Sync Coordinator", prompt: "You are a sync coordinator. Manage package synchronization..." }
+Agent { subagent_type: "coder", name: "Dependency Analyzer", prompt: "You are a dependency analyst. Analyze package dependencies..." }
+Agent { subagent_type: "coder", name: "Integration Developer", prompt: "You are an integration developer. Implement cross-package integration..." }
+Agent { subagent_type: "tester", name: "Validation Engineer", prompt: "You are a validation engineer. Validate synchronization results..." }
 
 // Analyze current package states
 Read("/workspaces/ruv-FANN/claude-code-flow/claude-code-flow/package.json")
@@ -148,11 +148,11 @@ This integration uses ruv-swarm agents for:
 [Single Message - Complete Synchronization]:
   // Initialize comprehensive sync swarm
   mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Master Sync Coordinator" }
-  mcp__claude-flow__agent_spawn { type: "analyst", name: "Package Analyzer" }
-  mcp__claude-flow__agent_spawn { type: "coder", name: "Integration Coder" }
-  mcp__claude-flow__agent_spawn { type: "tester", name: "Validation Tester" }
-  mcp__claude-flow__agent_spawn { type: "reviewer", name: "Quality Reviewer" }
+  Agent { subagent_type: "coder", name: "Master Sync Coordinator", prompt: "You are a sync coordinator. Manage complete package synchronization..." }
+  Agent { subagent_type: "coder", name: "Package Analyzer", prompt: "You are a package analyst. Analyze package states and dependencies..." }
+  Agent { subagent_type: "coder", name: "Integration Coder", prompt: "You are an integration developer. Implement cross-package changes..." }
+  Agent { subagent_type: "tester", name: "Validation Tester", prompt: "You are a validation tester. Run integration tests and validate sync..." }
+  Agent { subagent_type: "reviewer", name: "Quality Reviewer", prompt: "You are a quality reviewer. Review synchronization changes..." }
   
   // Read current state of both packages
   Read("/workspaces/ruv-FANN/claude-code-flow/claude-code-flow/package.json")

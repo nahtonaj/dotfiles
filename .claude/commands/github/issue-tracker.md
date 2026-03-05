@@ -26,9 +26,9 @@ Intelligent issue management and project coordination with ruv-swarm integration
 ```javascript
 // Initialize issue management swarm
 mcp__claude-flow__swarm_init { topology: "star", maxAgents: 3 }
-mcp__claude-flow__agent_spawn { type: "coordinator", name: "Issue Coordinator" }
-mcp__claude-flow__agent_spawn { type: "researcher", name: "Requirements Analyst" }
-mcp__claude-flow__agent_spawn { type: "coder", name: "Implementation Planner" }
+Agent { subagent_type: "coder", name: "Issue Coordinator", prompt: "You are an issue coordinator. Manage issue tracking and progress..." }
+Agent { subagent_type: "researcher", name: "Requirements Analyst", prompt: "You are a requirements analyst. Analyze issue requirements..." }
+Agent { subagent_type: "coder", name: "Implementation Planner", prompt: "You are an implementation planner. Plan issue implementation..." }
 
 // Create comprehensive issue
 mcp__github__create_issue {
@@ -126,9 +126,9 @@ mcp__github__update_issue {
 [Single Message - Issue Lifecycle Management]:
   // Initialize issue coordination swarm
   mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 4 }
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Issue Manager" }
-  mcp__claude-flow__agent_spawn { type: "analyst", name: "Progress Tracker" }
-  mcp__claude-flow__agent_spawn { type: "researcher", name: "Context Gatherer" }
+  Agent { subagent_type: "coder", name: "Issue Manager", prompt: "You are an issue manager. Coordinate issue lifecycle management..." }
+  Agent { subagent_type: "coder", name: "Progress Tracker", prompt: "You are a progress tracker. Monitor and report issue progress..." }
+  Agent { subagent_type: "researcher", name: "Context Gatherer", prompt: "You are a context gatherer. Gather context for issue resolution..." }
   
   // Create multiple related issues using gh CLI
   Bash(`gh issue create \
