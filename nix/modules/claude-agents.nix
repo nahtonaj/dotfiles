@@ -30,6 +30,10 @@
     source = "${flakePath}/claude-agents/dotfiles/dotfiles-porter.md";
   };
 
+  home.file.".claude/agents/custom/ddd-domain-expert.md" = {
+    source = "${flakePath}/claude-agents/custom/ddd-domain-expert.md";
+  };
+
   home.file.".claude/agents/meta/agent-definer.md" = {
     source = "${flakePath}/claude-agents/meta/agent-definer.md";
   };
