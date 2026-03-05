@@ -57,8 +57,26 @@ result-*
 .config/yazi/yazi.toml-*
 .oh-my-zsh/
 
+# Claude auto-generated agents (custom agents live in claude-agents/)
+.claude/agents/
+
 # Claude Flow ephemeral state
+.claude-flow/CAPABILITIES.md
+.claude-flow/config.yaml
 .claude-flow/metrics/
 .claude-flow/pids/
+.claude-flow/security/
 .claude/tmp.json
 .claude/.claude-flow/
+
+# Unused .config dirs
+.config/ada/
+.config/doom/
+.config/svim/
+.config/spicetify/
+.config/sketchybar_backup/
+.config/fish/
+.config/go/
+.config/mechanic/
+.config/systemd/
+.config/configstore/
