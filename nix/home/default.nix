@@ -18,6 +18,7 @@
     ../modules/ssh.nix
     ../modules/claude-agents.nix
     ../modules/claude.nix
+    ../modules/ruflo.nix
   ];
 
   home.username = "jon.gao";
