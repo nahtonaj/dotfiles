@@ -14,6 +14,22 @@
     source = "${flakePath}/claude-agents/devops/databricks-job-runner.md";
   };
 
+  home.file.".claude/agents/dotfiles/dotfiles-doctor.md" = {
+    source = "${flakePath}/claude-agents/dotfiles/dotfiles-doctor.md";
+  };
+
+  home.file.".claude/agents/dotfiles/dotfiles-editor.md" = {
+    source = "${flakePath}/claude-agents/dotfiles/dotfiles-editor.md";
+  };
+
+  home.file.".claude/agents/dotfiles/dotfiles-onboarder.md" = {
+    source = "${flakePath}/claude-agents/dotfiles/dotfiles-onboarder.md";
+  };
+
+  home.file.".claude/agents/dotfiles/dotfiles-porter.md" = {
+    source = "${flakePath}/claude-agents/dotfiles/dotfiles-porter.md";
+  };
+
   home.file.".claude/agents/meta/agent-definer.md" = {
     source = "${flakePath}/claude-agents/meta/agent-definer.md";
   };
