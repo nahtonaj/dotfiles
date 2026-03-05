@@ -9,4 +9,15 @@
   home.file.".claude/settings.json" = {
     source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/claude/settings.json";
   };
+
+  # Deploy Claude Code commands and skills globally
+  home.file.".claude/commands" = {
+    source = "${flakePath}/.claude/commands";
+    recursive = true;
+  };
+
+  home.file.".claude/skills" = {
+    source = "${flakePath}/.claude/skills";
+    recursive = true;
+  };
 }

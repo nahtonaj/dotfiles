@@ -52,12 +52,8 @@ mcp__claude-flow__swarm_init({
   "strategy": "auto"
 })
 
-// Spawn agents based on file type
-mcp__claude-flow__agent_spawn({
-  "type": "coder",
-  "name": "JavaScript Handler",
-  "capabilities": ["javascript", "typescript"]
-})
+// Spawn agent teammate based on file type
+Agent { subagent_type: "coder", name: "JavaScript Handler", prompt: "You are a JavaScript/TypeScript specialist. Handle JS/TS file changes..." }
 ```
 
 ### Fallback Configuration

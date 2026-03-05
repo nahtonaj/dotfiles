@@ -462,11 +462,8 @@ mcp__claude-flow__swarm_init {
   maxAgents: 8
 }
 
-// Spawn specialized agents
-mcp__claude-flow__agent_spawn {
-  type: "<agent-type>",
-  capabilities: ["<capability1>", "<capability2>"]
-}
+// Spawn specialized agent teammates
+Agent { subagent_type: "<agent-type>", prompt: "You are a <agent-type>. <task description>..." }
 
 // Monitor execution
 mcp__claude-flow__swarm_monitor {
@@ -529,17 +526,12 @@ mcp__claude-flow__swarm_init {
   maxAgents: 12
 }
 
-// Spawn coordinator
-mcp__claude-flow__agent_spawn {
-  type: "coordinator",
-  capabilities: ["planning", "delegation", "monitoring"]
-}
-
-// Spawn specialized workers
-mcp__claude-flow__agent_spawn { type: "architect" }
-mcp__claude-flow__agent_spawn { type: "coder" }
-mcp__claude-flow__agent_spawn { type: "tester" }
-mcp__claude-flow__agent_spawn { type: "reviewer" }
+// Spawn coordinator and specialized worker teammates
+Agent { subagent_type: "coder", name: "Coordinator", prompt: "You are a coordinator. Handle planning, delegation, and monitoring..." }
+Agent { subagent_type: "coder", name: "Architect", prompt: "You are an architect. Design system architecture..." }
+Agent { subagent_type: "coder", name: "Coder", prompt: "You are a coder. Implement the solution..." }
+Agent { subagent_type: "tester", name: "Tester", prompt: "You are a tester. Write and run tests..." }
+Agent { subagent_type: "reviewer", name: "Reviewer", prompt: "You are a reviewer. Review code quality..." }
 ```
 
 ### Pattern 2: Mesh Coordination
@@ -712,14 +704,14 @@ mcp__claude-flow__memory_usage {
 ```javascript
 // ✅ CORRECT: All operations together
 [Single Message]:
-  mcp__claude-flow__agent_spawn { type: "researcher" }
-  mcp__claude-flow__agent_spawn { type: "coder" }
-  mcp__claude-flow__agent_spawn { type: "tester" }
+  Agent { subagent_type: "researcher", prompt: "You are a researcher. Research the topic..." }
+  Agent { subagent_type: "coder", prompt: "You are a coder. Implement the solution..." }
+  Agent { subagent_type: "tester", prompt: "You are a tester. Write and run tests..." }
   TodoWrite { todos: [8-10 todos] }
 
 // ❌ WRONG: Multiple messages
-Message 1: mcp__claude-flow__agent_spawn { type: "researcher" }
-Message 2: mcp__claude-flow__agent_spawn { type: "coder" }
+Message 1: Agent { subagent_type: "researcher", prompt: "..." }
+Message 2: Agent { subagent_type: "coder", prompt: "..." }
 Message 3: TodoWrite { todos: [...] }
 ```
 

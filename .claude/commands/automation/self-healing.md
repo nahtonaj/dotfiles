@@ -74,12 +74,8 @@ mcp__claude-flow__swarm_init({
   "strategy": "adaptive"
 })
 
-// Spawn recovery agents
-mcp__claude-flow__agent_spawn({
-  "type": "monitor",
-  "name": "Error Monitor",
-  "capabilities": ["error-detection", "recovery"]
-})
+// Spawn recovery agent teammate
+Agent { subagent_type: "coder", name: "Error Monitor", prompt: "You are an error monitor. Detect errors and coordinate recovery..." }
 
 // Orchestrate recovery
 mcp__claude-flow__task_orchestrate({

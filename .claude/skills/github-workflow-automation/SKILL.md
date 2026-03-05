@@ -543,10 +543,10 @@ mcp__claude-flow__swarm_init {
 }
 
 // Step 2: Spawn specialized agents
-mcp__claude-flow__agent_spawn { type: "coordinator", name: "GitHub Coordinator" }
-mcp__claude-flow__agent_spawn { type: "reviewer", name: "Code Reviewer" }
-mcp__claude-flow__agent_spawn { type: "tester", name: "QA Agent" }
-mcp__claude-flow__agent_spawn { type: "analyst", name: "Security Analyst" }
+Agent { subagent_type: "coder", name: "GitHub Coordinator", prompt: "You are a GitHub coordinator. Orchestrate the GitHub workflow..." }
+Agent { subagent_type: "reviewer", name: "Code Reviewer", prompt: "You are a code reviewer. Review code changes for quality..." }
+Agent { subagent_type: "tester", name: "QA Agent", prompt: "You are a QA agent. Run tests and validate changes..." }
+Agent { subagent_type: "coder", name: "Security Analyst", prompt: "You are a security analyst. Analyze code for security issues..." }
 
 // Step 3: Orchestrate GitHub workflow
 mcp__claude-flow__task_orchestrate {

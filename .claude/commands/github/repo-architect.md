@@ -25,10 +25,10 @@ Repository structure optimization and multi-repo management with ruv-swarm coord
 ```javascript
 // Initialize architecture analysis swarm
 mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 4 }
-mcp__claude-flow__agent_spawn { type: "analyst", name: "Structure Analyzer" }
-mcp__claude-flow__agent_spawn { type: "architect", name: "Repository Architect" }
-mcp__claude-flow__agent_spawn { type: "optimizer", name: "Structure Optimizer" }
-mcp__claude-flow__agent_spawn { type: "coordinator", name: "Multi-Repo Coordinator" }
+Agent { subagent_type: "coder", name: "Structure Analyzer", prompt: "You are a structure analyst. Analyze repository organization..." }
+Agent { subagent_type: "coder", name: "Repository Architect", prompt: "You are a repository architect. Design optimal repo structure..." }
+Agent { subagent_type: "coder", name: "Structure Optimizer", prompt: "You are a structure optimizer. Optimize repo layout for scalability..." }
+Agent { subagent_type: "coder", name: "Multi-Repo Coordinator", prompt: "You are a multi-repo coordinator. Coordinate cross-repo operations..." }
 
 // Analyze current repository structure
 LS("/workspaces/ruv-FANN/claude-code-flow/claude-code-flow")
@@ -170,11 +170,11 @@ jobs:
 [Single Message - Repository Architecture Review]:
   // Initialize comprehensive architecture swarm
   mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 6 }
-  mcp__claude-flow__agent_spawn { type: "architect", name: "Senior Architect" }
-  mcp__claude-flow__agent_spawn { type: "analyst", name: "Structure Analyst" }
-  mcp__claude-flow__agent_spawn { type: "optimizer", name: "Performance Optimizer" }
-  mcp__claude-flow__agent_spawn { type: "researcher", name: "Best Practices Researcher" }
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Multi-Repo Coordinator" }
+  Agent { subagent_type: "coder", name: "Senior Architect", prompt: "You are a senior architect. Design comprehensive repository architecture..." }
+  Agent { subagent_type: "coder", name: "Structure Analyst", prompt: "You are a structure analyst. Analyze current repo organization..." }
+  Agent { subagent_type: "coder", name: "Performance Optimizer", prompt: "You are a performance optimizer. Optimize repo workflows and structure..." }
+  Agent { subagent_type: "researcher", name: "Best Practices Researcher", prompt: "You are a best practices researcher. Research optimal repo patterns..." }
+  Agent { subagent_type: "coder", name: "Multi-Repo Coordinator", prompt: "You are a multi-repo coordinator. Coordinate cross-repo architecture..." }
   
   // Analyze current repository structures
   LS("/workspaces/ruv-FANN/claude-code-flow/claude-code-flow")

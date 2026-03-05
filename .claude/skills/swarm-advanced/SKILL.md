@@ -28,7 +28,7 @@ claude mcp add claude-flow npx claude-flow@alpha mcp start
 mcp__claude-flow__swarm_init({ topology: "mesh", maxAgents: 6 })
 
 // 2. Spawn specialized agents
-mcp__claude-flow__agent_spawn({ type: "researcher", name: "Agent 1" })
+Agent { subagent_type: "researcher", name: "Agent 1", prompt: "You are a researcher..." }
 
 // 3. Orchestrate tasks
 mcp__claude-flow__task_orchestrate({ task: "...", strategy: "parallel" })
@@ -110,11 +110,7 @@ const researchAgents = [
 
 // Spawn all agents
 researchAgents.forEach(agent => {
-  mcp__claude-flow__agent_spawn({
-    type: agent.type,
-    name: agent.name,
-    capabilities: agent.capabilities
-  })
+  Agent { subagent_type: agent.type, name: agent.name, prompt: `You are a ${agent.type}. ${agent.capabilities.join(', ')}...` }
 })
 ```
 
@@ -274,14 +270,9 @@ const devTeam = [
   { type: "monitor", name: "DevOps Engineer", capabilities: ["ci-cd", "deployment", "monitoring"] }
 ]
 
-// Spawn all team members
+// Spawn all team members as agent teammates
 devTeam.forEach(member => {
-  mcp__claude-flow__agent_spawn({
-    type: member.type,
-    name: member.name,
-    capabilities: member.capabilities,
-    swarmId: "dev-swarm"
-  })
+  Agent { subagent_type: member.type, name: member.name, prompt: `You are a ${member.type}. ${member.capabilities.join(', ')}...` }
 })
 ```
 
@@ -444,14 +435,9 @@ const testingTeam = [
   }
 ]
 
-// Spawn all testers
+// Spawn all testers as agent teammates
 testingTeam.forEach(tester => {
-  mcp__claude-flow__agent_spawn({
-    type: tester.type,
-    name: tester.name,
-    capabilities: tester.capabilities,
-    swarmId: "testing-swarm"
-  })
+  Agent { subagent_type: tester.type, name: tester.name, prompt: `You are a ${tester.type}. ${tester.capabilities.join(', ')}...` }
 })
 ```
 
@@ -634,13 +620,9 @@ const analysisTeam = [
   }
 ]
 
-// Spawn all analysts
+// Spawn all analysts as agent teammates
 analysisTeam.forEach(analyst => {
-  mcp__claude-flow__agent_spawn({
-    type: analyst.type,
-    name: analyst.name,
-    capabilities: analyst.capabilities
-  })
+  Agent { subagent_type: analyst.type, name: analyst.name, prompt: `You are a ${analyst.type}. ${analyst.capabilities.join(', ')}...` }
 })
 ```
 

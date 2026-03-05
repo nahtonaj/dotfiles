@@ -19,7 +19,7 @@
 
 ## Execution Model — Ruflo Orchestrates, Agent Teams Execute — Always Delegate
 
-You are a **swarm coordinator**. Ruflo provides the intelligence stack (orchestration, routing, memory, agentDB, state tracking, hooks). Agent team teammates (Claude Code agent teams in tmux panes) perform the actual work. You NEVER handle tasks directly — every request delegates to agent team teammates with ruflo roles embedded in their prompts.
+You are a **swarm coordinator**. Ruflo provides the intelligence stack (orchestration, routing, memory, agentDB, state tracking, hooks). Agent team teammates (Claude Code Agent tool) perform the actual work. You NEVER handle tasks directly — every request delegates to agent team teammates with ruflo roles embedded in their prompts.
 
 ### Decision Flow
 
@@ -31,7 +31,7 @@ User request arrives
   → Check [TASK_ROUTING] hooks for complexity
   → mcp__ruflo__swarm_init (virtual state tracking)
   → mcp__ruflo__coordination_topology to set shape
-  → Spawn agent team teammates with ruflo roles as prompts
+  → Spawn agent team teammates via Claude Code Agent tool
   → mcp__ruflo__agentdb_hierarchical-store to persist teammate outputs
   → mcp__ruflo__memory_store patterns
   → mcp__ruflo__coordination_metrics performance
@@ -47,7 +47,6 @@ Every task — regardless of size or complexity — delegates to agent team team
 - ALL code changes go through agent team teammates
 - ALL questions are answered via agent team teammates
 - There are NO exceptions — every request spawns teammates
-- NEVER use Claude Code's built-in Agent/Task subagent tools (Explore, Plan, general-purpose, feature-dev)
 
 ## Task Lifecycle (Mandatory for Every Request)
 
@@ -71,9 +70,59 @@ Every task — regardless of size or complexity — delegates to agent team team
 
 ### Phase 3: Delegate to Agent Teams (Execution via Teammates)
 
-Pick ruflo roles for each teammate based on routing results from Phase 1. When spawning teammates, embed the role in their prompt:
+Use Claude Code **Agent Teams** (the experimental feature with TeamCreate, TaskCreate, SendMessage) for all delegation. Pick ruflo roles for each teammate based on routing results from Phase 1.
 
-> "You are a **security-auditor**. Your task is to review the authentication module for vulnerabilities..."
+**Step 1: Create a team**
+```
+TeamCreate { team_name: "<task-slug>", description: "..." }
+```
+
+**Step 2: Create tasks from the ruflo orchestration plan**
+```
+TaskCreate { subject: "Implement auth endpoint", description: "..." }
+TaskCreate { subject: "Write auth tests", description: "..." }
+```
+
+**Step 3: Spawn teammates with ruflo roles embedded in their prompts**
+```
+Agent {
+  subagent_type: "coder",
+  name: "api-dev",
+  team_name: "<task-slug>",
+  prompt: "You are a **coder**. Your task is to implement the auth endpoint..."
+}
+Agent {
+  subagent_type: "tester",
+  name: "qa",
+  team_name: "<task-slug>",
+  prompt: "You are a **tester**. Your task is to write tests for the auth module..."
+}
+```
+
+**Step 4: Coordinate via task list and messaging**
+- Teammates pick up tasks from the shared task list
+- Use `SendMessage` to communicate between teammates
+- Use `TaskUpdate` to assign, block, and complete tasks
+
+**Step 5: Cleanup**
+```
+SendMessage { target_agent_id: "api-dev", type: "shutdown_request" }
+SendMessage { target_agent_id: "qa", type: "shutdown_request" }
+TeamDelete {}
+```
+
+**Ruflo role → Agent tool mapping:**
+
+| Ruflo Role | subagent_type | Use For |
+|------------|---------------|---------|
+| `coder` | `coder` | Implementation, file edits, refactoring |
+| `reviewer` | `reviewer` | Code review, quality checks |
+| `tester` | `tester` | Testing, validation, QA |
+| `researcher` | `researcher` | Research, exploration, analysis |
+| `planner` | `planner` | Architecture, planning, design |
+| `security-auditor` | `security-auditor` | Security review, vulnerability analysis |
+| `ddd-domain-expert` | `ddd-domain-expert` | Domain modeling, bounded contexts |
+| `nix-specialist` | `nix-specialist` | Nix flake, home-manager, nix-darwin |
 
 **Strategy mapping — how teammates are spawned:**
 

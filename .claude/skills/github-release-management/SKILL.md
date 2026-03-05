@@ -157,12 +157,12 @@ gh release create $(npm pkg get version) \
   }
 
   // Spawn specialized agents
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Release Director" }
-  mcp__claude-flow__agent_spawn { type: "coder", name: "Version Manager" }
-  mcp__claude-flow__agent_spawn { type: "tester", name: "QA Engineer" }
-  mcp__claude-flow__agent_spawn { type: "reviewer", name: "Release Reviewer" }
-  mcp__claude-flow__agent_spawn { type: "analyst", name: "Deployment Analyst" }
-  mcp__claude-flow__agent_spawn { type: "researcher", name: "Compatibility Checker" }
+  Agent { subagent_type: "coder", name: "Release Director", prompt: "You are a release director. Oversee the complete release pipeline..." }
+  Agent { subagent_type: "coder", name: "Version Manager", prompt: "You are a version manager. Coordinate version updates across packages..." }
+  Agent { subagent_type: "tester", name: "QA Engineer", prompt: "You are a QA engineer. Validate release quality..." }
+  Agent { subagent_type: "reviewer", name: "Release Reviewer", prompt: "You are a release reviewer. Review release changes..." }
+  Agent { subagent_type: "coder", name: "Deployment Analyst", prompt: "You are a deployment analyst. Analyze deployment readiness..." }
+  Agent { subagent_type: "researcher", name: "Compatibility Checker", prompt: "You are a compatibility checker. Verify cross-package compatibility..." }
 ```
 
 #### Coordinated Release Workflow

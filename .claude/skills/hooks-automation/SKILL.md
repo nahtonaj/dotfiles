@@ -602,10 +602,7 @@ Hooks automatically integrate with MCP tools for coordination:
 npx claude-flow hook pre-task --description "Build REST API"
 
 // Internally calls MCP tools:
-mcp__claude-flow__agent_spawn {
-  type: "backend-dev",
-  capabilities: ["api", "database", "testing"]
-}
+Agent { subagent_type: "backend-dev", prompt: "You are a backend developer. Build REST API with database and testing..." }
 
 mcp__claude-flow__memory_usage {
   action: "store",

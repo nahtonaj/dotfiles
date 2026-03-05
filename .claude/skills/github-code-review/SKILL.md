@@ -1028,9 +1028,9 @@ fi
 [Single Message - Parallel Execution]:
   // Initialize coordination
   mcp__claude-flow__swarm_init { topology: "hierarchical", maxAgents: 5 }
-  mcp__claude-flow__agent_spawn { type: "reviewer", name: "Senior Reviewer" }
-  mcp__claude-flow__agent_spawn { type: "tester", name: "QA Engineer" }
-  mcp__claude-flow__agent_spawn { type: "coordinator", name: "Merge Coordinator" }
+  Agent { subagent_type: "reviewer", name: "Senior Reviewer", prompt: "You are a senior reviewer. Perform comprehensive code review..." }
+  Agent { subagent_type: "tester", name: "QA Engineer", prompt: "You are a QA engineer. Execute test suite and validate changes..." }
+  Agent { subagent_type: "coder", name: "Merge Coordinator", prompt: "You are a merge coordinator. Manage merge process and validation..." }
 
   // Create and manage PR using gh CLI
   Bash("gh pr create --title 'Feature: Add authentication' --base main")
