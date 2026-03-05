@@ -86,11 +86,7 @@ auto_commit() {
 Automatic checkpoint created by Claude Code
 - Branch: $branch
 - Timestamp: $timestamp
-- Changes: $change_count file(s)
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>" --quiet 2>/dev/null; then
+- Changes: $change_count file(s)" --quiet 2>/dev/null; then
         log "Created commit: $message"
 
         # Push if enabled
