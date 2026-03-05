@@ -184,3 +184,14 @@ programs.ssh.matchBlocks = {
 5. **Follow existing style** — match indentation, naming conventions, and patterns.
 6. **Don't edit `.config/nvim/`** without understanding it's a git submodule — changes there need a separate commit in the submodule.
 7. **For tmux**: the config file is `configs/tmux/tmux.conf`, but plugin management is in `nix/modules/tmux.nix`. Know which to edit.
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```

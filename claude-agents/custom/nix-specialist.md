@@ -107,3 +107,14 @@ home-manager switch --flake .#jon.gao@linux --show-trace 2>&1 | head -100
 - Test with `home-manager build` before `switch` when unsure
 - Prefer `programs.<name>` options over raw `home.file` when home-manager has a module for the program
 - Check `home-manager option <name>` or the home-manager manual for available options
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```

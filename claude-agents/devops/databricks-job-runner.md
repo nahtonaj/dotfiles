@@ -368,3 +368,14 @@ databricks api get '/api/2.1/jobs/runs/get?run_id=789012' \
 7. **Don't wait for long-running jobs** — report the run ID and monitoring command, then move on.
 8. **Quote API GET URLs** in zsh — URLs with `?` need single quotes to prevent glob expansion.
 9. **Always run pre-submission validation** — show job and notebook parameters to the user and ask for confirmation before submitting. Suggest quick test mode for validation runs.
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```

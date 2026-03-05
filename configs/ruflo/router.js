@@ -31,6 +31,14 @@ const TASK_PATTERNS = {
   'domain model|bounded context|aggregate|ubiquitous language|context map|ddd|event storm': 'ddd-domain-expert',
 };
 
+const DDD_SIGNALS = [
+  'domain boundar', 'bounded context', 'aggregate', 'context map',
+  'ubiquitous language', 'data ownership', 'module boundar', 'coupling',
+  'shared model', 'event storm', 'anti-corruption', 'restructur',
+  'cross-module', 'cross-package', 'entity relation', 'value object',
+  'service decompos', 'domain event'
+];
+
 function routeTask(task) {
   const taskLower = task.toLowerCase();
 
@@ -43,6 +51,26 @@ function routeTask(task) {
   if (hits >= 2 || wordCount > 30) complexity = 'HIGH';
   else if (hits >= 1 || wordCount > 15) complexity = 'MEDIUM';
 
+  // DDD signal detection
+  const dddHits = DDD_SIGNALS.filter(s => taskLower.includes(s));
+  let requiresDdd = false;
+  if (dddHits.length > 0) {
+    requiresDdd = true;
+    // Write DDD requirement to state file for enforcement hooks
+    const fs = require('fs');
+    const path = require('path');
+    const stateFile = path.join(process.env.HOME, '.claude', '.ruflo-state.json');
+    try {
+      let state = {};
+      try { state = JSON.parse(fs.readFileSync(stateFile, 'utf8')); } catch {}
+      state.dddRequired = true;
+      const dir = path.dirname(stateFile);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
+    } catch {}
+    console.error(`[DDD_REQUIRED] ${dddHits.length} DDD signal(s) detected: ${dddHits.join(', ')}`);
+  }
+
   // Check patterns
   for (const [pattern, agent] of Object.entries(TASK_PATTERNS)) {
     const regex = new RegExp(pattern, 'i');
@@ -52,6 +80,8 @@ function routeTask(task) {
         confidence: 0.8,
         reason: `Matched pattern: ${pattern}`,
         complexity,
+        requiresDdd,
+        dddSignals: dddHits.length,
       };
     }
   }
@@ -62,6 +92,8 @@ function routeTask(task) {
     confidence: 0.5,
     reason: 'Default routing - no specific pattern matched',
     complexity,
+    requiresDdd,
+    dddSignals: dddHits.length,
   };
 }
 

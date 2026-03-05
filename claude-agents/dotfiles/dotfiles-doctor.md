@@ -202,3 +202,14 @@ When the user reports "something broke":
 4. **Preserve working state** — if the build is currently passing, don't suggest changes that could break it.
 5. **Check recent git history** — `git log --oneline -10` often reveals what changed.
 6. **Prioritize build-breaking issues** — fix those before cosmetic problems.
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```

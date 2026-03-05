@@ -238,3 +238,14 @@ esac
 5. **Never hardcode paths** — use `flakePath`, `$HOME`, `~`, or nix-provided paths.
 6. **Document platform differences** — if a module has conditionals, add a comment explaining why.
 7. **Check both builds** — when editing shared modules, verify both `jon.gao@linux` and `jon.gao-mac` targets if possible.
+
+## Structured Report (ALWAYS include at end of response)
+
+```
+## RESULTS
+- **Status**: completed | partial | blocked
+- **Files Changed**: [list of files modified with paths]
+- **Key Findings**: [bullet list of important discoveries]
+- **Patterns Discovered**: [reusable patterns for agentDB storage]
+- **Cross-Team Context**: [information other teammates should know]
+```

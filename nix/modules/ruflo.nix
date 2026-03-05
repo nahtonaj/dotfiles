@@ -12,6 +12,14 @@
     executable = true;
   };
 
+  home.file.".claude/helpers/agent-enforcement.js" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/ruflo/agent-enforcement.js";
+  };
+
+  home.file.".claude/helpers/post-agent-hook.js" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/ruflo/post-agent-hook.js";
+  };
+
   # Install ruflo and initialize default helpers if missing.
   home.activation.rufloSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     export PATH="${pkgs.nodejs_22}/bin:$HOME/.npm-global/bin:$HOME/.nvm/versions/node/$(${pkgs.nodejs_22}/bin/node -v 2>/dev/null)/bin:$PATH"
