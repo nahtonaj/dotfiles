@@ -1,0 +1,390 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_FLOW_V3_ENABLED": "true",
+    "CLAUDE_FLOW_HOOKS_ENABLED": "true"
+  },
+  "attribution": {
+    "commit": "Co-Authored-By: claude-flow <ruv@ruv.net>",
+    "pr": "🤖 Generated with [claude-flow](https://github.com/ruvnet/claude-flow)"
+  },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "WebFetch(domain:*.anthropic.com)",
+      "WebFetch(domain:*.mozilla.org)",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(rg:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(cd:*)",
+      "Bash(ps:*)",
+      "Bash(top:*)",
+      "Bash(df:*)",
+      "Bash(du:*)",
+      "Bash(which:*)",
+      "Bash(whereis:*)",
+      "Bash(whoami:*)",
+      "Bash(git checkout:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh api:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl version)",
+      "Bash(bazel query:*)",
+      "Bash(bazel build:*)",
+      "Bash(bazel test:*)",
+      "Bash(python3 /home/jon.gao/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/skills/bazel-universe/scripts/bazel.py:*)",
+      "Bash(python3 ~/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/skills/bazel-universe/scripts/bazel.py:*)",
+      "Read(///home/jon.gao/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/**)",
+      "Read(~/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/**)",
+      "Skill(bazel-universe:bazel-universe)",
+      "mcp__proxy__github__get_pull_request",
+      "mcp__proxy__github__get_pull_request_diff",
+      "mcp__proxy__github__get_pull_requests_by_user",
+      "mcp__proxy__databricks__execute_parameterized_sql",
+      "mcp__proxy__databricks__check_statement_status",
+      "mcp__proxy__databricks__cancel_statement",
+      "mcp__proxy__databricks__list_dbfs_files",
+      "mcp__proxy__databricks__read_dbfs_file_contents",
+      "mcp__proxy__databricks__get_dbfs_destination",
+      "mcp__proxy__databricks__databricks_jobs",
+      "mcp__proxy__glean__summarize_document",
+      "mcp__proxy__glean__search",
+      "mcp__proxy__glean__get_document_content",
+      "mcp__proxy__glean__resolve_go_link",
+      "mcp__proxy__jira__jira_search_issues",
+      "mcp__proxy__jira__jira_get_issue",
+      "mcp__proxy__confluence__get_confluence_page_content",
+      "mcp__proxy__confluence__search_confluence_pages",
+      "mcp__proxy__confluence__get_confluence_spaces",
+      "mcp__proxy__confluence__get_page_children",
+      "mcp__proxy__devportal__get_prs",
+      "mcp__proxy__devportal__get_pr_details",
+      "mcp__proxy__devportal__get_run_group_details",
+      "mcp__proxy__devportal__get_run_details",
+      "mcp__proxy__devportal__get_run_logs",
+      "mcp__proxy__devportal__get_test_results",
+      "mcp__proxy__devportal__get_test_run_details",
+      "mcp__proxy__devportal__list_artifacts",
+      "mcp__proxy__devportal__download_artifact",
+      "mcp__proxy__github__github_read_api_call",
+      "mcp__atlassian__getJiraIssue",
+      "Bash(zsh --version:*)",
+      "WebSearch",
+      "Bash(compaudit:*)",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "mcp__devportal__get_pr_details",
+      "mcp__devportal__get_test_results",
+      "mcp__devportal__get_test_run_details",
+      "mcp__devportal__get_run_logs",
+      "mcp__jira__jira_get_issue",
+      "Bash(xargs -I {} bash -c 'echo \"\"\"\"=== {} ===\"\"\"\" && cat {} | grep -E \"\"\"\"(<testcase|<failure|<error)\"\"\"\" | head -50')",
+      "mcp__glean__search",
+      "mcp__glean__get_document_content",
+      "Bash(npx @claude-flow*)",
+      "Bash(npx claude-flow*)",
+      "Bash(node .claude/*)",
+      "mcp__claude-flow__:*",
+      "mcp__ruflo__:*"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs pre-bash",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs post-edit",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs route",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-restore",
+            "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs import",
+            "timeout": 8000
+          },
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs daemon-init",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs sync",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "manual",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs compact-manual"
+          },
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs compact-auto"
+          },
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
+            "timeout": 6000
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node $HOME/.claude/helpers/hook-handler.cjs status",
+            "timeout": 3000
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "node $HOME/.claude/helpers/statusline.cjs"
+  },
+  "enabledPlugins": {
+    "bazel-universe@experimental-plugin-marketplace": true,
+    "spec-driven-workflow@experimental-plugin-marketplace": false,
+    "pr-review-toolkit@claude-plugins-official": false,
+    "commit-commands@claude-plugins-official": false,
+    "feature-dev@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": true,
+    "code-review@claude-plugins-official": false,
+    "github@claude-plugins-official": true,
+    "atlassian@claude-plugins-official": false,
+    "slack@claude-plugins-official": false,
+    "claude-hud@experimental-plugin-marketplace": false,
+    "ralph-wiggum@experimental-plugin-marketplace": false,
+    "memory-ctrl@experimental-plugin-marketplace": true,
+    "ralph-loop@claude-plugins-official": true,
+    "plugin-builder@experimental-plugin-marketplace": false
+  },
+  "alwaysThinkingEnabled": true,
+  "claudeFlow": {
+    "version": "3.0.0",
+    "enabled": true,
+    "modelPreferences": {
+      "default": "claude-opus-4-6",
+      "routing": "claude-haiku-4-5-20251001"
+    },
+    "agentTeams": {
+      "enabled": true,
+      "teammateMode": "auto",
+      "taskListEnabled": true,
+      "mailboxEnabled": true,
+      "coordination": {
+        "autoAssignOnIdle": true,
+        "trainPatternsOnComplete": true,
+        "notifyLeadOnComplete": true,
+        "sharedMemoryNamespace": "agent-teams"
+      },
+      "hooks": {
+        "teammateIdle": {
+          "enabled": true,
+          "autoAssign": true,
+          "checkTaskList": true
+        },
+        "taskCompleted": {
+          "enabled": true,
+          "trainPatterns": true,
+          "notifyLead": true
+        }
+      }
+    },
+    "swarm": {
+      "topology": "hierarchical-mesh",
+      "maxAgents": 15
+    },
+    "memory": {
+      "backend": "hybrid",
+      "enableHNSW": true,
+      "learningBridge": {
+        "enabled": true
+      },
+      "memoryGraph": {
+        "enabled": true
+      },
+      "agentScopes": {
+        "enabled": true
+      }
+    },
+    "neural": {
+      "enabled": true
+    },
+    "daemon": {
+      "autoStart": true,
+      "workers": [
+        "map",
+        "audit",
+        "optimize",
+        "consolidate",
+        "testgaps",
+        "ultralearn",
+        "deepdive",
+        "document",
+        "refactor",
+        "benchmark"
+      ],
+      "schedules": {
+        "audit": {
+          "interval": "1h",
+          "priority": "critical"
+        },
+        "optimize": {
+          "interval": "30m",
+          "priority": "high"
+        },
+        "consolidate": {
+          "interval": "2h",
+          "priority": "low"
+        },
+        "document": {
+          "interval": "1h",
+          "priority": "normal",
+          "triggers": [
+            "adr-update",
+            "api-change"
+          ]
+        },
+        "deepdive": {
+          "interval": "4h",
+          "priority": "normal",
+          "triggers": [
+            "complex-change"
+          ]
+        },
+        "ultralearn": {
+          "interval": "1h",
+          "priority": "normal"
+        }
+      }
+    },
+    "learning": {
+      "enabled": true,
+      "autoTrain": true,
+      "patterns": [
+        "coordination",
+        "optimization",
+        "prediction"
+      ],
+      "retention": {
+        "shortTerm": "24h",
+        "longTerm": "30d"
+      }
+    },
+    "adr": {
+      "autoGenerate": true,
+      "directory": "/docs/adr",
+      "template": "madr"
+    },
+    "ddd": {
+      "trackDomains": true,
+      "validateBoundedContexts": true,
+      "directory": "/docs/ddd"
+    },
+    "security": {
+      "autoScan": true,
+      "scanOnEdit": true,
+      "cveCheck": true,
+      "threatModel": true
+    }
+  },
+  "effortLevel": "high"
+}
