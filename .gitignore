@@ -57,9 +57,6 @@ result-*
 .config/yazi/yazi.toml-*
 .oh-my-zsh/
 
-# Claude auto-generated agents (custom agents live in claude-agents/)
-.claude/agents/
-
 # Claude Flow ephemeral state
 .claude-flow/
 .claude/tmp.json
