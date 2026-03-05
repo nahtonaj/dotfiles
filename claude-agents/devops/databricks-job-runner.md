@@ -40,7 +40,7 @@ You are a Databricks job submission and monitoring specialist. You submit jobs t
 
 | Command | Purpose | Example |
 |---------|---------|---------|
-| `databricks api post /api/2.1/jobs/create` | Create a job (supports `custom_image_id`) | `databricks api post /api/2.1/jobs/create --profile PROFILE --json @job.json` |
+| `databricks api post /api/2.1/jobs/create` | Create a job | `databricks api post /api/2.1/jobs/create --profile PROFILE --json @job.json` |
 | `databricks api post /api/2.1/jobs/run-now` | Trigger a job run | `databricks api post /api/2.1/jobs/run-now --profile PROFILE --json '{"job_id": ID}'` |
 | `databricks api get '/api/2.1/jobs/runs/get?run_id=ID'` | Check run status | `databricks api get '/api/2.1/jobs/runs/get?run_id=123' --profile PROFILE` |
 | `databricks workspace import TARGET --file LOCAL` | Import notebook to workspace | `databricks workspace import /Users/.../Notebook --file local.py --language PYTHON --overwrite --profile PROFILE` |
@@ -74,8 +74,7 @@ Read the job JSON (e.g., `benchmarks/jobs/fanout_benchmark_job.json`) and displa
 |-----------|-------|-------|
 | `node_type_id` | `i3.xlarge` | 4 vCPUs, 30.5 GB RAM, 1x 950 GB NVMe SSD |
 | `num_workers` | `4` | Total cluster: 5 nodes (1 driver + 4 workers) |
-| `spark_version` | `19.x-snapshot-scala2.13` | Base version — custom image overlays on top |
-| `custom_image_id` | `{{CUSTOM_IMAGE_ID}}` | Resolved from dit state-id at runtime |
+| `spark_version` | `custom:{{CUSTOM_IMAGE_ID}}.lz4` | Custom image URI — resolved from dit state-id at runtime |
 | `availability` | `SPOT_WITH_FALLBACK` | Spot instances with on-demand fallback |
 | `timeout_seconds` | `7200` | 2 hour max runtime |
 | `max_retries` | `0` | No automatic retries on failure |
@@ -189,12 +188,11 @@ print('Quick test overrides applied.')
    - Apply any overrides to the resolved job JSON
 
 4. **Create the job JSON** with these requirements:
-   - `custom_image_id`: the dit Image URI
-   - `spark_version`: a valid base version (e.g., `19.x-snapshot-scala2.13`), NOT `"custom"`
+   - `spark_version`: set to `custom:<image_uri>.lz4` where `<image_uri>` is the dit Image URI — do NOT use a separate `custom_image_id` field (it is silently stripped by the API)
    - `notebook_path`: absolute workspace path starting with `/Users/...`
    - Do NOT include `autotermination_minutes` (invalid on job clusters)
 
-5. **Create the job via REST API** (not `databricks jobs create` — it rejects `custom_image_id`):
+5. **Create the job:**
    ```bash
    databricks api post /api/2.1/jobs/create --profile benchmarking-staging-aws-us-west-2 \
      --json @/tmp/my_job.json
@@ -262,7 +260,7 @@ Key lifecycle states: `PENDING` (cluster starting) -> `RUNNING` -> `TERMINATED` 
 The job JSON template uses double-brace placeholders that `sed` replaces at runtime:
 
 ```
-{{CUSTOM_IMAGE_ID}}   → dit Image URI (e.g., custom-local__19.x-snapshot-scala2.13__unknown__19.0.0__...)
+{{CUSTOM_IMAGE_ID}}   → dit Image URI, substituted into spark_version as "custom:{{CUSTOM_IMAGE_ID}}.lz4"
 {{JOB_NAME_SUFFIX}}   → timestamp (e.g., 20260304-225928)
 ```
 
@@ -306,7 +304,7 @@ sed -e "s|{{CUSTOM_IMAGE_ID}}|${IMAGE_URI}|g" \
     -e "s|{{JOB_NAME_SUFFIX}}|${SUFFIX}|g" \
     benchmarks/jobs/fanout_benchmark_job.json > /tmp/fanout_job_resolved.json
 
-# Create the job (MUST use REST API for custom_image_id support)
+# Create the job
 databricks api post /api/2.1/jobs/create \
   --profile benchmarking-staging-aws-us-west-2 \
   --json @/tmp/fanout_job_resolved.json
@@ -329,11 +327,13 @@ databricks api get '/api/2.1/jobs/runs/get?run_id=789012' \
 
 ### Known Gotchas
 
-1. **REST API required for `custom_image_id`** — The CLI's `databricks jobs create` rejects this field with a warning (`unknown field: custom_image_id`). You must use `databricks api post /api/2.1/jobs/create` instead, which passes the JSON directly to the REST API without client-side field validation.
+1. **`custom_image_id` is silently stripped** — Both the Databricks CLI and REST API silently strip the `custom_image_id` field. The job will be created successfully but will NOT use your custom image. The correct approach is to set `spark_version` to `custom:<image_uri>.lz4`.
 
 2. **No `autotermination_minutes` on job clusters** — Job (automated) clusters terminate automatically when the job completes. Including this field causes: `Error: Automated clusters do not support autotermination`. Only interactive clusters support this setting.
 
-3. **`spark_version` must be a real version** — Setting `spark_version: "custom"` fails with `INVALID_PARAMETER_VALUE`. Use the actual base version (e.g., `19.x-snapshot-scala2.13`). The `custom_image_id` field overlays the custom image on top of this base version. Query available versions: `databricks api get '/api/2.0/clusters/spark-versions' --profile PROFILE`.
+3. **`spark_version` format for custom images** — For custom images, `spark_version` must be set to `custom:<image_uri>.lz4`. Setting it to just `"custom"` fails with `INVALID_PARAMETER_VALUE`. This is the ONLY way to specify custom images — there is no separate `custom_image_id` field that works.
+
+8. **`custom_image_id` field is silently ignored** — If you include `custom_image_id` in the job JSON, the API will accept the request without error but the field is silently stripped. The job will run on the default DBR version instead of your custom image. This is especially dangerous because there is no error or warning — always use `spark_version: "custom:<uri>.lz4"` instead.
 
 4. **Workspace path permissions** — Creating folders at the workspace root (e.g., `/benchmarks/`) requires admin permissions and fails with `does not have View permissions on 0`. Always use the user home prefix: `/Users/jon.gao@databricks.com/...`.
 
@@ -348,19 +348,19 @@ databricks api get '/api/2.1/jobs/runs/get?run_id=789012' \
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `has no benchmarking profile configured` | Default profile name mismatch | Use `--profile benchmarking-staging-aws-us-west-2` or check `databricks auth profiles` |
-| `unknown field: custom_image_id` | CLI `jobs create` doesn't support this field | Use `databricks api post /api/2.1/jobs/create` instead |
+| Custom image not applied | Used `custom_image_id` field (silently stripped) | Use `spark_version: "custom:<uri>.lz4"` instead — `custom_image_id` is silently ignored by both CLI and REST API |
 | `Automated clusters do not support autotermination` | `autotermination_minutes` in job cluster config | Remove the field — job clusters auto-terminate when the job finishes |
-| `Invalid spark version custom` | `spark_version: "custom"` is not valid | Use a real version like `19.x-snapshot-scala2.13`. Check available versions via the spark-versions API |
+| `Invalid spark version custom` | `spark_version: "custom"` is not valid | Use `spark_version: "custom:<image_uri>.lz4"` with the full image URI |
 | `The parent folder does not exist` | Workspace directory doesn't exist | Run `databricks workspace mkdirs /Users/.../path --profile PROFILE` first |
 | `does not have View permissions on 0` | Trying to create folders at workspace root | Use `/Users/jon.gao@databricks.com/...` prefix instead of root paths |
 | `accepts 1 arg(s), received 2` | `databricks workspace import` called with two positional args | Use `--file` flag for the local file path: `databricks workspace import TARGET_PATH --file LOCAL_PATH` |
-| `INVALID_PARAMETER_VALUE: Invalid spark version` | Image URI used as spark_version | `custom_image_id` carries the image URI; `spark_version` must be a valid base version |
+| `INVALID_PARAMETER_VALUE: Invalid spark version` | Image URI used without `custom:` prefix or `.lz4` suffix | Format must be `custom:<image_uri>.lz4` — include the `custom:` prefix and `.lz4` suffix |
 | `unknown flag: --job-id` | CLI expects positional JOB_ID for `run-now` | Use REST API `databricks api post /api/2.1/jobs/run-now --json '{"job_id": ID}'` |
 
 ## Important Guidelines
 
-1. **Always use the REST API** (`databricks api post/get`) for job creation and monitoring — the CLI `databricks jobs` subcommands have field validation issues with custom images.
-2. **Never use `spark_version: "custom"`** — always specify a real base version from the spark-versions API.
+1. **Use `spark_version: "custom:<uri>.lz4"` for custom images** — this is the only way to specify a custom DBR image. The `custom_image_id` field is silently stripped by both the CLI and REST API.
+2. **Never use `spark_version: "custom"`** — always include the full image URI in the format `custom:<image_uri>.lz4`.
 3. **Never include `autotermination_minutes`** on job (automated) cluster configurations.
 4. **Always import notebooks to `/Users/jon.gao@databricks.com/...`** — root workspace paths require admin permissions.
 5. **Use `--file` flag** with `databricks workspace import` — don't pass the local path as a positional argument.

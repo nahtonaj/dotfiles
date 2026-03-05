@@ -56,6 +56,7 @@ Use this table to find the right file for any config change:
 | **Databricks CLI** | `nix/modules/databricks.nix` | Databricks-specific packages and config |
 | **Shell scripts** | `nix/modules/scripts.nix` | Custom scripts managed via home-manager |
 | **Add a package** | `nix/home/default.nix` | `home.packages = with pkgs; [ ... ];` |
+| **Claude settings** | `configs/claude/settings.json` | Out-of-store symlink via `claude.nix` (bidirectional) |
 | **Claude agents** | `claude-agents/<category>/` | Agent `.md` files + `claude-agents.nix` registration |
 | **macOS window manager** | `nix/modules-darwin/aerospace.nix` | macOS-only |
 | **macOS keyboard** | `nix/modules-darwin/karabiner.nix` | macOS-only |
