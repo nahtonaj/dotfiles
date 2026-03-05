@@ -3,5 +3,10 @@ data/
 logs/
 sessions/
 neural/
+metrics/
+pids/
+security/
 *.log
 *.tmp
+CAPABILITIES.md
+config.yaml
