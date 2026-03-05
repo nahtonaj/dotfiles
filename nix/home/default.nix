@@ -17,6 +17,7 @@
     ../modules/tridactyl.nix
     ../modules/ssh.nix
     ../modules/claude-agents.nix
+    ../modules/claude.nix
   ];
 
   home.username = "jon.gao";
