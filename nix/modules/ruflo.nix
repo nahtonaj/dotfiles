@@ -12,28 +12,29 @@
     executable = true;
   };
 
-  # Install ruflo globally and initialize default helpers if missing.
+  # Install ruflo and initialize default helpers if missing.
   home.activation.rufloSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    PATH="${pkgs.nodejs_22}/bin:$PATH"
+    export PATH="${pkgs.nodejs_22}/bin:$HOME/.npm-global/bin:$HOME/.nvm/versions/node/$(${pkgs.nodejs_22}/bin/node -v 2>/dev/null)/bin:$PATH"
+    export NPM_CONFIG_PREFIX="$HOME/.npm-global"
     RUFLO_LOG="$HOME/.local/share/ruflo/setup.log"
-    mkdir -p "$(dirname "$RUFLO_LOG")"
+    mkdir -p "$(dirname "$RUFLO_LOG")" "$HOME/.npm-global"
     echo "--- ruflo setup $(date -Iseconds) ---" >> "$RUFLO_LOG"
 
     # Install ruflo if not present
-    if ! command -v ruflo &>/dev/null && ! [ -x "$HOME/.nvm/versions/node/$(node -v 2>/dev/null)/bin/ruflo" ]; then
-      echo "Installing ruflo..."
+    if ! command -v ruflo &>/dev/null; then
+      echo "Installing ruflo..." | tee -a "$RUFLO_LOG"
       npm install -g ruflo 2>&1 | tee -a "$RUFLO_LOG" || true
     fi
 
     # Initialize default helpers if missing
     if [ ! -f "$HOME/.claude/helpers/hook-handler.cjs" ]; then
-      echo "Initializing ruflo helpers..."
+      echo "Initializing ruflo helpers..." | tee -a "$RUFLO_LOG"
       ruflo init --minimal --only-claude 2>&1 | tee -a "$RUFLO_LOG" || true
     fi
 
     # Ensure sql.js dependency is installed
     if [ -f "$HOME/.claude/helpers/package.json" ] && [ ! -d "$HOME/.claude/helpers/node_modules" ]; then
-      echo "Installing ruflo helper npm dependencies..."
+      echo "Installing ruflo helper npm dependencies..." | tee -a "$RUFLO_LOG"
       (cd "$HOME/.claude/helpers" && npm install --no-audit --no-fund 2>&1 | tee -a "$RUFLO_LOG") || true
     fi
   '';
