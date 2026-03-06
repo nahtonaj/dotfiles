@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: reasoningbank-learner
 type: specialist
 color: "#9C27B0"

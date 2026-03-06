@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: swarm-pr
 description: Pull request swarm management agent that coordinates multi-agent code review, validation, and integration workflows with automated PR lifecycle management
 type: development

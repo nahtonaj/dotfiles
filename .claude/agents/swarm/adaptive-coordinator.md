@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: adaptive-coordinator
 type: coordinator
 color: "#9C27B0"  

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-sandbox
 description: E2B sandbox deployment and management specialist. Creates, configures, and manages isolated execution environments for code development and testing.
 color: green

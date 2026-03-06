@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: "mobile-dev"
 description: "Expert agent for React Native mobile application development across iOS and Android"
 color: "teal"

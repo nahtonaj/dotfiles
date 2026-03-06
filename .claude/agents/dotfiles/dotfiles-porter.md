@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: dotfiles-porter
 type: dotfiles
 color: "#F39C12"

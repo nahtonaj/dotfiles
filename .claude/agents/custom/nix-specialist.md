@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: nix-specialist
 description: Dotfiles-aware Nix specialist for flake, home-manager, and nix-darwin tasks
 category: custom

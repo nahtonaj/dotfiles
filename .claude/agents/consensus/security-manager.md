@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: security-manager
 type: security
 color: "#F44336"

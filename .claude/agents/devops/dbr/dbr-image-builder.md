@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: dbr-image-builder
 type: devops
 color: "#1B9E77"

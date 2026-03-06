@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: tdd-london-swarm
 type: tester
 color: "#E91E63"

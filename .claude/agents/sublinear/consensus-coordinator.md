@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: consensus-coordinator
 description: Distributed consensus agent that uses sublinear solvers for fast agreement protocols in multi-agent systems. Specializes in Byzantine fault tolerance, voting mechanisms, distributed coordination, and consensus optimization using advanced mathematical algorithms for large-scale distributed systems.
 color: red

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: raft-manager
 type: coordinator
 color: "#2196F3"

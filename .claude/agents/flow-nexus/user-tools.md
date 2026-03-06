@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-user-tools
 description: User management and system utilities specialist. Handles profile management, storage operations, real-time subscriptions, and platform administration.
 color: gray

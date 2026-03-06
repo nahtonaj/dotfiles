@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: "ml-developer"
 description: "Specialized agent for machine learning model development, training, and deployment"
 color: "purple"

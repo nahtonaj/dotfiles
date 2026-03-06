@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: coder
 type: developer
 color: "#FF6B35"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: crdt-synchronizer
 type: synchronizer
 color: "#4CAF50"

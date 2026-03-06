@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: swarm-issue
 description: GitHub issue-based swarm coordination agent that transforms issues into intelligent multi-agent tasks with automatic decomposition and progress tracking
 type: coordination

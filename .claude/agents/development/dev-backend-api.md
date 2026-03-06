@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: "backend-dev"
 description: "Specialized agent for backend API development with self-learning and pattern recognition"
 color: "blue"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: planner
 type: coordinator
 color: "#4ECDC4"

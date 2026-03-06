@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: sync-coordinator
 description: Multi-repository synchronization coordinator that manages version alignment, dependency synchronization, and cross-package integration with intelligent swarm orchestration
 type: coordination

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-payments
 description: Credit management and billing specialist. Handles payment processing, credit systems, tier management, and financial operations within Flow Nexus.
 color: pink

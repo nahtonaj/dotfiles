@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-app-store
 description: Application marketplace and template management specialist. Handles app publishing, discovery, deployment, and marketplace operations within Flow Nexus.
 color: indigo

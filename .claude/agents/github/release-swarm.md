@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: release-swarm
 description: Orchestrate complex software releases using AI swarms that handle everything from changelog generation to multi-platform deployment
 type: coordination

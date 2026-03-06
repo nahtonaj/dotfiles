@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: ddd-domain-expert
 type: architect
 color: "#2196F3"

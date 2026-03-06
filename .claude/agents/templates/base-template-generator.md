@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: base-template-generator
 version: "2.0.0-alpha"
 updated: "2025-12-03"

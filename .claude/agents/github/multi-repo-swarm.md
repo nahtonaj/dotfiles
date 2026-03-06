@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: multi-repo-swarm
 description: Cross-repository swarm orchestration for organization-wide automation and intelligent collaboration
 type: coordination

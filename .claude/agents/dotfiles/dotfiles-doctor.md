@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: dotfiles-doctor
 type: dotfiles
 color: "#E74C3C"

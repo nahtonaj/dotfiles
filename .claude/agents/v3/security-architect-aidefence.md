@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: security-architect-aidefence
 type: security
 color: "#7B1FA2"

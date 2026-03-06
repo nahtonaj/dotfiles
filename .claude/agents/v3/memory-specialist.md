@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: memory-specialist
 type: specialist
 color: "#00D4AA"

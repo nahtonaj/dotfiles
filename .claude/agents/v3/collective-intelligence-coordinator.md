@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: collective-intelligence-coordinator
 type: coordinator
 color: "#7E57C2"

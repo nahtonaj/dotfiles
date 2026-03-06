@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: "ml-developer"
 description: "ML developer with self-learning hyperparameter optimization and pattern recognition"
 color: "purple"

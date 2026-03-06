@@ -22,8 +22,9 @@
     Service = {
       Type = "forking";
       ExecStart = "${pkgs.tmux}/bin/tmux new-session -d";
+      ExecStartPost = "${pkgs.bash}/bin/bash -c 'sleep 3 && %h/.config/tmux/plugins/tmux-resurrect/scripts/restore.sh || true'";
       ExecStop = [
-        "%h/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+        "%h/.config/tmux/plugins/tmux-resurrect/scripts/save.sh"
         "${pkgs.tmux}/bin/tmux kill-server"
       ];
       KillMode = "control-group";

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: quorum-manager
 type: coordinator
 color: "#673AB7"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: benchmark-suite
 type: agent
 category: optimization

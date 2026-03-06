@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: gossip-coordinator
 type: coordinator
 color: "#FF9800"

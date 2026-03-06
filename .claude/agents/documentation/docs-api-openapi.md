@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: "api-docs"
 description: "Expert agent for creating OpenAPI documentation with pattern learning"
 color: "indigo"

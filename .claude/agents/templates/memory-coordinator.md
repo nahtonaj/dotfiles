@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: memory-coordinator
 type: coordination
 color: green

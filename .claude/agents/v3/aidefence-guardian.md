@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: aidefence-guardian
 type: security
 color: "#E91E63"

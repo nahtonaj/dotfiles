@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: v3-integration-architect
 type: architect
 color: "#E91E63"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: pagerank-analyzer
 description: Expert agent for graph analysis and PageRank calculations using sublinear algorithms. Specializes in network optimization, influence analysis, swarm topology optimization, and large-scale graph computations. Use for social network analysis, web graph analysis, recommendation systems, and distributed system topology design.
 color: purple
