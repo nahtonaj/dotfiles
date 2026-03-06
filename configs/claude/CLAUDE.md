@@ -128,9 +128,9 @@ Agent {
 Pipeline handoffs are a specific case of Pattern 1 (Store-Before-Share). Inter-agent handoffs MUST go through agentDB:
 
 ```
-Agent N stores directly in agentDB: mcp__ruflo__agentdb_hierarchical-store
+Agent N stores directly in agentDB: mcp__ruflo__agentdb_hierarchical-store (tier: "working")
   -> Agent N sends coordinator: "Stored under key: {team}-{agent-N-name}-{date}"
-  -> Coordinator recalls from agentDB: mcp__ruflo__agentdb_hierarchical-recall (verifies storage)
+  -> Coordinator recalls from agentDB: mcp__ruflo__agentdb_hierarchical-recall (omit tier to search all tiers)
   -> Coordinator spawns Agent N+1 with recalled context in prompt
 ```
 
@@ -253,6 +253,19 @@ agentDB (`mcp__ruflo__agentdb_*`) is the ONLY authoritative channel for sharing 
 
 **Architectural Necessity**: The platform enforces a single-team-per-coordinator constraint — teams MUST be deleted after task completion. When a team is deleted, all team state is permanently lost. agentDB is the ONLY persistence layer that survives team deletion.
 
+### agentDB Parameter Reference
+
+| Tool | Parameter | Type | Required | Default | Notes |
+|------|-----------|------|----------|---------|-------|
+| `agentdb_hierarchical-store` | `key` | string | Yes | — | Memory entry key (`{team}-{agent}-{date}` format) |
+| `agentdb_hierarchical-store` | `value` | string | Yes | — | Memory entry value |
+| `agentdb_hierarchical-store` | `tier` | `"working"` \| `"episodic"` \| `"semantic"` | No | `"working"` | Always specify explicitly to avoid mismatches |
+| `agentdb_hierarchical-recall` | `query` | string | Yes | — | Recall query (key or search term) |
+| `agentdb_hierarchical-recall` | `tier` | string | No | *(all tiers)* | Omit to search all tiers; specify to filter |
+| `agentdb_hierarchical-recall` | `topK` | number | No | `5` | Number of results to return |
+
+**Tier consistency rule**: Always store with explicit `tier: "working"`. Always recall by omitting `tier` (searches all tiers) unless you need to filter to a specific tier. This prevents store/recall mismatches.
+
 ### Channel Roles — Strict Delineation
 
 | Channel | Allowed Use | NEVER Use For |
@@ -279,11 +292,11 @@ Any data produced by a teammate that another teammate needs MUST be in agentDB B
 
 **Flow:**
 ```
-Teammate stores directly in agentDB -> Sends coordinator agentDB key reference -> Coordinator recalls from agentDB to verify -> Recalled data feeds into next teammate's prompt
+Teammate stores directly in agentDB (tier: "working") -> Sends coordinator agentDB key reference -> Coordinator recalls from agentDB to verify (omit tier to search all tiers) -> Recalled data feeds into next teammate's prompt
 ```
 
 **Verification steps** (after receiving agentDB key reference from ANY teammate):
-1. **Verify agent stored in agentDB**: Call `mcp__ruflo__agentdb_hierarchical-recall` with the key the agent reported. If data exists, storage is confirmed.
+1. **Verify agent stored in agentDB**: Call `mcp__ruflo__agentdb_hierarchical-recall` with the key the agent reported (omit `tier` to search all tiers, or use `tier: "working"`). If data exists, storage is confirmed.
 2. **Fallback**: If recall returns empty (agent failed to store), coordinator stores as fallback using the agent's RESULTS section.
 3. **Persist for cross-session recall**: `mcp__ruflo__memory_store` with pattern key, summary, namespace `"patterns"`.
 4. **For DDD teammates**, verify storage under `category: "ddd"`, `level: "domain"`, `key: "context-map-{project}-{date}"`.
@@ -298,7 +311,7 @@ ALL teammate spawns MUST include an `agentdb_hierarchical-recall` call. Even the
 **Flow:**
 ```
 Before ANY teammate spawn:
-  1. mcp__ruflo__agentdb_hierarchical-recall with category matching the teammate's role
+  1. mcp__ruflo__agentdb_hierarchical-recall with category matching the teammate's role (omit `tier` to search all tiers)
   2. Include recalled context in the prompt under "## Prior agentDB Context"
   3. If no prior context exists, include: "## Prior agentDB Context\nNo prior context found for this category."
 ```
@@ -320,7 +333,7 @@ SendMessage MUST NEVER contain code snippets, analysis results, data payloads, o
 
 Before synthesizing a response to the user from teammate results, the coordinator MUST:
 1. Confirm all teammates reported agentDB storage keys (agents store directly)
-2. Call `agentdb_hierarchical-recall` with those keys to verify storage and retrieve data
+2. Call `agentdb_hierarchical-recall` with those keys to verify storage and retrieve data (omit `tier` to search all tiers)
 3. If any recall returns empty, store the agent's RESULTS as fallback
 4. Synthesize the response from RECALLED data, not from raw teammate output
 
@@ -344,10 +357,11 @@ Every agent prompt MUST include this instruction block:
 ```
 ## agentDB Protocol (MANDATORY)
 - Before starting work, call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_pattern-store,mcp__ruflo__agentdb_pattern-search` to load agentDB tools
-- If prior agentDB keys are provided, call `mcp__ruflo__agentdb_hierarchical-recall` to retrieve context directly
+- If prior agentDB keys are provided, call `mcp__ruflo__agentdb_hierarchical-recall` to retrieve context directly (omit `tier` to search all tiers)
 - After completing work, call `mcp__ruflo__agentdb_hierarchical-store` directly with:
   - `key`: `{team}-{agent-name}-{date}` format
   - `value`: your findings/results
+  - `tier`: `"working"` (always specify explicitly)
 - Store discovered patterns via `mcp__ruflo__agentdb_pattern-store` directly
 - You MUST list all agentDB keys stored and consumed in your RESULTS section
 - After storing, send coordinator a coordination signal via SendMessage with just the agentDB key reference (e.g., "Findings stored under key: X")
@@ -395,7 +409,7 @@ Before EVERY tool call, verify against this table:
 |---|-------|-----------|
 | 1 | Is this tool BLOCKED? Delegate to a teammate. | Using Read, Edit, Write, Bash, Grep, Glob, or NotebookEdit directly |
 | 2 | Am I about to spawn a teammate? Did I run memory_search, hooks_route, AND agentdb_hierarchical-recall first? | Spawning without pre-flight checks |
-| 3 | Did a teammate just report back? Did they confirm agentDB storage? Did I verify via recall? | Not verifying teammate self-storage in agentDB |
+| 3 | Did a teammate just report back? Did they confirm agentDB storage? Did I verify via recall? Did I omit `tier` on recall (or use `tier: "working"`) to match the store tier? | Not verifying teammate self-storage in agentDB; tier mismatch on recall |
 | 4 | Does this task touch module boundaries? Did I check DDD routing? | Skipping DDD for cross-module changes |
 | 5 | Am I finishing a task? Did I run memory_store, pattern-store, and coordination_metrics? | Skipping end-of-task persistence |
 | 6 | Am I sending a SendMessage? Is it coordination signals only (< 500 chars, no code/data)? | SendMessage with code, findings, or > 500 chars |
