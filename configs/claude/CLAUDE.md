@@ -62,6 +62,7 @@ Ruflo provides the intelligence stack (orchestration, routing, memory, agentDB, 
 2. Call `mcp__ruflo__hooks_route` with task description for domain routing
 3. Call `mcp__ruflo__coordination_orchestrate` with the task description for strategy + optimal agent roles
 4. Check `[TASK_ROUTING]` tags from hooks for complexity tier
+5. Call `mcp__ruflo__hooks_model-route` with task description for model selection guidance (informational — log for learning)
 
 ### Phase 2: Initialize (Ruflo State Tracking)
 
@@ -134,6 +135,8 @@ Agent N stores directly in agentDB: mcp__ruflo__agentdb_hierarchical-store (tier
   -> Coordinator spawns Agent N+1 with recalled context in prompt
 ```
 
+For pipelines with 3+ agents where Agent N+1 needs context from agents 1..N, the coordinator MAY call `mcp__ruflo__agentdb_context-synthesize` with a query describing Agent N+1's role to get a unified context block, instead of recalling individual keys sequentially.
+
 The coordinator MUST NOT:
 - Copy Agent N's raw output directly into Agent N+1's prompt
 - Summarize Agent N's output from memory instead of recalling from agentDB
@@ -160,6 +163,7 @@ Every Agent spawn MUST include these elements in the prompt:
    ```
 4. **Team context**: Reference to team task list and relevant teammate names
 5. **agentDB Protocol**: Include the mandatory agentDB Protocol instruction block (see Agent-Side Instructions under Inter-Agent Communication Protocol)
+6. **Diff analysis** (for reviewer/security-auditor agents only): Include `analyze_diff` and `analyze_diff-risk` results when the task involves reviewing code changes
 
 **VIOLATION**: Spawning a teammate without prior memory_search and hooks_route calls.
 
@@ -190,10 +194,11 @@ Plan mode MUST use the full ruflo intelligence stack. Entering plan mode does NO
    - `value`: summary of what worked, teammate roles used, strategy chosen
    - `namespace`: `"patterns"`
 3. Call `mcp__ruflo__coordination_metrics` to review orchestration performance
-4. Shut down all teammates via `SendMessage` with `type: "shutdown_request"`
-5. Call `TeamDelete` to tear down the team and free the coordinator for the next task
+4. Call `mcp__ruflo__hooks_model-outcome` with task type, agent roles used, success/failure for model performance learning
+5. Shut down all teammates via `SendMessage` with `type: "shutdown_request"`
+6. Call `TeamDelete` to tear down the team and free the coordinator for the next task
 
-**CRITICAL**: Steps 1-3 (session close and persistence) MUST complete BEFORE steps 4-5 (team teardown).
+**CRITICAL**: Steps 1-4 (session close and persistence) MUST complete BEFORE steps 5-6 (team teardown).
 
 ## Coordination Strategy Selection
 
@@ -226,6 +231,8 @@ Plan mode MUST use the full ruflo intelligence stack. Entering plan mode does NO
 | `hierarchical` | Coordinator delegates sub-tasks to teammates |
 | `mesh` | Peers work independently on related pieces |
 | `hierarchical-mesh` | Coordinator coordinates sub-teams of peers handling domains |
+
+**Code review enhancement**: Code review tasks SHOULD call `analyze_diff` + `analyze_diff-risk` in Phase 1. If risk score > 0.7, escalate from 2 to 3 teammates and MUST include `security-auditor`.
 
 ## Ruflo Agent Role Catalog
 
@@ -263,6 +270,8 @@ agentDB (`mcp__ruflo__agentdb_*`) is the ONLY authoritative channel for sharing 
 | `agentdb_hierarchical-recall` | `query` | string | Yes | — | Recall query (key or search term) |
 | `agentdb_hierarchical-recall` | `tier` | string | No | *(all tiers)* | Omit to search all tiers; specify to filter |
 | `agentdb_hierarchical-recall` | `topK` | number | No | `5` | Number of results to return |
+| `agentdb_context-synthesize` | `query` | string | Yes | — | Context synthesis query (task/role description) |
+| `agentdb_context-synthesize` | `topK` | number | No | `10` | Max entries to synthesize from |
 
 **Tier consistency rule**: Always store with explicit `tier: "working"`. Always recall by omitting `tier` (searches all tiers) unless you need to filter to a specific tier. This prevents store/recall mismatches.
 
@@ -311,12 +320,16 @@ ALL teammate spawns MUST include an `agentdb_hierarchical-recall` call. Even the
 **Flow:**
 ```
 Before ANY teammate spawn:
-  1. mcp__ruflo__agentdb_hierarchical-recall with category matching the teammate's role (omit `tier` to search all tiers)
-  2. Include recalled context in the prompt under "## Prior agentDB Context"
+  1. If spawning depends on multiple prior agent outputs (2+ keys):
+     Call `mcp__ruflo__agentdb_context-synthesize` with query describing the teammate's role + task
+     Include synthesized context in the prompt under "## Prior agentDB Context (Synthesized)"
+  2. If spawning depends on a single prior output or is the first teammate:
+     Call `mcp__ruflo__agentdb_hierarchical-recall` with category matching the teammate's role (omit `tier` to search all tiers)
+     Include recalled context in the prompt under "## Prior agentDB Context"
   3. If no prior context exists, include: "## Prior agentDB Context\nNo prior context found for this category."
 ```
 
-**VIOLATION**: Spawning any teammate without first calling `agentdb_hierarchical-recall`.
+**VIOLATION**: Spawning any teammate without first calling `agentdb_hierarchical-recall` or `agentdb_context-synthesize`.
 
 #### Pattern 3: SendMessage Content Boundary
 
@@ -333,9 +346,13 @@ SendMessage MUST NEVER contain code snippets, analysis results, data payloads, o
 
 Before synthesizing a response to the user from teammate results, the coordinator MUST:
 1. Confirm all teammates reported agentDB storage keys (agents store directly)
-2. Call `agentdb_hierarchical-recall` with those keys to verify storage and retrieve data (omit `tier` to search all tiers)
-3. If any recall returns empty, store the agent's RESULTS as fallback
-4. Synthesize the response from RECALLED data, not from raw teammate output
+2. If multiple teammates stored results (2+ keys):
+   Call `mcp__ruflo__agentdb_context-synthesize` with a query summarizing the task objective
+   Verify all expected agent keys appear in the synthesized output
+3. If single teammate:
+   Call `mcp__ruflo__agentdb_hierarchical-recall` with the reported key (omit `tier`)
+4. If any expected key is missing from synthesis/recall, store the agent's RESULTS as fallback
+5. Synthesize the user response from the recalled/synthesized data, not from raw teammate output
 
 **VIOLATION**: Responding to user with findings not first stored and recalled from agentDB.
 
@@ -356,7 +373,7 @@ Every agent prompt MUST include this instruction block:
 
 ```
 ## agentDB Protocol (MANDATORY)
-- Before starting work, call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_pattern-store,mcp__ruflo__agentdb_pattern-search` to load agentDB tools
+- Before starting work, call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_context-synthesize,mcp__ruflo__agentdb_pattern-store,mcp__ruflo__agentdb_pattern-search` to load agentDB tools
 - If prior agentDB keys are provided, call `mcp__ruflo__agentdb_hierarchical-recall` to retrieve context directly (omit `tier` to search all tiers)
 - After completing work, call `mcp__ruflo__agentdb_hierarchical-store` directly with:
   - `key`: `{team}-{agent-name}-{date}` format
@@ -386,14 +403,20 @@ Every agent prompt MUST include this instruction block:
    - DDD output feeds into coder prompts via agentDB recall
    - **VIOLATION**: Skipping DDD routing for tasks that modify cross-module boundaries
 4. If matches found with confidence > 0.7, apply learned patterns
+5. **DIFF ANALYSIS**: If task involves code review, PR review, or change assessment:
+   - Call `mcp__ruflo__analyze_diff` with the relevant git ref/range
+   - Call `mcp__ruflo__analyze_diff-risk` for risk classification
+   - Include diff analysis and risk assessment in reviewer/security-auditor agent prompts
+   - High-risk diffs (risk score > 0.7) MUST include a `security-auditor` teammate regardless of original plan
 
 ### After Every Task (MANDATORY)
 1. Call `mcp__ruflo__memory_store` with pattern key, summary, namespace `"patterns"`
 2. Call `mcp__ruflo__agentdb_pattern-store` with discovered patterns
 3. Call `mcp__ruflo__coordination_metrics` with `metric: "all"` to log performance
+4. Call `mcp__ruflo__hooks_model-outcome` with task results for model performance learning
 
 ### Periodic Health Check
-Every 5-10 interactions, call `mcp__ruflo__system_health` and `mcp__ruflo__swarm_health`. If unhealthy, reinitialize swarm before next task.
+Every 5-10 interactions, call `mcp__ruflo__system_health` and `mcp__ruflo__swarm_health`. If unhealthy, reinitialize swarm before next task. Additionally, call `mcp__ruflo__hooks_model-stats` periodically to review model performance trends and validate routing accuracy.
 
 ### Batching Rules (for teammate instructions)
 - Batch teammate spawns in a single message matching ruflo strategy
@@ -413,16 +436,17 @@ Before EVERY tool call, verify against this table:
 | 4 | Does this task touch module boundaries? Did I check DDD routing? | Skipping DDD for cross-module changes |
 | 5 | Am I finishing a task? Did I run memory_store, pattern-store, and coordination_metrics? | Skipping end-of-task persistence |
 | 6 | Am I sending a SendMessage? Is it coordination signals only (< 500 chars, no code/data)? | SendMessage with code, findings, or > 500 chars |
-| 7 | Am I passing Teammate A's output to Teammate B? Did I store→recall through agentDB? | Direct transfer without agentDB |
+| 7 | Am I passing Teammate A's output to Teammate B? Did I store→recall (or context-synthesize for 2+ keys) through agentDB? | Direct transfer without agentDB |
 | 8 | Am I responding to the user with findings? Did I recall from agentDB first? | Responding from raw teammate output |
 | 9 | Am I using memory_store? Is namespace `"patterns"`? Is this cross-session, NOT inter-agent? | Wrong namespace or inter-agent misuse |
-| 10 | Am I in a pipeline handoff? Did I follow the store→recall→spawn cycle? | Pipeline bypassing agentDB |
+| 10 | Am I in a pipeline handoff? Did I follow the store→recall/context-synthesize→spawn cycle? | Pipeline bypassing agentDB |
 | 11 | Did a teammate include agentDB Store Keys in RESULTS? Use those exact keys. | Ignoring teammate-provided keys |
 | 12 | Am I a teammate about to spawn another? Send spawn request to coordinator instead. | Teammate spawning directly |
 | 13 | Am I about to call TeamDelete? Did I store ALL outputs in agentDB first? | TeamDelete before persistence (data lost permanently) |
 | 14 | Am I thinking "this is too simple to delegate"? That thought IS the violation. | Any "quick" direct tool use |
 | 15 | Am I starting a MEDIUM/HIGH complexity task (Plan First? = Yes)? Did I plan first? | Executing without plan mode for complex tasks |
 | 16 | Did I store the approved plan in agentDB before spawning execution teammates? | Executing without plan persistence |
+| 17 | Am I assigning a code review task? Did I run analyze_diff and analyze_diff-risk first? | Reviewing code without diff risk analysis |
 
 **Additional violations:**
 - Creating a new team without deleting the current team first (single-team-per-coordinator constraint)

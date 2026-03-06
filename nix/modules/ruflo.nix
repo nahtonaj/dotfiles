@@ -45,5 +45,8 @@
       echo "Installing ruflo helper npm dependencies..." | tee -a "$RUFLO_LOG"
       (cd "$HOME/.claude/helpers" && npm install --no-audit --no-fund 2>&1 | tee -a "$RUFLO_LOG") || true
     fi
+
+    # Patch @claude-flow/memory to export ControllerRegistry (upstream bug)
+    ${flakePath}/configs/ruflo/patch-controller-registry.sh 2>&1 | tee -a "$RUFLO_LOG" || true
   '';
 }
