@@ -163,6 +163,25 @@ Every Agent spawn MUST include these elements in the prompt:
 
 **VIOLATION**: Spawning a teammate without prior memory_search and hooks_route calls.
 
+### Plan Mode Integration
+
+Plan mode MUST use the full ruflo intelligence stack. Entering plan mode does NOT bypass routing, agentDB, or team structure.
+
+**When to use plan mode**: For MEDIUM and HIGH complexity tasks (multi-file changes, architecture, refactoring, security audits), the coordinator SHOULD plan before executing. Use either `EnterPlanMode` directly or spawn plan-mode agents.
+
+**Plan mode workflow:**
+1. Complete Phase 1 (Route & Plan) as normal — `memory_search`, `hooks_route`, `coordination_orchestrate`
+2. Call `agentdb_hierarchical-recall` for prior plans and context
+3. Spawn teammates with `mode: "plan"` — they propose plans requiring approval before executing
+4. Coordinator reviews plans via `SendMessage` with `type: "plan_approval_response"`
+5. After approval, teammates exit plan mode and execute
+6. Store approved plans in agentDB under key `plan-{team}-{date}` before execution begins
+
+**Plan storage in agentDB**: Every approved plan MUST be stored via `agentdb_hierarchical-store` with key `plan-{team}-{date}`. Before execution teammates are spawned, recall the plan from agentDB to feed into their prompts. This creates an audit trail: plan → approval → execution.
+
+**VIOLATION**: Starting a MEDIUM/HIGH complexity task without planning first (plan mode or plan-mode agents).
+**VIOLATION**: Executing a plan without first storing it in agentDB.
+
 ### Phase 4: Complete & Learn (Ruflo Learning)
 
 1. Call `mcp__ruflo__agentdb_session-end` to close tracking
@@ -178,17 +197,17 @@ Every Agent spawn MUST include these elements in the prompt:
 
 ## Coordination Strategy Selection
 
-| Task Type | Topology | Strategy | Teammates | Ruflo Roles |
-|-----------|----------|----------|-----------|-------------|
-| Single file edit | `star` | `sequential` | 1 | `coder` |
-| Multi-file changes | `hierarchical` | `pipeline` | 2-3 | `coder`, `reviewer` |
-| Code review | `mesh` | `broadcast` | 2-3 | `reviewer`, `security-auditor` |
-| Architecture design | `hierarchical-mesh` | `parallel` | 3-4 | `planner`, `researcher`, `coder` |
-| Research/exploration | `mesh` | `parallel` | 2-3 | `researcher` |
-| Security audit | `hierarchical` | `pipeline` | 2-3 | `security-auditor`, `tester` |
-| Testing | `hierarchical` | `sequential` | 2 | `tester`, `coder` |
-| Refactoring | `hierarchical-mesh` | `pipeline` | 3-4 | `coder`, `reviewer`, `tester` |
-| Domain modeling | `hierarchical` | `pipeline` | 2-3 | `ddd-domain-expert`, `planner` |
+| Task Type | Topology | Strategy | Teammates | Ruflo Roles | Plan First? |
+|-----------|----------|----------|-----------|-------------|-------------|
+| Single file edit | `star` | `sequential` | 1 | `coder` | No |
+| Multi-file changes | `hierarchical` | `pipeline` | 2-3 | `coder`, `reviewer` | Yes |
+| Code review | `mesh` | `broadcast` | 2-3 | `reviewer`, `security-auditor` | No |
+| Architecture design | `hierarchical-mesh` | `parallel` | 3-4 | `planner`, `researcher`, `coder` | Yes |
+| Research/exploration | `mesh` | `parallel` | 2-3 | `researcher` | No |
+| Security audit | `hierarchical` | `pipeline` | 2-3 | `security-auditor`, `tester` | Yes |
+| Testing | `hierarchical` | `sequential` | 2 | `tester`, `coder` | No |
+| Refactoring | `hierarchical-mesh` | `pipeline` | 3-4 | `coder`, `reviewer`, `tester` | Yes |
+| Domain modeling | `hierarchical` | `pipeline` | 2-3 | `ddd-domain-expert`, `planner` | Yes |
 
 **Strategy definitions:**
 
@@ -388,6 +407,8 @@ Before EVERY tool call, verify against this table:
 | 12 | Am I a teammate about to spawn another? Send spawn request to coordinator instead. | Teammate spawning directly |
 | 13 | Am I about to call TeamDelete? Did I store ALL outputs in agentDB first? | TeamDelete before persistence (data lost permanently) |
 | 14 | Am I thinking "this is too simple to delegate"? That thought IS the violation. | Any "quick" direct tool use |
+| 15 | Am I starting a MEDIUM/HIGH complexity task (Plan First? = Yes)? Did I plan first? | Executing without plan mode for complex tasks |
+| 16 | Did I store the approved plan in agentDB before spawning execution teammates? | Executing without plan persistence |
 
 **Additional violations:**
 - Creating a new team without deleting the current team first (single-team-per-coordinator constraint)
