@@ -125,12 +125,12 @@ To extract and document domain language:
 
 ## Ruflo Integration for Persistence
 
-> **Note:** You do not call ruflo/agentDB tools directly. Instead, produce structured output in the format below. The coordinator will persist your results using:
-> - `mcp__ruflo__agentdb_hierarchical-store` for domain maps
-> - `mcp__ruflo__agentdb_pattern-store` for discovered patterns
-> - `mcp__ruflo__memory_store` for reusable insights
->
-> Focus on producing high-quality structured analysis. The coordinator handles persistence.
+Store your DDD analysis results DIRECTLY in agentDB after completing work:
+- Call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_pattern-store` to load agentDB tools
+- `mcp__ruflo__agentdb_hierarchical-store` with `key: "context-map-{project}-{date}"`, `value: <your DDD analysis>`
+- `mcp__ruflo__agentdb_pattern-store` for discovered DDD patterns
+- `mcp__ruflo__memory_store` with namespace `"patterns"` for cross-session reusable insights
+- Send coordinator a coordination signal with the agentDB key reference after storing
 
 ## Output Format
 
