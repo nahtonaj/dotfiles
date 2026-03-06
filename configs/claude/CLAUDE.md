@@ -117,8 +117,8 @@ Agent {
 - Use `TaskUpdate` to assign, block, and complete tasks
 - Task descriptions and metadata are for tracking ONLY — do not embed context or findings in task fields
 
-**Step 5: Persist, shut down, and tear down**
-- Store ALL teammate outputs in agentDB (see Pattern 1 under Inter-Agent Communication Protocol)
+**Step 5: Verify persistence, shut down, and tear down**
+- Verify teammates stored their outputs in agentDB; recall to confirm (see Pattern 1 under Inter-Agent Communication Protocol)
 - Shut down teammates via `SendMessage` with `type: "shutdown_request"`
 - Call `TeamDelete` to free the coordinator for the next task
 - **CRITICAL ORDER**: agentDB persistence MUST complete BEFORE `TeamDelete` — all team state is permanently lost on deletion
@@ -128,10 +128,9 @@ Agent {
 Pipeline handoffs are a specific case of Pattern 1 (Store-Before-Share). Inter-agent handoffs MUST go through agentDB:
 
 ```
-Agent N completes
-  -> Coordinator stores in agentDB: mcp__ruflo__agentdb_hierarchical-store
-      key: "{team}-{agent-N-name}-{date}"
-  -> Coordinator recalls from agentDB: mcp__ruflo__agentdb_hierarchical-recall
+Agent N stores directly in agentDB: mcp__ruflo__agentdb_hierarchical-store
+  -> Agent N sends coordinator: "Stored under key: {team}-{agent-N-name}-{date}"
+  -> Coordinator recalls from agentDB: mcp__ruflo__agentdb_hierarchical-recall (verifies storage)
   -> Coordinator spawns Agent N+1 with recalled context in prompt
 ```
 
@@ -139,6 +138,7 @@ The coordinator MUST NOT:
 - Copy Agent N's raw output directly into Agent N+1's prompt
 - Summarize Agent N's output from memory instead of recalling from agentDB
 - Bypass the store→recall cycle by claiming a handoff is "simple"
+- Store on behalf of an agent unless the agent failed to self-store (fallback only)
 
 ### Agent Prompt Template (MANDATORY)
 
@@ -243,7 +243,7 @@ agentDB (`mcp__ruflo__agentdb_*`) is the ONLY authoritative channel for sharing 
 | `memory_store/search` (namespace: `"patterns"` ONLY) | Cross-session pattern learning | Inter-agent context within a session |
 | `SendMessage` | Coordination signals: "task complete", "blocked on X", "ready for review" | Findings, code, file contents, analysis results |
 | `Task metadata` | Task tracking: status, assignment, dependencies | Context, findings, or data payloads |
-| `Agent RESULTS section` | Structured output for coordinator to STORE in agentDB | Direct consumption without agentDB storage |
+| `Agent RESULTS section` | Structured record of what agent stored in agentDB (keys, status) | Direct consumption of findings (agent stores in agentDB directly) |
 
 **Data store rules:**
 - `memory_store` MUST ONLY use namespace `"patterns"`. No other namespaces.
@@ -256,28 +256,21 @@ agentDB (`mcp__ruflo__agentdb_*`) is the ONLY authoritative channel for sharing 
 
 #### Pattern 1: Store-Before-Share
 
-Any data produced by a teammate that another teammate needs MUST be stored in agentDB BEFORE the dependent teammate is spawned.
+Any data produced by a teammate that another teammate needs MUST be in agentDB BEFORE the dependent teammate is spawned. Teammates store their own results directly in agentDB; the coordinator verifies via recall.
 
 **Flow:**
 ```
-Teammate completes -> Coordinator stores in agentDB -> Coordinator recalls from agentDB -> Recalled data feeds into next teammate's prompt
+Teammate stores directly in agentDB -> Sends coordinator agentDB key reference -> Coordinator recalls from agentDB to verify -> Recalled data feeds into next teammate's prompt
 ```
 
-**Storage steps** (after receiving results from ANY teammate):
-1. **Store in agentDB hierarchy**:
-   ```
-   mcp__ruflo__agentdb_hierarchical-store
-     category: "{agent-role}", level: "task-output"
-     key: "{team-name}-{agent-name}-{date}"
-     data: { agent's RESULTS section }
-   ```
-   If the teammate's RESULTS includes `agentDB Store Keys`, use those exact keys.
-2. **Store discovered patterns**: `mcp__ruflo__agentdb_pattern-store` with pattern name and data from Patterns Discovered section.
+**Verification steps** (after receiving agentDB key reference from ANY teammate):
+1. **Verify agent stored in agentDB**: Call `mcp__ruflo__agentdb_hierarchical-recall` with the key the agent reported. If data exists, storage is confirmed.
+2. **Fallback**: If recall returns empty (agent failed to store), coordinator stores as fallback using the agent's RESULTS section.
 3. **Persist for cross-session recall**: `mcp__ruflo__memory_store` with pattern key, summary, namespace `"patterns"`.
-4. **For DDD teammates**, additionally store under `category: "ddd"`, `level: "domain"`, `key: "context-map-{project}-{date}"`.
+4. **For DDD teammates**, verify storage under `category: "ddd"`, `level: "domain"`, `key: "context-map-{project}-{date}"`.
 
 **VIOLATION**: Copying a teammate's raw output directly into another teammate's prompt without store→recall through agentDB.
-**VIOLATION**: Receiving teammate results and NOT storing them in agentDB.
+**VIOLATION**: Receiving teammate results and NOT verifying they stored in agentDB (via recall).
 
 #### Pattern 2: Recall-Before-Spawn
 
@@ -307,9 +300,10 @@ SendMessage MUST NEVER contain code snippets, analysis results, data payloads, o
 #### Pattern 4: Coordinator Must Recall Before Responding
 
 Before synthesizing a response to the user from teammate results, the coordinator MUST:
-1. Verify all teammate outputs have been stored in agentDB
-2. Call `agentdb_hierarchical-recall` for the relevant categories
-3. Synthesize the response from RECALLED data, not from raw teammate output
+1. Confirm all teammates reported agentDB storage keys (agents store directly)
+2. Call `agentdb_hierarchical-recall` with those keys to verify storage and retrieve data
+3. If any recall returns empty, store the agent's RESULTS as fallback
+4. Synthesize the response from RECALLED data, not from raw teammate output
 
 **VIOLATION**: Responding to user with findings not first stored and recalled from agentDB.
 
@@ -330,11 +324,15 @@ Every agent prompt MUST include this instruction block:
 
 ```
 ## agentDB Protocol (MANDATORY)
-- You MUST list all agentDB keys your output should be stored under in your RESULTS section
-- You MUST list all agentDB keys you consumed (received via prompt context) in your RESULTS section
-- You MUST NOT send findings, code, or data via SendMessage — use your RESULTS section for the coordinator to store in agentDB
-- If you need data from another teammate, request it from the coordinator who will recall it from agentDB
-- Store INTERMEDIATE state in your RESULTS section under "Intermediate State" if your task is partially complete
+- Before starting work, call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_pattern-store,mcp__ruflo__agentdb_pattern-search` to load agentDB tools
+- If prior agentDB keys are provided, call `mcp__ruflo__agentdb_hierarchical-recall` to retrieve context directly
+- After completing work, call `mcp__ruflo__agentdb_hierarchical-store` directly with:
+  - `key`: `{team}-{agent-name}-{date}` format
+  - `value`: your findings/results
+- Store discovered patterns via `mcp__ruflo__agentdb_pattern-store` directly
+- You MUST list all agentDB keys stored and consumed in your RESULTS section
+- After storing, send coordinator a coordination signal via SendMessage with just the agentDB key reference (e.g., "Findings stored under key: X")
+- You MUST NOT send findings, code, or data via SendMessage — store in agentDB directly, then reference the key
 - If you need another teammate's help, send a spawn request to the coordinator via SendMessage — do NOT spawn teammates yourself
 ```
 
@@ -378,7 +376,7 @@ Before EVERY tool call, verify against this table:
 |---|-------|-----------|
 | 1 | Is this tool BLOCKED? Delegate to a teammate. | Using Read, Edit, Write, Bash, Grep, Glob, or NotebookEdit directly |
 | 2 | Am I about to spawn a teammate? Did I run memory_search, hooks_route, AND agentdb_hierarchical-recall first? | Spawning without pre-flight checks |
-| 3 | Did a teammate just report back? Did I store results in agentDB? | Not storing teammate output in agentDB |
+| 3 | Did a teammate just report back? Did they confirm agentDB storage? Did I verify via recall? | Not verifying teammate self-storage in agentDB |
 | 4 | Does this task touch module boundaries? Did I check DDD routing? | Skipping DDD for cross-module changes |
 | 5 | Am I finishing a task? Did I run memory_store, pattern-store, and coordination_metrics? | Skipping end-of-task persistence |
 | 6 | Am I sending a SendMessage? Is it coordination signals only (< 500 chars, no code/data)? | SendMessage with code, findings, or > 500 chars |
