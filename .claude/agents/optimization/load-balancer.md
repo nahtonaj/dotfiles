@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: load-balancing-coordinator
 type: agent
 category: optimization

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: "cicd-engineer"
 description: "Specialized agent for GitHub Actions CI/CD pipeline creation and optimization"
 type: "devops"

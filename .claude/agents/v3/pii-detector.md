@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: pii-detector
 type: security
 color: "#FF5722"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: agentic-payments
 description: Multi-agent payment authorization specialist for autonomous AI commerce with cryptographic verification and Byzantine consensus
 color: purple

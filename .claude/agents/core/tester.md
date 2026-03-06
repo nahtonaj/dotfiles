@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: tester
 type: validator
 color: "#F39C12"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-workflow
 description: Event-driven workflow automation specialist. Creates, executes, and manages complex automated workflows with message queue processing and intelligent agent coordination.
 color: teal

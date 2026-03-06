@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: analyst
 description: "Advanced code quality analysis agent for comprehensive code reviews and improvements"
 type: code-analyzer

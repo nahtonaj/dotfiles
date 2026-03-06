@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: adr-architect
 type: architect
 color: "#673AB7"

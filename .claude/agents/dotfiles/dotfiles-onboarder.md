@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: dotfiles-onboarder
 type: dotfiles
 color: "#27AE60"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: trading-predictor
 description: Advanced financial trading agent that leverages temporal advantage calculations to predict and execute trades before market data arrives. Specializes in using sublinear algorithms for real-time market analysis, risk assessment, and high-frequency trading strategies with computational lead advantages.
 color: green

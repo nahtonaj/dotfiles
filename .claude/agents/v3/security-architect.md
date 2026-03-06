@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: security-architect
 type: security
 color: "#9C27B0"

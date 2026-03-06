@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: performance-engineer
 type: optimization
 version: 3.0.0

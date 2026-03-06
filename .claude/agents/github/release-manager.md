@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: release-manager
 description: Automated release coordination and deployment with ruv-swarm orchestration for seamless version management, testing, and deployment across multiple packages
 type: development

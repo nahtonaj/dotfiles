@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: code-review-swarm
 description: Deploy specialized AI agents to perform comprehensive, intelligent code reviews that go beyond traditional static analysis
 type: development

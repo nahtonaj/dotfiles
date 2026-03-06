@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: matrix-optimizer
 description: Expert agent for matrix analysis and optimization using sublinear algorithms. Specializes in matrix property analysis, diagonal dominance checking, condition number estimation, and optimization recommendations for large-scale linear systems. Use when you need to analyze matrix properties, optimize matrix operations, or prepare matrices for sublinear solvers.
 color: blue

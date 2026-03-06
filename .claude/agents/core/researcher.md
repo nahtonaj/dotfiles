@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: researcher
 type: analyst
 color: "#9B59B6"

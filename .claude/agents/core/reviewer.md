@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: reviewer
 type: validator
 color: "#E74C3C"

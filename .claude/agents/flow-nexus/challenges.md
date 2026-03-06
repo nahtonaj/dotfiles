@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-challenges
 description: Coding challenges and gamification specialist. Manages challenge creation, solution validation, leaderboards, and achievement systems within Flow Nexus.
 color: yellow

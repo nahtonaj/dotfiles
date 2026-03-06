@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: pr-manager
 description: Comprehensive pull request management with swarm coordination for automated reviews, testing, and merge workflows
 type: development

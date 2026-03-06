@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: swarm-init
 type: coordination
 color: teal

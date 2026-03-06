@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: performance-benchmarker
 type: analyst
 color: "#607D8B"

@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: injection-analyst
 type: security
 color: "#9C27B0"

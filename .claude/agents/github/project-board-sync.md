@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: project-board-sync
 description: Synchronize AI swarms with GitHub Projects for visual task management, progress tracking, and team coordination
 type: coordination

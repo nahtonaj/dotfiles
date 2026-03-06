@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: swarm-memory-manager
 type: coordinator
 color: "#00BCD4"

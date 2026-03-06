@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: hierarchical-coordinator
 type: coordinator
 color: "#FF6B35"

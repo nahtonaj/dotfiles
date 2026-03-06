@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: sona-learning-optimizer
 description: SONA-powered self-optimizing agent with LoRA fine-tuning and EWC++ memory preservation
 type: adaptive-learning

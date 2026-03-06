@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: flow-nexus-auth
 description: Flow Nexus authentication and user management specialist. Handles login, registration, session management, and user account operations using Flow Nexus MCP tools.
 color: blue

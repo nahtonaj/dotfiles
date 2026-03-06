@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: issue-tracker
 description: Intelligent issue management and project coordination with automated tracking, progress monitoring, and team coordination
 type: development

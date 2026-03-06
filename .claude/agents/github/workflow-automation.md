@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: workflow-automation
 description: GitHub Actions workflow automation agent that creates intelligent, self-organizing CI/CD pipelines with adaptive multi-agent coordination and automated optimization
 type: automation

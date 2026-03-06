@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: production-validator
 type: validator
 color: "#4CAF50"

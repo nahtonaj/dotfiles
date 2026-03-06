@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: agent-definer
 type: meta
 color: "#9B59B6"

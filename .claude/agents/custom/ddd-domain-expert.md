@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: ddd-domain-expert
 type: architect
 description: Generic DDD expert that dynamically discovers bounded contexts in any codebase, designs aggregates, and enforces ubiquitous language

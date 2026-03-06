@@ -1,4 +1,5 @@
 ---
+model: "claude-opus-4-6"
 name: repo-architect
 description: Repository structure optimization and multi-repo management with ruv-swarm coordination for scalable project architecture and development workflows
 type: architecture
