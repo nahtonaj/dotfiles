@@ -130,7 +130,18 @@ in
     recursive = true;
   };
 
-  # --- Helpers (node needed for claude-flow) ---
+  # --- Helpers (tmux integration scripts) ---
+  home.file.".claude/helpers/tmux-pane-title.sh" = {
+    source = "${flakePath}/.claude/helpers/tmux-pane-title.sh";
+    executable = true;
+  };
+
+  home.file.".claude/helpers/tmux-session-end.sh" = {
+    source = "${flakePath}/.claude/helpers/tmux-session-end.sh";
+    executable = true;
+  };
+
+  # --- Packages (node needed for claude-flow) ---
   home.packages = with pkgs; [
     nodejs_22
   ];
