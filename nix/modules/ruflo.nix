@@ -48,5 +48,8 @@
 
     # Patch @claude-flow/memory to export ControllerRegistry (upstream bug)
     ${flakePath}/configs/ruflo/patch-controller-registry.sh 2>&1 | tee -a "$RUFLO_LOG" || true
+
+    # Patch memory-bridge.js pattern-store/search bridge (upstream bug — object vs positional args)
+    ${flakePath}/configs/ruflo/patch-memory-bridge.sh 2>&1 | tee -a "$RUFLO_LOG" || true
   '';
 }
