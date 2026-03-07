@@ -55,6 +55,9 @@ result-*
 .config/zellij/
 .config/yazi/*.backup
 .config/yazi/yazi.toml-*
+.config/yazi/package.toml
+.config/yazi/theme.toml
+.config/yazi/yazi.toml
 .oh-my-zsh/
 
 # Claude Flow ephemeral state
