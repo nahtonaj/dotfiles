@@ -169,6 +169,11 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs route",
             "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/helpers/tmux-pane-title.sh",
+            "timeout": 3000
           }
         ]
       }
