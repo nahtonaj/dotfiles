@@ -22,7 +22,8 @@
     Service = {
       Type = "forking";
       ExecStart = "${pkgs.tmux}/bin/tmux new-session -d";
-      ExecStartPost = "${pkgs.bash}/bin/bash -c 'sleep 3 && %h/.config/tmux/plugins/tmux-resurrect/scripts/restore.sh || true'";
+      # Restore is handled solely by @continuum-restore 'on' in tmux.conf
+      # Removed duplicate restore.sh call that raced with continuum
       ExecStop = [
         "%h/.config/tmux/plugins/tmux-resurrect/scripts/save.sh"
         "${pkgs.tmux}/bin/tmux kill-server"

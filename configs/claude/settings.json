@@ -206,6 +206,11 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
             "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/helpers/tmux-session-end.sh",
+            "timeout": 3000
           }
         ]
       }
@@ -217,11 +222,6 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs sync",
             "timeout": 10000
-          },
-          {
-            "type": "command",
-            "command": "bash $HOME/.claude/helpers/tmux-session-end.sh",
-            "timeout": 3000
           }
         ]
       }

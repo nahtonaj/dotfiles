@@ -46,9 +46,9 @@ fi
 SUMMARY=$(echo "$PROMPT" | head -1 | cut -c1-60)
 tmux select-pane -T "claude[${DIR}]: ${SUMMARY}"
 
-# Set window name to task/team context
-tmux rename-window "$WIN_NAME" 2>/dev/null
+# Disable automatic rename first to prevent race, then set window name
 tmux set-option -w automatic-rename off 2>/dev/null
+tmux rename-window "$WIN_NAME" 2>/dev/null
 
 # Set session name based on team (only if current session name is generic)
 if [ -n "$TEAM" ]; then
