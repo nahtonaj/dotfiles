@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# tmux-validate-save: Post-save hook to prevent degraded saves
+#
+# Called as @resurrect-hook-post-save-all.
+# If the save that was just written is empty or has fewer sessions than
+# the previous save, rolls back the 'last' symlink to the previous save.
+
+RESURRECT_DIR="${HOME}/.local/share/tmux/resurrect"
+LAST_LINK="${RESURRECT_DIR}/last"
+
+[ -d "$RESURRECT_DIR" ] || exit 0
+[ -L "$LAST_LINK" ] || exit 0
+
+current=$(readlink "$LAST_LINK")
+current_file="${RESURRECT_DIR}/${current}"
+
+# If the new save is empty, always roll back
+if [ ! -s "$current_file" ]; then
+    echo "[tmux-validate-save] Empty save detected, rolling back..." >&2
+else
+    # Count sessions in new save
+    new_sessions=$(awk -F'\t' '/^pane/ {print $2}' "$current_file" | sort -u | wc -l)
+
+    # If it has at least 1 session, accept it
+    if [ "$new_sessions" -ge 1 ]; then
+        exit 0
+    fi
+    echo "[tmux-validate-save] Save has 0 sessions, rolling back..." >&2
+fi
+
+# Find the most recent valid save that isn't the current one
+previous=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
+    | while read -r f; do
+        [ "$f" = "$current_file" ] && continue
+        [ -s "$f" ] || continue
+        count=$(awk -F'\t' '/^pane/ {print $2}' "$f" | sort -u | wc -l)
+        [ "$count" -ge 1 ] && echo "$f" && break
+    done)
+
+if [ -n "$previous" ]; then
+    ln -sf "$(basename "$previous")" "$LAST_LINK"
+    echo "[tmux-validate-save] Rolled back: last -> $(basename "$previous")" >&2
+fi

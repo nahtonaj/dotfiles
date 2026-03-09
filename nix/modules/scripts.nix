@@ -10,4 +10,14 @@
     source = "${flakePath}/bin/tmux-fzf-url-copy";
     executable = true;
   };
+
+  home.file."bin/tmux-fix-resurrect" = {
+    source = "${flakePath}/bin/tmux-fix-resurrect";
+    executable = true;
+  };
+
+  home.file."bin/tmux-validate-save" = {
+    source = "${flakePath}/bin/tmux-validate-save";
+    executable = true;
+  };
 }
