@@ -1,6 +1,10 @@
 #!/bin/bash
 [ -z "$TMUX" ] && exit 0
 
+# Disable automatic rename immediately — must happen before any early exit
+# so that tmux never overrides the Claude-set window name mid-session.
+tmux set-option -w automatic-rename off 2>/dev/null
+
 INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // empty' 2>/dev/null)
 [ -z "$PROMPT" ] && exit 0
@@ -15,39 +19,23 @@ if [ -d "$TEAM_DIR" ]; then
   TEAM=$(ls -t "$TEAM_DIR" 2>/dev/null | head -1)
 fi
 
-# Find active task subject from team's task list
-TASK_SUBJECT=""
-if [ -n "$TEAM" ]; then
-  TASK_DIR="$HOME/.claude/tasks/$TEAM"
-  if [ -d "$TASK_DIR" ]; then
-    # Find first in_progress task, fall back to first pending task
-    TASK_SUBJECT=$(
-      for f in "$TASK_DIR"/*.json; do
-        [ -f "$f" ] && cat "$f"
-      done 2>/dev/null | jq -rs '
-        (map(select(.status == "in_progress")) | first // null) //
-        (map(select(.status == "pending")) | first // null) |
-        .subject // empty
-      ' 2>/dev/null
-    )
-  fi
-fi
+# Build prompt summary for window name and pane title
+SUMMARY=$(echo "$PROMPT" | head -1 | cut -c1-60)
 
-# Build window name: active task subject > team name > directory
-if [ -n "$TASK_SUBJECT" ]; then
-  WIN_NAME=$(echo "$TASK_SUBJECT" | cut -c1-40)
-elif [ -n "$TEAM" ]; then
-  WIN_NAME="$TEAM"
+# Clean summary for window name: strip chars that break tmux, truncate to 40
+WIN_SUMMARY=$(echo "$SUMMARY" | sed 's/[^a-zA-Z0-9 _.,!?-]//g' | sed 's/^[[:space:]]*//' | cut -c1-40 | sed 's/[[:space:]]*$//')
+
+# Window name: prompt summary > directory fallback
+if [ -n "$WIN_SUMMARY" ]; then
+  WIN_NAME="$WIN_SUMMARY"
 else
   WIN_NAME="$DIR"
 fi
 
 # Set pane title
-SUMMARY=$(echo "$PROMPT" | head -1 | cut -c1-60)
 tmux select-pane -T "claude[${DIR}]: ${SUMMARY}"
 
-# Disable automatic rename first to prevent race, then set window name
-tmux set-option -w automatic-rename off 2>/dev/null
+# Set window name (automatic-rename already disabled at script entry)
 tmux rename-window "$WIN_NAME" 2>/dev/null
 
 # Set session name based on team (only if current session name is generic)
