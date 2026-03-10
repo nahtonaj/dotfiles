@@ -3,17 +3,37 @@
 # tmux-validate-save: Post-save hook to prevent degraded saves
 #
 # Called as @resurrect-hook-post-save-all.
-# If the save that was just written is empty or has fewer sessions than
-# the previous save, rolls back the 'last' symlink to the previous save.
+# Rejects saves that happen during restore (lock file present) or that have
+# significantly fewer sessions than the previous good save.
 
 RESURRECT_DIR="${HOME}/.local/share/tmux/resurrect"
 LAST_LINK="${RESURRECT_DIR}/last"
+RESTORE_LOCK="/tmp/tmux-restoring"
 
 [ -d "$RESURRECT_DIR" ] || exit 0
 [ -L "$LAST_LINK" ] || exit 0
 
 current=$(readlink "$LAST_LINK")
 current_file="${RESURRECT_DIR}/${current}"
+
+# If a restore is in progress, reject this save entirely by rolling back
+if [ -f "$RESTORE_LOCK" ]; then
+    echo "[tmux-validate-save] Restore in progress, rejecting save..." >&2
+    # Roll back to previous save
+    previous=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
+        | while read -r f; do
+            [ "$f" = "$current_file" ] && continue
+            [ -s "$f" ] || continue
+            echo "$f" && break
+        done)
+    if [ -n "$previous" ]; then
+        ln -sf "$(basename "$previous")" "$LAST_LINK"
+        echo "[tmux-validate-save] Rolled back: last -> $(basename "$previous")" >&2
+    fi
+    # Remove the bad save file
+    [ -f "$current_file" ] && rm -f "$current_file"
+    exit 0
+fi
 
 # If the new save is empty, always roll back
 if [ ! -s "$current_file" ]; then
@@ -22,11 +42,31 @@ else
     # Count sessions in new save
     new_sessions=$(awk -F'\t' '/^pane/ {print $2}' "$current_file" | sort -u | wc -l)
 
-    # If it has at least 1 session, accept it
-    if [ "$new_sessions" -ge 1 ]; then
-        exit 0
+    # Find the previous save (not the current one) to compare session counts
+    previous_file=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
+        | while read -r f; do
+            [ "$f" = "$current_file" ] && continue
+            [ -s "$f" ] || continue
+            echo "$f" && break
+        done)
+
+    if [ -n "$previous_file" ]; then
+        prev_sessions=$(awk -F'\t' '/^pane/ {print $2}' "$previous_file" | sort -u | wc -l)
+
+        # If previous had 3+ sessions and new has only 1, this is likely a bare-session save
+        # Roll back to prevent overwriting a good multi-session save
+        if [ "$prev_sessions" -ge 3 ] && [ "$new_sessions" -le 1 ]; then
+            echo "[tmux-validate-save] Session count dropped: ${prev_sessions} -> ${new_sessions}, rolling back..." >&2
+        else
+            exit 0  # Save looks reasonable
+        fi
+    else
+        # No previous save to compare against — accept if it has any sessions
+        if [ "$new_sessions" -ge 1 ]; then
+            exit 0
+        fi
+        echo "[tmux-validate-save] Save has 0 sessions and no previous save, rolling back..." >&2
     fi
-    echo "[tmux-validate-save] Save has 0 sessions, rolling back..." >&2
 fi
 
 # Find the most recent valid save that isn't the current one
