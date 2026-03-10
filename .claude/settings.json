@@ -72,6 +72,16 @@
         ]
       }
     ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\e]1337;StealFocus\\a' > /dev/tty"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
@@ -79,6 +89,10 @@
             "type": "command",
             "command": "node .claude/helpers/auto-memory-hook.mjs sync",
             "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "printf '\\e]1337;StealFocus\\a' > /dev/tty"
           }
         ]
       }

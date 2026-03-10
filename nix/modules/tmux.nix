@@ -22,12 +22,9 @@
     Service = {
       Type = "forking";
       ExecStart = "${pkgs.tmux}/bin/tmux new-session -d";
+      # Save is handled solely by continuum auto-save (every 15 min)
       # Restore is handled solely by @continuum-restore 'on' in tmux.conf
-      # Removed duplicate restore.sh call that raced with continuum
-      ExecStop = [
-        "%h/.config/tmux/plugins/tmux-resurrect/scripts/save.sh"
-        "${pkgs.tmux}/bin/tmux kill-server"
-      ];
+      ExecStop = "${pkgs.tmux}/bin/tmux kill-server";
       KillMode = "control-group";
       RestartSec = 2;
     };
