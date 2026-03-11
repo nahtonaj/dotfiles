@@ -293,9 +293,11 @@
     "ralph-wiggum@experimental-plugin-marketplace": false,
     "memory-ctrl@experimental-plugin-marketplace": true,
     "ralph-loop@claude-plugins-official": true,
-    "plugin-builder@experimental-plugin-marketplace": false
+    "plugin-builder@experimental-plugin-marketplace": true,
+    "superpowers@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
   "claudeFlow": {
     "version": "3.0.0",
     "enabled": true,
@@ -424,6 +426,5 @@
       "cveCheck": true,
       "threatModel": true
     }
-  },
-  "effortLevel": "high"
+  }
 }

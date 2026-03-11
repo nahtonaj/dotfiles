@@ -60,14 +60,6 @@ result-*
 .config/yazi/yazi.toml
 .oh-my-zsh/
 
-# Claude Flow ephemeral state
-.claude-flow/
-.claude/tmp.json
-.claude/.claude-flow/
-
-# Swarm runtime state
-.swarm/
-
 # Unused .config dirs
 .config/ada/
 .config/doom/
