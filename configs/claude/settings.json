@@ -198,6 +198,11 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
             "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/dotfiles/.claude/helpers/team-cleanup.sh",
+            "timeout": 5000
           }
         ]
       }
