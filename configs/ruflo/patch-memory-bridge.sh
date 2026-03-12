@@ -10,12 +10,7 @@
 set -euo pipefail
 
 find_bridge() {
-  local candidates=(
-    "$HOME/.nvm/versions/node/$(node -v 2>/dev/null)/lib/node_modules/ruflo/node_modules/@claude-flow/cli/dist/src/memory/memory-bridge.js"
-    "$HOME/.npm-global/lib/node_modules/ruflo/node_modules/@claude-flow/cli/dist/src/memory/memory-bridge.js"
-    "/usr/local/lib/node_modules/ruflo/node_modules/@claude-flow/cli/dist/src/memory/memory-bridge.js"
-  )
-  for f in "${candidates[@]}"; do
+  for f in "$HOME"/.nvm/versions/node/*/lib/node_modules/ruflo/node_modules/@claude-flow/cli/dist/src/memory/memory-bridge.js; do
     if [ -f "$f" ]; then
       echo "$f"
       return 0

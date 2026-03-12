@@ -7,14 +7,9 @@
 # Safe to re-run: checks for marker before patching.
 set -euo pipefail
 
-# Find the index.js to patch — search NVM, npm-global, and common paths
+# Find the index.js to patch — nvm global install
 find_index() {
-  local candidates=(
-    "$HOME/.nvm/versions/node/$(node -v 2>/dev/null)/lib/node_modules/ruflo/node_modules/@claude-flow/memory/dist/index.js"
-    "$HOME/.npm-global/lib/node_modules/ruflo/node_modules/@claude-flow/memory/dist/index.js"
-    "/usr/local/lib/node_modules/ruflo/node_modules/@claude-flow/memory/dist/index.js"
-  )
-  for f in "${candidates[@]}"; do
+  for f in "$HOME"/.nvm/versions/node/*/lib/node_modules/ruflo/node_modules/@claude-flow/memory/dist/index.js; do
     if [ -f "$f" ]; then
       echo "$f"
       return 0
@@ -25,10 +20,18 @@ find_index() {
 
 INDEX_JS=$(find_index) || { echo "[patch-cr] @claude-flow/memory not found, skipping"; exit 0; }
 
-# Idempotency: skip if already patched
-if grep -q 'export class ControllerRegistry' "$INDEX_JS" 2>/dev/null; then
-  echo "[patch-cr] Already patched: $INDEX_JS"
+# Idempotency: skip if already patched WITH causalGraph support
+if grep -q 'export class ControllerRegistry' "$INDEX_JS" 2>/dev/null && \
+   grep -q '_CausalMemoryGraph' "$INDEX_JS" 2>/dev/null; then
+  echo "[patch-cr] Already patched (with causalGraph): $INDEX_JS"
   exit 0
+fi
+
+# If old patch exists without causalGraph, strip it and re-apply
+if grep -q 'export class ControllerRegistry' "$INDEX_JS" 2>/dev/null; then
+  echo "[patch-cr] Upgrading patch (adding causalGraph): $INDEX_JS"
+  # Remove old patch (everything from the shim marker to end)
+  sed -i '/^\/\/ ===== ControllerRegistry shim/,$d' "$INDEX_JS"
 fi
 
 echo "[patch-cr] Patching: $INDEX_JS"
@@ -142,6 +145,67 @@ class _ReasoningBank {
     }
 }
 
+class _CausalMemoryGraph {
+    constructor(db) { this._db = db; this._init(); }
+    _init() {
+        this._db.exec(`CREATE TABLE IF NOT EXISTS causal_edges (
+            id TEXT PRIMARY KEY,
+            source_id TEXT NOT NULL,
+            target_id TEXT NOT NULL,
+            relation TEXT NOT NULL,
+            weight REAL DEFAULT 1.0,
+            metadata TEXT DEFAULT '{}',
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')*1000),
+            UNIQUE(source_id, target_id, relation)
+        )`);
+        this._db.exec(`CREATE INDEX IF NOT EXISTS idx_ce_source ON causal_edges(source_id)`);
+        this._db.exec(`CREATE INDEX IF NOT EXISTS idx_ce_target ON causal_edges(target_id)`);
+    }
+    addEdge(sourceId, targetId, options = {}) {
+        const id = _cr_crypto.randomUUID();
+        this._db.prepare(
+            `INSERT OR REPLACE INTO causal_edges (id, source_id, target_id, relation, weight, metadata, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).run(id, sourceId, targetId, options.relation || 'caused', options.weight ?? 1.0,
+            JSON.stringify({ timestamp: options.timestamp || Date.now() }), Date.now());
+        return id;
+    }
+    getEdges(nodeId) {
+        const outgoing = this._db.prepare(
+            `SELECT * FROM causal_edges WHERE source_id = ? ORDER BY created_at DESC`
+        ).all(nodeId);
+        const incoming = this._db.prepare(
+            `SELECT * FROM causal_edges WHERE target_id = ? ORDER BY created_at DESC`
+        ).all(nodeId);
+        return { outgoing, incoming };
+    }
+    getPath(sourceId, targetId, maxDepth = 5) {
+        const visited = new Set();
+        const queue = [[sourceId]];
+        while (queue.length > 0) {
+            const path = queue.shift();
+            const current = path[path.length - 1];
+            if (current === targetId) return path;
+            if (path.length >= maxDepth || visited.has(current)) continue;
+            visited.add(current);
+            const edges = this._db.prepare(
+                `SELECT target_id FROM causal_edges WHERE source_id = ?`
+            ).all(current);
+            for (const edge of edges) {
+                queue.push([...path, edge.target_id]);
+            }
+        }
+        return null;
+    }
+    getStats() {
+        const total = this._db.prepare(`SELECT COUNT(*) as cnt FROM causal_edges`).get();
+        const relations = this._db.prepare(
+            `SELECT relation, COUNT(*) as cnt FROM causal_edges GROUP BY relation`
+        ).all();
+        return { totalEdges: total?.cnt || 0, byRelation: Object.fromEntries(relations.map(r => [r.relation, r.cnt])) };
+    }
+}
+
 export class ControllerRegistry {
     constructor() {
         this._db = null;
@@ -167,7 +231,10 @@ export class ControllerRegistry {
         if (ctrlConfig.reasoningBank !== false) {
             this._controllers.set('reasoningBank', new _ReasoningBank(this._db));
         }
-        const stubs = ['memoryConsolidation','memoryGraph','learningBridge','causalGraph',
+        if (ctrlConfig.causalGraph !== false) {
+            this._controllers.set('causalGraph', new _CausalMemoryGraph(this._db));
+        }
+        const stubs = ['memoryConsolidation','memoryGraph','learningBridge',
             'reflexion','nightlyLearner','semanticRouter','learningSystem',
             'attestationLog','mutationGuard','skills','batchOperations','contextSynthesizer'];
         for (const name of stubs) {

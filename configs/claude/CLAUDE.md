@@ -3,12 +3,13 @@
 ## Behavioral Rules
 
 - Do what has been asked; nothing more, nothing less
-- NEVER create files unless they're absolutely necessary for achieving your goal
-- ALWAYS prefer editing an existing file to creating a new one
-- NEVER proactively create documentation files (*.md) or README files unless explicitly requested
+- NEVER create files unless absolutely necessary
+- ALWAYS prefer editing existing files over creating new ones
+- NEVER proactively create documentation files unless explicitly requested
 - NEVER save working files, text/mds, or tests to the root folder
 - ALWAYS read a file before editing it
 - NEVER commit secrets, credentials, or .env files
+- Batch all independent operations in a single message for parallelism
 
 ## Security Rules
 
@@ -17,60 +18,91 @@
 - MUST validate user input at system boundaries
 - MUST sanitize file paths to prevent directory traversal
 
-## How This Setup Works
+## Task Complexity — Scale Effort to Match
 
-Two layers collaborate on every task:
+Assess every task before starting. Use the minimum ceremony needed.
 
-- **Ruflo MCP** = coordination layer: routing (`hooks_route`, `coordination_orchestrate`), memory (`memory_store/search`), agentDB (`agentdb_hierarchical-store/recall`), topology (`swarm_init`, `coordination_topology`), hooks, and learning (`hooks_model-route/outcome`)
-- **Claude Code** = execution layer: teams (`TeamCreate`/`TeamDelete`), agents (`Agent` with `team_name`), tasks (`TaskCreate`/`TaskUpdate`), file ops, bash, git
-- MCP tools inform spawning decisions; agents do the actual work
-- **Teams are ephemeral** — all state is lost on `TeamDelete`. **agentDB persists** across sessions. Always store outputs in agentDB before tearing down a team.
+| Level | Signals | Approach |
+|-------|---------|----------|
+| **Trivial** | Typo, single-line fix, rename | Direct edit. No agents. |
+| **Simple** | 1-3 file change, clear scope | Single agent, no team needed |
+| **Medium** | Multi-file, some ambiguity, 2+ concerns | 2-3 agents with `TeamCreate` |
+| **Complex** | Cross-module, refactoring, security-sensitive | Full team + routing + topology |
 
-## Using Agent Teams
+## Automatic Ruflo Triggers
 
-Lifecycle: `TeamCreate` → `TaskCreate` → `Agent` (with `team_name`) → coordinate → `TeamDelete`
+All ruflo tools are accessed as `mcp__ruflo__*`. These triggers are mandatory — run them automatically without being asked.
 
-- Every `Agent` call MUST include `team_name` — create a team first, even for single-agent tasks
-- Spawn agents with `run_in_background: true` for parallel work
-- Use `SendMessage` for coordination signals only — status updates, key references, spawn requests. Never send code or data through it.
-- All substantive data flows through agentDB (`agentdb_hierarchical-store` → `agentdb_hierarchical-recall`)
-- Persist ALL outputs in agentDB BEFORE calling `TeamDelete`
-- For complex tasks, plan first: spawn agents with `mode: "plan"`, store approved plans in agentDB (`plan-{team}-{date}`), then execute
-- Batch parallel agent spawns in a single message; batch file ops within agent prompts
+### On Every Task (all levels)
 
-## agentDB Discipline
+1. `memory_search` — check for prior patterns relevant to this task
+2. `agentdb_pattern-search` — check for reusable solutions
+3. Include findings in your approach; skip silently if nothing found
 
-agentDB is the single source of truth for inter-agent data. Teams vanish; agentDB endures.
+### Before Spawning Any Agent (Simple+)
 
-### 1. Store-Before-Share
-Any data a teammate produces that another needs MUST be in agentDB first. Teammates store directly via `agentdb_hierarchical-store` (tier: `"working"`), then send the coordinator a key reference. Coordinator recalls to verify before spawning the next agent.
+1. `agentdb_hierarchical-recall` (omit tier) — check for prior context
+2. Include recalled context in agent prompt under `## Prior Context`
+3. For 2+ prior keys, use `agentdb_context-synthesize` instead of individual recalls
 
-### 2. Recall-Before-Spawn
-Before spawning ANY agent, recall prior context from agentDB. Use `agentdb_hierarchical-recall` (omit `tier` to search all) for single-key lookups, or `agentdb_context-synthesize` when an agent needs context from 2+ prior agents.
+### Before Commits and PRs (all levels)
 
-### 3. Recall-Before-Responding
-Before synthesizing a response to the user, the coordinator recalls from agentDB — never responds from raw agent output.
+1. `analyze_diff` + `analyze_diff-risk` — understand changes and risk
+2. Risk > 0.7 → warn user, suggest security review before proceeding
+3. `analyze_diff-classify` — categorize the change type
 
-### Key conventions
-- Key format: `{team}-{agent-name}-{date}`
-- Store with explicit `tier: "working"`, recall by omitting `tier`
-- `memory_store` (namespace: `"patterns"` only) for cross-session learning
-- `agentdb_pattern-store` for reusable patterns that bridge sessions
-- At end of task, persist to both `memory_store` and `agentdb_pattern-store` when applicable
+### After Completing Any Non-Trivial Task
 
-## Agent Output Format
+1. `agentdb_pattern-store` — store reusable pattern with confidence score
+2. `memory_store` (namespace: `"patterns"`) — persist cross-session learning
+3. `hooks_model-outcome` — record what worked (task type, agent roles, success)
 
-Agents should end responses with:
+### Code Review Triggers
 
-```
-## RESULTS
-- **Status**: completed | partial | blocked
-- **Files Changed**: list of files modified
-- **Key Findings**: bullet list
-- **agentDB Keys Stored**: list of keys stored
-```
+1. Always run `analyze_diff` + `analyze_diff-risk` first
+2. Risk > 0.7 → include `security-auditor` agent
+3. Multi-module changes + domain boundary signals → include `ddd-domain-expert`
 
-## Agent agentDB Instructions
+### DDD Triggers
+
+When task involves restructuring modules, changing data ownership, cross-module coupling, or domain boundary changes → automatically include `ddd-domain-expert` agent.
+
+### Model Routing
+
+Check `[TASK_ROUTING]` output from the UserPromptSubmit hook:
+- `[AGENT_BOOSTER_AVAILABLE]` → use Edit tool directly, skip agent
+- Low complexity → spawn with `model: "haiku"`
+- High complexity / security → spawn with `model: "opus"`
+
+## Execution Model
+
+**This session is the coordinator.** It spawns agents, manages their lifecycle, and synthesizes results. For trivial tasks, the coordinator works directly.
+
+Two layers:
+- **Ruflo MCP** (`mcp__ruflo__*`) = coordination, memory, routing, learning, analysis
+- **Claude Code** = execution: agents, file ops, bash, git
+
+## Agent Teams (Medium+ only)
+
+Use `TeamCreate` → `Agent` (with `team_name`) → `TeamDelete` for Medium+ tasks. For Simple tasks, bare `Agent` calls are fine.
+
+### Lifecycle
+
+1. `TeamCreate` — name after the task (e.g., `refactor-auth`)
+2. Spawn agents with `team_name` and `run_in_background: true` for parallel work
+3. Agents store results in agentDB, send key references via `SendMessage`
+4. Coordinator recalls from agentDB, synthesizes, responds to user
+5. Run "After Completing" triggers above BEFORE teardown
+6. `TeamDelete` — one team active at a time; delete before creating another
+
+### Rules
+
+- Batch parallel agent spawns in a single message
+- `SendMessage` for coordination signals only — key refs, status (<500 chars)
+- For complex tasks, plan first: spawn with `mode: "plan"`, then execute
+- Teammates cannot spawn teammates — send spawn request to coordinator
+
+## agentDB Protocol
 
 Include in every agent prompt:
 
@@ -79,34 +111,28 @@ Include in every agent prompt:
 - Load tools: ToolSearch query "select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_pattern-store"
 - If prior keys provided, recall context via agentdb_hierarchical-recall (omit tier)
 - After work, store results via agentdb_hierarchical-store (key: {team}-{name}-{date}, tier: "working")
-- Store patterns via agentdb_pattern-store
+- Store reusable patterns via agentdb_pattern-store
 - List all agentDB keys in RESULTS section
-- Send coordinator only key references via SendMessage — never code or data
-- Need help? Send spawn request to coordinator — don't spawn agents yourself
+- Send coordinator only key references via SendMessage
 ```
 
-## Coordination Reference
+Key format: `{team}-{agent}-{YYYY-MM-DD}` — store with `tier: "working"`, recall by omitting tier.
 
-Guidance for team sizing — not a rigid mandate:
+## Team Sizing
 
-| Task Type | Topology | Agents |
-|-----------|----------|--------|
-| Simple edit | star | 1 coder |
-| Multi-file changes | hierarchical | 2-3 coder + reviewer |
-| Code review | mesh | 2-3 reviewer + security-auditor |
-| Architecture | hierarchical-mesh | 3-4 planner + researcher + coder |
-| Research | mesh | 2-3 researcher |
-| Security audit | hierarchical | 2-3 security-auditor + tester |
-| Refactoring | hierarchical-mesh | 3-4 coder + reviewer + tester |
-
-For code review tasks, run `analyze_diff` + `analyze_diff-risk` first. If risk > 0.7, include a `security-auditor`.
+| Task | Agents |
+|------|--------|
+| Simple edit | 1 coder |
+| Multi-file changes | 2-3 coder + reviewer |
+| Code review | 2-3 reviewer + security-auditor (if risk > 0.7) |
+| Architecture | 3-4 planner + researcher + coder |
+| Refactoring | 3-4 coder + reviewer + tester |
 
 ## Ruflo MCP Quick Reference
 
-- **Routing**: `hooks_route`, `coordination_orchestrate`, `hooks_model-route`
-- **Memory**: `memory_store/search` (namespace: `"patterns"`), `agentdb_hierarchical-store/recall`, `agentdb_context-synthesize`
-- **Patterns**: `agentdb_pattern-store/search`
-- **Lifecycle**: `agentdb_session-start/end`, `coordination_metrics`, `hooks_model-outcome`
-- **Swarm**: `swarm_init`, `coordination_topology`, `swarm_health`
+- **Memory**: `memory_store/search`, `agentdb_hierarchical-store/recall`, `agentdb_context-synthesize`, `agentdb_pattern-store/search`
 - **Analysis**: `analyze_diff`, `analyze_diff-risk`, `analyze_diff-classify`, `analyze_diff-stats`
+- **Routing**: `hooks_route`, `hooks_model-route`, `coordination_orchestrate`
+- **Learning**: `hooks_model-outcome`, `agentdb_pattern-store`, `agentdb_feedback`
+- **Lifecycle**: `swarm_init`, `coordination_topology`, `agentdb_session-start/end`
 - **Health**: `system_health`, `swarm_health`, `agentdb_health`

@@ -20,15 +20,23 @@
     source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/ruflo/post-agent-hook.js";
   };
 
-  # Install ruflo and initialize default helpers if missing.
+  # Install ruflo via nvm global (single install location).
   home.activation.rufloSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    export PATH="${pkgs.nodejs_22}/bin:$HOME/.npm-global/bin:$HOME/.nvm/versions/node/$(${pkgs.nodejs_22}/bin/node -v 2>/dev/null)/bin:$PATH"
-    export NPM_CONFIG_PREFIX="$HOME/.npm-global"
+    # Prefer nvm node bin; fall back to Nix nodejs_22
+    NVM_BIN=""
+    for d in "$HOME"/.nvm/versions/node/*/bin; do
+      [ -x "$d/node" ] && NVM_BIN="$d" && break
+    done
+    if [ -n "$NVM_BIN" ]; then
+      export PATH="$NVM_BIN:$PATH"
+    else
+      export PATH="${pkgs.nodejs_22}/bin:$PATH"
+    fi
     RUFLO_LOG="$HOME/.local/share/ruflo/setup.log"
-    mkdir -p "$(dirname "$RUFLO_LOG")" "$HOME/.npm-global"
+    mkdir -p "$(dirname "$RUFLO_LOG")"
     echo "--- ruflo setup $(date -Iseconds) ---" >> "$RUFLO_LOG"
 
-    # Install ruflo if not present
+    # Install ruflo globally if not present
     if ! command -v ruflo &>/dev/null; then
       echo "Installing ruflo..." | tee -a "$RUFLO_LOG"
       npm install -g ruflo 2>&1 | tee -a "$RUFLO_LOG" || true
@@ -51,5 +59,8 @@
 
     # Patch memory-bridge.js pattern-store/search bridge (upstream bug — object vs positional args)
     ${flakePath}/configs/ruflo/patch-memory-bridge.sh 2>&1 | tee -a "$RUFLO_LOG" || true
+
+    # Patch diff-classifier.js ESM/CJS mismatch (upstream bug — require() in ESM module)
+    ${flakePath}/configs/ruflo/patch-diff-classifier.sh 2>&1 | tee -a "$RUFLO_LOG" || true
   '';
 }
