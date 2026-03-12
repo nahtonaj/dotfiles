@@ -81,8 +81,17 @@ Check `[TASK_ROUTING]` output from the UserPromptSubmit hook:
 - **Coordinator does**: parse intent, spawn agents, synthesize results, relay to user
 - **Coordinator does NOT**: read/analyze files, run builds, do multi-step operations, or any work that blocks prompt intake
 - For trivial tasks (single quick command), coordinator may act directly
-- For anything requiring 2+ tool calls or >5s of work, spawn a background agent
-- Always use `run_in_background: true` so the coordinator stays unblocked
+- For anything requiring 2+ tool calls or >5s of work, spawn an agent
+
+### Agent dispatch modes
+
+Background agents cannot prompt the user for permission — they fail silently on restricted ops. Choose dispatch mode based on the work:
+
+| Work type | Dispatch | Why |
+|-----------|----------|-----|
+| Read-only (research, analysis, code review) | `run_in_background: true` | No permissions needed, coordinator stays free |
+| Write ops (git, builds, deploys, file edits) | Foreground agent (default) | Needs permission prompts from user |
+| Trivial (single quick command) | Coordinator direct | Not worth agent overhead |
 
 Two layers:
 - **Ruflo MCP** (`mcp__ruflo__*`) = coordination, memory, routing, learning, analysis
