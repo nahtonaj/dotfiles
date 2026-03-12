@@ -91,7 +91,7 @@ Key format: `{team}-{agent}-{YYYY-MM-DD}` — store with `tier: "working"`, reca
 ## agentDB Enforcement
 
 1. **Store→Recall cycle**: Agents store results before dependents spawn. Coordinator recalls before spawning next or responding to user.
-2. **Recall-Before-Spawn**: Every spawn requires prior `agentdb_hierarchical-recall` (or `agentdb_context-synthesize` for 2+ keys).
+2. **Recall-Before-Spawn**: Every spawn requires prior `agentdb_hierarchical-recall`. For 2+ keys, try `agentdb_context-synthesize`; if unavailable, recall each key individually and merge in the coordinator prompt.
 3. **SendMessage boundary**: Signals only — key refs, status, max 500 chars. Never code or data.
 
 ## Pipeline Handoff Protocol
@@ -120,10 +120,10 @@ Store with explicit `tier`; recall by omitting `tier` to search all.
 
 ## 4-Phase Task Lifecycle
 
-1. **Route & Plan**: `memory_search` + `agentdb_pattern-search` → `hooks_route` (check `[TASK_ROUTING]`) → `coordination_orchestrate` → `analyze_diff` + `analyze_diff-risk` (risk > 0.7 → warn + security-auditor)
-2. **Initialize**: `swarm_init` (topology, maxAgents) → `agentdb_session-start`
-3. **Delegate**: `TeamCreate` → spawn agents with agentDB protocol → store→recall cycle
-4. **Complete & Learn**: `agentdb_session-end` → `agentdb_pattern-store` + `memory_store` → `hooks_model-outcome` → `TeamDelete`
+1. **Route & Plan** (REQUIRED before TeamCreate): `agentdb_pattern-search` + `memory_search` (both MUST run, even if 0 results) → `hooks_route` → `coordination_orchestrate` → `analyze_diff-risk` (risk > 0.7 → security-auditor)
+2. **Initialize** (REQUIRED, skip neither): `swarm_init` (topology, maxAgents) → `agentdb_session-start`
+3. **Delegate**: `TeamCreate` → every agent prompt MUST include agentDB Protocol block verbatim → store→recall cycle
+4. **Complete & Learn** (ALL MUST run before TeamDelete): `agentdb_session-end` → `agentdb_pattern-store` + `memory_store` → `hooks_model-outcome` → `TeamDelete`
 
 ## Ruflo Quick Reference
 

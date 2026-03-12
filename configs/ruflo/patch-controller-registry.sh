@@ -20,16 +20,17 @@ find_index() {
 
 INDEX_JS=$(find_index) || { echo "[patch-cr] @claude-flow/memory not found, skipping"; exit 0; }
 
-# Idempotency: skip if already patched WITH causalGraph support
+# Idempotency: skip if already patched WITH contextSynthesizer + n-gram embedder
 if grep -q 'export class ControllerRegistry' "$INDEX_JS" 2>/dev/null && \
-   grep -q '_CausalMemoryGraph' "$INDEX_JS" 2>/dev/null; then
-  echo "[patch-cr] Already patched (with causalGraph): $INDEX_JS"
+   grep -q '_ContextSynthesizer' "$INDEX_JS" 2>/dev/null && \
+   grep -q '0x811c9dc5' "$INDEX_JS" 2>/dev/null; then
+  echo "[patch-cr] Already patched (with contextSynthesizer + embedder): $INDEX_JS"
   exit 0
 fi
 
-# If old patch exists without causalGraph, strip it and re-apply
+# If old patch exists, strip it and re-apply
 if grep -q 'export class ControllerRegistry' "$INDEX_JS" 2>/dev/null; then
-  echo "[patch-cr] Upgrading patch (adding causalGraph): $INDEX_JS"
+  echo "[patch-cr] Upgrading patch (adding contextSynthesizer + embedder): $INDEX_JS"
   # Remove old patch (everything from the shim marker to end)
   sed -i '/^\/\/ ===== ControllerRegistry shim/,$d' "$INDEX_JS"
 fi
@@ -145,6 +146,77 @@ class _ReasoningBank {
     }
 }
 
+class _ContextSynthesizer {
+    synthesize(memories, options = {}) {
+        if (!memories || memories.length === 0) {
+            return { summary: '', entries: 0, recommendations: [] };
+        }
+        // Deduplicate by key
+        const seen = new Set();
+        const unique = memories.filter(m => {
+            const k = m.key || m.content;
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+        // Build synthesized context from memory entries
+        const parts = unique.map((m, i) => {
+            const label = m.key ? `[${m.key}]` : `[entry-${i}]`;
+            return `${label} ${m.content}`;
+        });
+        const summary = parts.join('\n\n');
+        const result = {
+            summary,
+            entries: unique.length,
+            sources: unique.map(m => m.key || 'unknown'),
+        };
+        if (options.includeRecommendations) {
+            result.recommendations = unique.length > 5
+                ? ['Consider consolidating related entries']
+                : [];
+        }
+        return result;
+    }
+}
+
+class _HashEmbedder {
+    constructor(dimensions = 384) {
+        this._dimensions = dimensions;
+    }
+    _hash(str) {
+        let h = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 0x01000193);
+        }
+        return h >>> 0;
+    }
+    async embed(text) {
+        const dims = this._dimensions;
+        const embedding = new Float32Array(dims);
+        const normalized = String(text).toLowerCase().replace(/[^a-z0-9 ]/g, '');
+        const words = normalized.split(/\s+/).filter(w => w.length > 0);
+        // Word unigrams (position-independent)
+        for (const word of words) {
+            const idx = this._hash('w:' + word) % dims;
+            embedding[idx] += 1.0;
+        }
+        // Character trigrams for fuzzy matching (deploy ↔ deployment)
+        const padded = '  ' + normalized + '  ';
+        for (let i = 0; i < padded.length - 2; i++) {
+            const tri = padded.substring(i, i + 3);
+            const idx = this._hash('t:' + tri) % dims;
+            embedding[idx] += 0.3;
+        }
+        // Normalize to unit vector
+        let mag = 0;
+        for (let i = 0; i < dims; i++) mag += embedding[i] * embedding[i];
+        mag = Math.sqrt(mag) || 1;
+        for (let i = 0; i < dims; i++) embedding[i] /= mag;
+        return embedding;
+    }
+}
+
 class _CausalMemoryGraph {
     constructor(db) { this._db = db; this._init(); }
     _init() {
@@ -234,15 +306,19 @@ export class ControllerRegistry {
         if (ctrlConfig.causalGraph !== false) {
             this._controllers.set('causalGraph', new _CausalMemoryGraph(this._db));
         }
+        if (ctrlConfig.contextSynthesizer !== false) {
+            this._controllers.set('contextSynthesizer', new _ContextSynthesizer());
+        }
+        this._embedder = new _HashEmbedder(config.dimension || 384);
         const stubs = ['memoryConsolidation','memoryGraph','learningBridge',
             'reflexion','nightlyLearner','semanticRouter','learningSystem',
-            'attestationLog','mutationGuard','skills','batchOperations','contextSynthesizer'];
+            'attestationLog','mutationGuard','skills','batchOperations'];
         for (const name of stubs) {
             if (!this._controllers.has(name)) this._controllers.set(name, null);
         }
     }
     get(name) { return this._controllers.get(name) ?? null; }
-    getAgentDB() { return { database: this._db }; }
+    getAgentDB() { return { database: this._db, embedder: this._embedder }; }
     listControllers() {
         return Array.from(this._controllers.entries()).map(([name, ctrl]) => ({
             name, enabled: ctrl !== null, type: ctrl?.constructor?.name || 'stub',

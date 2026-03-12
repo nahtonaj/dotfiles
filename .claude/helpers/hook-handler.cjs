@@ -190,7 +190,11 @@ const handlers = {
       } catch (e) { /* non-fatal */ }
     }
     if (session && session.end) {
-      session.end();
+      try {
+        session.end();
+      } catch (e) {
+        console.log(`[WARN] Session end failed: ${e.message}`);
+      }
     } else {
       console.log('[OK] Session ended');
     }

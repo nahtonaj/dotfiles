@@ -6,9 +6,28 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const SESSION_DIR = path.join(process.cwd(), '.claude-flow', 'sessions');
 const SESSION_FILE = path.join(SESSION_DIR, 'current.json');
+
+/** Safe JSON parse — returns null and removes corrupted file on failure */
+function safeParseSessionFile(filePath) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch (e) {
+    console.log(`[WARN] Corrupted session file, resetting: ${e.message}`);
+    try { fs.unlinkSync(filePath); } catch (_) {}
+    return null;
+  }
+}
+
+/** Atomic write — write to tmp file then rename to avoid partial writes */
+function atomicWriteSync(filePath, data) {
+  const tmp = filePath + `.tmp.${process.pid}`;
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, filePath);
+}
 
 const commands = {
   start: () => {
@@ -27,7 +46,7 @@ const commands = {
     };
 
     fs.mkdirSync(SESSION_DIR, { recursive: true });
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(session, null, 2));
+    atomicWriteSync(SESSION_FILE, JSON.stringify(session, null, 2));
 
     console.log(`Session started: ${sessionId}`);
     return session;
@@ -39,9 +58,10 @@ const commands = {
       return null;
     }
 
-    const session = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+    const session = safeParseSessionFile(SESSION_FILE);
+    if (!session) return null;
     session.restoredAt = new Date().toISOString();
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(session, null, 2));
+    atomicWriteSync(SESSION_FILE, JSON.stringify(session, null, 2));
 
     console.log(`Session restored: ${session.id}`);
     return session;
@@ -53,13 +73,14 @@ const commands = {
       return null;
     }
 
-    const session = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+    const session = safeParseSessionFile(SESSION_FILE);
+    if (!session) return null;
     session.endedAt = new Date().toISOString();
     session.duration = Date.now() - new Date(session.startedAt).getTime();
 
     // Archive session
     const archivePath = path.join(SESSION_DIR, `${session.id}.json`);
-    fs.writeFileSync(archivePath, JSON.stringify(session, null, 2));
+    atomicWriteSync(archivePath, JSON.stringify(session, null, 2));
     fs.unlinkSync(SESSION_FILE);
 
     console.log(`Session ended: ${session.id}`);
@@ -75,7 +96,8 @@ const commands = {
       return null;
     }
 
-    const session = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+    const session = safeParseSessionFile(SESSION_FILE);
+    if (!session) return null;
     const duration = Date.now() - new Date(session.startedAt).getTime();
 
     console.log(`Session: ${session.id}`);
@@ -92,10 +114,11 @@ const commands = {
       return null;
     }
 
-    const session = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+    const session = safeParseSessionFile(SESSION_FILE);
+    if (!session) return null;
     session.context[key] = value;
     session.updatedAt = new Date().toISOString();
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(session, null, 2));
+    atomicWriteSync(SESSION_FILE, JSON.stringify(session, null, 2));
 
     return session;
   },
@@ -113,10 +136,11 @@ const commands = {
       return null;
     }
 
-    const session = JSON.parse(fs.readFileSync(SESSION_FILE, 'utf-8'));
+    const session = safeParseSessionFile(SESSION_FILE);
+    if (!session) return null;
     if (session.metrics[name] !== undefined) {
       session.metrics[name]++;
-      fs.writeFileSync(SESSION_FILE, JSON.stringify(session, null, 2));
+      atomicWriteSync(SESSION_FILE, JSON.stringify(session, null, 2));
     }
 
     return session;
