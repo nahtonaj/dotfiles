@@ -78,28 +78,20 @@ Check `[TASK_ROUTING]` output from the UserPromptSubmit hook:
 
 **This session is the coordinator.** It must always remain available for user prompts. Minimize coordinator work — delegate everything possible to agents.
 
-- **Coordinator does**: parse intent, spawn agents, synthesize results, relay to user
-- **Coordinator does NOT**: read/analyze files, run builds, do multi-step operations, or any work that blocks prompt intake
-- For trivial tasks (single quick command), coordinator may act directly
-- For anything requiring 2+ tool calls or >5s of work, spawn an agent
-
-### Agent dispatch modes
-
-Background agents cannot prompt the user for permission — they fail silently on restricted ops. Choose dispatch mode based on the work:
-
-| Work type | Dispatch | Why |
-|-----------|----------|-----|
-| Read-only (research, analysis, code review) | `run_in_background: true` | No permissions needed, coordinator stays free |
-| Write ops (git, builds, deploys, file edits) | Foreground agent (default) | Needs permission prompts from user |
-| Trivial (single quick command) | Coordinator direct | Not worth agent overhead |
+- **Coordinator does**: parse intent, spawn teams/agents, grant permissions, synthesize results, relay to user
+- **Coordinator does NOT**: read/analyze files, run builds, execute commands, or do any direct work
+- **Trivial** (single quick command): bare background agent — coordinator grants permissions beforehand if needed
+- **Everything else**: spawn a team
 
 Two layers:
 - **Ruflo MCP** (`mcp__ruflo__*`) = coordination, memory, routing, learning, analysis
 - **Claude Code** = execution: agents, file ops, bash, git
 
-## Agent Teams (Medium+ only)
+## Agent Teams (default for all non-trivial work)
 
-Use `TeamCreate` → `Agent` (with `team_name`) → `TeamDelete` for Medium+ tasks. For Simple tasks, bare `Agent` calls are fine.
+Always use `TeamCreate` → `Agent` (with `team_name`) → `TeamDelete`.
+
+**Why teams, not bare agents:** Foreground agents block input just like the coordinator. Background agents can't get permissions on their own. Teams give structure, agentDB coordination, and let the coordinator stay free.
 
 ### Lifecycle
 
