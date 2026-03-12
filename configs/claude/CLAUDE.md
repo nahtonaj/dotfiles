@@ -76,7 +76,13 @@ Check `[TASK_ROUTING]` output from the UserPromptSubmit hook:
 
 ## Execution Model
 
-**This session is the coordinator.** It spawns agents, manages their lifecycle, and synthesizes results. For trivial tasks, the coordinator works directly.
+**This session is the coordinator.** It must always remain available for user prompts. Minimize coordinator work — delegate everything possible to agents.
+
+- **Coordinator does**: parse intent, spawn agents, synthesize results, relay to user
+- **Coordinator does NOT**: read/analyze files, run builds, do multi-step operations, or any work that blocks prompt intake
+- For trivial tasks (single quick command), coordinator may act directly
+- For anything requiring 2+ tool calls or >5s of work, spawn a background agent
+- Always use `run_in_background: true` so the coordinator stays unblocked
 
 Two layers:
 - **Ruflo MCP** (`mcp__ruflo__*`) = coordination, memory, routing, learning, analysis
