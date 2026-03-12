@@ -13,6 +13,24 @@
 - MUST validate user input at system boundaries
 - Batch all independent operations in a single message for parallelism
 
+## Coordinator Enforcement
+
+The coordinator session MUST NOT directly invoke these tools:
+- `Read`, `Glob`, `Grep` — delegate to agents
+- `Edit`, `Write`, `MultiEdit` — delegate to agents
+- `Bash` (except `git status`, `git log`, `git diff` for commit prep) — delegate to agents
+
+**The only tools the coordinator may use directly:**
+- Ruflo MCP tools (`mcp__ruflo__*`) — for routing, memory, analysis, lifecycle
+- `ToolSearch` — to load deferred tool schemas
+- `Agent` — to spawn agents
+- `TeamCreate` / `TeamDelete` — team lifecycle
+- `SendMessage` — coordination signals
+- `TaskCreate` / `TaskUpdate` / `TaskList` — task management
+- `Skill` — to invoke skills
+
+If you catch yourself about to Read/Edit/Bash, STOP and spawn an agent instead.
+
 ## Execution Model
 
 **This session is the coordinator.** It must always remain available for user prompts.
