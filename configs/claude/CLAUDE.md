@@ -78,9 +78,9 @@ Check `[TASK_ROUTING]` output from the UserPromptSubmit hook:
 
 **This session is the coordinator.** It must always remain available for user prompts. Minimize coordinator work — delegate everything possible to agents.
 
-- **Coordinator does**: parse intent, spawn teams/agents, grant permissions, synthesize results, relay to user
+- **Coordinator does**: parse intent, spawn teams/agents, approve permissions, synthesize results, relay to user
 - **Coordinator does NOT**: read/analyze files, run builds, execute commands, or do any direct work
-- **Trivial** (single quick command): bare background agent — coordinator grants permissions beforehand if needed
+- **Trivial** (single quick command): bare background agent
 - **Everything else**: spawn a team
 
 Two layers:
@@ -91,7 +91,9 @@ Two layers:
 
 Always use `TeamCreate` → `Agent` (with `team_name`) → `TeamDelete`.
 
-**Why teams, not bare agents:** Foreground agents block input just like the coordinator. Background agents can't get permissions on their own. Teams give structure, agentDB coordination, and let the coordinator stay free.
+### Permission model
+
+Agents inherit the session's pre-approved allowlist from settings.json. For safe ops (reads, analysis, MCP tools), use background agents. For dangerous ops (git, builds, deploys), use foreground agents within a team — the coordinator is briefly blocked only when the user's explicit approval is needed.
 
 ### Lifecycle
 
