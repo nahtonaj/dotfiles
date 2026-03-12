@@ -35,47 +35,18 @@ if [ -f "$RESTORE_LOCK" ]; then
     exit 0
 fi
 
-# If the new save is empty, always roll back
-if [ ! -s "$current_file" ]; then
-    echo "[tmux-validate-save] Empty save detected, rolling back..." >&2
-else
-    # Count sessions in new save
-    new_sessions=$(awk -F'\t' '/^pane/ {print $2}' "$current_file" | sort -u | wc -l)
-
-    # Find the previous save (not the current one) to compare session counts
-    previous_file=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
-        | while read -r f; do
-            [ "$f" = "$current_file" ] && continue
-            [ -s "$f" ] || continue
-            echo "$f" && break
-        done)
-
-    if [ -n "$previous_file" ]; then
-        prev_sessions=$(awk -F'\t' '/^pane/ {print $2}' "$previous_file" | sort -u | wc -l)
-
-        # If previous had 3+ sessions and new has only 1, this is likely a bare-session save
-        # Roll back to prevent overwriting a good multi-session save
-        if [ "$prev_sessions" -ge 3 ] && [ "$new_sessions" -le 1 ]; then
-            echo "[tmux-validate-save] Session count dropped: ${prev_sessions} -> ${new_sessions}, rolling back..." >&2
-        else
-            exit 0  # Save looks reasonable
-        fi
-    else
-        # No previous save to compare against — accept if it has any sessions
-        if [ "$new_sessions" -ge 1 ]; then
-            exit 0
-        fi
-        echo "[tmux-validate-save] Save has 0 sessions and no previous save, rolling back..." >&2
-    fi
+# Only roll back truly empty (0-byte) saves
+if [ -s "$current_file" ]; then
+    exit 0  # Non-empty save — trust it
 fi
 
-# Find the most recent valid save that isn't the current one
+echo "[tmux-validate-save] Empty save detected, rolling back..." >&2
+
+# Find the most recent non-empty save
 previous=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
     | while read -r f; do
         [ "$f" = "$current_file" ] && continue
-        [ -s "$f" ] || continue
-        count=$(awk -F'\t' '/^pane/ {print $2}' "$f" | sort -u | wc -l)
-        [ "$count" -ge 1 ] && echo "$f" && break
+        [ -s "$f" ] && echo "$f" && break
     done)
 
 if [ -n "$previous" ]; then

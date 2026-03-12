@@ -16,35 +16,19 @@ LAST_LINK="${RESURRECT_DIR}/last"
 current=$(readlink "$LAST_LINK")
 current_file="${RESURRECT_DIR}/${current}"
 
-# Check 1: Is the file empty (0 bytes)?
-if [ ! -s "$current_file" ]; then
-    echo "[tmux-fix-resurrect] Save file is empty, searching for valid save..." >&2
-else
-    # Check 2: Does it have at least 2 sessions? (1 session = likely degraded)
-    session_count=$(awk -F'\t' '/^pane/ {print $2}' "$current_file" | sort -u | wc -l)
-    if [ "$session_count" -ge 2 ]; then
-        exit 0  # Save looks healthy
-    fi
-    echo "[tmux-fix-resurrect] Save has only ${session_count} session(s), searching for better save..." >&2
+# Only fix truly empty (0-byte) save files
+if [ -s "$current_file" ]; then
+    exit 0  # Non-empty save — trust it
 fi
 
-# Find the most recent non-empty save with 2+ sessions
+echo "[tmux-fix-resurrect] Save file is empty, searching for valid save..." >&2
+
+# Find the most recent non-empty save
 latest=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
     | while read -r f; do
         [ "$f" = "$current_file" ] && continue
-        [ -s "$f" ] || continue
-        count=$(awk -F'\t' '/^pane/ {print $2}' "$f" | sort -u | wc -l)
-        [ "$count" -ge 2 ] && echo "$f" && break
+        [ -s "$f" ] && echo "$f" && break
     done)
-
-if [ -z "$latest" ]; then
-    # Fallback: find any non-empty save
-    latest=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
-        | while read -r f; do
-            [ "$f" = "$current_file" ] && continue
-            [ -s "$f" ] && echo "$f" && break
-        done)
-fi
 
 if [ -z "$latest" ]; then
     echo "[tmux-fix-resurrect] No valid save files found" >&2
