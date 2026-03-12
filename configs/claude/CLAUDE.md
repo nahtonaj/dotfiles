@@ -88,30 +88,42 @@ Include in every agent prompt:
 
 Key format: `{team}-{agent}-{YYYY-MM-DD}` — store with `tier: "working"`, recall by omitting tier.
 
-## Ruflo Triggers
+## agentDB Enforcement
 
-All ruflo tools accessed as `mcp__ruflo__*`. Run automatically — never wait to be asked.
+1. **Store→Recall cycle**: Agents store results before dependents spawn. Coordinator recalls before spawning next or responding to user.
+2. **Recall-Before-Spawn**: Every spawn requires prior `agentdb_hierarchical-recall` (or `agentdb_context-synthesize` for 2+ keys).
+3. **SendMessage boundary**: Signals only — key refs, status, max 500 chars. Never code or data.
 
-### Every task
-- `memory_search` + `agentdb_pattern-search` — check for prior patterns/solutions
+## Pipeline Handoff Protocol
 
-### Before spawning agents
-- `agentdb_hierarchical-recall` (omit tier) — load prior context into agent prompt
-- For 2+ prior keys, use `agentdb_context-synthesize`
+For sequential chains (A → B → C): agent stores in agentDB (`tier: "working"`) → sends key via SendMessage → coordinator recalls to verify → spawns next agent with recalled context. For 3+ agents, use `agentdb_context-synthesize` to merge all prior outputs. Always go through store→recall — never copy raw output or summarize from memory.
 
-### Before commits/PRs
-- `analyze_diff` + `analyze_diff-risk` — risk > 0.7 → warn user, include security-auditor
-- `analyze_diff-classify` — categorize the change
+## Hierarchical Memory Structure
 
-### After completing work
-- `agentdb_pattern-store` — store reusable pattern
-- `memory_store` (namespace: `"patterns"`) — cross-session learning
-- `hooks_model-outcome` — record what worked
+Store with explicit `tier`; recall by omitting `tier` to search all.
 
-### Model routing
-Check `[TASK_ROUTING]` from UserPromptSubmit hook:
-- Low complexity → spawn with `model: "haiku"`
-- High complexity / security → spawn with `model: "opus"`
+| Tier | Purpose | Lifetime | Use For |
+|------|---------|----------|---------|
+| `working` | Active task data | Session | Agent results, intermediate state, handoffs |
+| `episodic` | Task summaries | Cross-session | Completed outcomes, decisions |
+| `semantic` | Extracted knowledge | Permanent | Patterns, architecture, domain rules |
+
+| Tool | When |
+|------|------|
+| `agentdb_hierarchical-store` | Agent storing results (always specify `tier`) |
+| `agentdb_hierarchical-recall` | Retrieving context (omit `tier` to search all) |
+| `agentdb_context-synthesize` | Merging 2+ prior agent outputs |
+| `agentdb_pattern-store/search` | Reusable patterns (bridges sessions) |
+| `memory_store/search` | Cross-session learning (namespace: `"patterns"` only) |
+
+`agentdb_hierarchical-store` is the ONLY inter-agent data mechanism. `memory_store` is cross-session patterns only. At task end, store in both when applicable.
+
+## 4-Phase Task Lifecycle
+
+1. **Route & Plan**: `memory_search` + `agentdb_pattern-search` → `hooks_route` (check `[TASK_ROUTING]`) → `coordination_orchestrate` → `analyze_diff` + `analyze_diff-risk` (risk > 0.7 → warn + security-auditor)
+2. **Initialize**: `swarm_init` (topology, maxAgents) → `agentdb_session-start`
+3. **Delegate**: `TeamCreate` → spawn agents with agentDB protocol → store→recall cycle
+4. **Complete & Learn**: `agentdb_session-end` → `agentdb_pattern-store` + `memory_store` → `hooks_model-outcome` → `TeamDelete`
 
 ## Ruflo Quick Reference
 
