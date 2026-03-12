@@ -1,6 +1,6 @@
 # Claude Code — Global Instructions
 
-## Behavioral Rules
+## Rules
 
 - Do what has been asked; nothing more, nothing less
 - NEVER create files unless absolutely necessary
@@ -9,99 +9,49 @@
 - NEVER save working files, text/mds, or tests to the root folder
 - ALWAYS read a file before editing it
 - NEVER commit secrets, credentials, or .env files
-- Batch all independent operations in a single message for parallelism
-
-## Security Rules
-
 - NEVER hardcode API keys, secrets, or credentials in source files
-- NEVER commit .env files or any file containing secrets
 - MUST validate user input at system boundaries
-- MUST sanitize file paths to prevent directory traversal
-
-## Task Complexity — Scale Effort to Match
-
-Assess every task before starting. Use the minimum ceremony needed.
-
-| Level | Signals | Approach |
-|-------|---------|----------|
-| **Trivial** | Typo, single-line fix, rename | Direct edit. No agents. |
-| **Simple** | 1-3 file change, clear scope | Single agent, no team needed |
-| **Medium** | Multi-file, some ambiguity, 2+ concerns | 2-3 agents with `TeamCreate` |
-| **Complex** | Cross-module, refactoring, security-sensitive | Full team + routing + topology |
-
-## Automatic Ruflo Triggers
-
-All ruflo tools are accessed as `mcp__ruflo__*`. These triggers are mandatory — run them automatically without being asked.
-
-### On Every Task (all levels)
-
-1. `memory_search` — check for prior patterns relevant to this task
-2. `agentdb_pattern-search` — check for reusable solutions
-3. Include findings in your approach; skip silently if nothing found
-
-### Before Spawning Any Agent (Simple+)
-
-1. `agentdb_hierarchical-recall` (omit tier) — check for prior context
-2. Include recalled context in agent prompt under `## Prior Context`
-3. For 2+ prior keys, use `agentdb_context-synthesize` instead of individual recalls
-
-### Before Commits and PRs (all levels)
-
-1. `analyze_diff` + `analyze_diff-risk` — understand changes and risk
-2. Risk > 0.7 → warn user, suggest security review before proceeding
-3. `analyze_diff-classify` — categorize the change type
-
-### After Completing Any Non-Trivial Task
-
-1. `agentdb_pattern-store` — store reusable pattern with confidence score
-2. `memory_store` (namespace: `"patterns"`) — persist cross-session learning
-3. `hooks_model-outcome` — record what worked (task type, agent roles, success)
-
-### Code Review Triggers
-
-1. Always run `analyze_diff` + `analyze_diff-risk` first
-2. Risk > 0.7 → include `security-auditor` agent
-3. Multi-module changes + domain boundary signals → include `ddd-domain-expert`
-
-### DDD Triggers
-
-When task involves restructuring modules, changing data ownership, cross-module coupling, or domain boundary changes → automatically include `ddd-domain-expert` agent.
-
-### Model Routing
-
-Check `[TASK_ROUTING]` output from the UserPromptSubmit hook:
-- `[AGENT_BOOSTER_AVAILABLE]` → use Edit tool directly, skip agent
-- Low complexity → spawn with `model: "haiku"`
-- High complexity / security → spawn with `model: "opus"`
+- Batch all independent operations in a single message for parallelism
 
 ## Execution Model
 
-**This session is the coordinator.** It must always remain available for user prompts. Minimize coordinator work — delegate everything possible to agents.
+**This session is the coordinator.** It must always remain available for user prompts.
 
-- **Coordinator does**: parse intent, spawn teams/agents, approve permissions, synthesize results, relay to user
-- **Coordinator does NOT**: read/analyze files, run builds, execute commands, or do any direct work
-- **Trivial** (single quick command): bare background agent
+- **Coordinator does**: parse intent, spawn teams, approve permissions, synthesize results, relay to user
+- **Coordinator does NOT**: read files, analyze code, run builds, execute commands, or do any direct work
+- **Trivial tasks** (single quick command): bare background agent
 - **Everything else**: spawn a team
 
-Two layers:
-- **Ruflo MCP** (`mcp__ruflo__*`) = coordination, memory, routing, learning, analysis
-- **Claude Code** = execution: agents, file ops, bash, git
+All agents and subagents follow this same structure — they do not do direct work outside their designated role. Subagents must not spawn their own agents; they send spawn requests to the coordinator.
 
-## Agent Teams (default for all non-trivial work)
+Two layers collaborate:
+- **Ruflo MCP** (`mcp__ruflo__*`) — coordination, memory, routing, learning, analysis
+- **Claude Code** — execution: teams, agents, file ops, bash, git
 
-Always use `TeamCreate` → `Agent` (with `team_name`) → `TeamDelete`.
+## Agent Teams
+
+All non-trivial work goes through teams. No exceptions.
+
+`TeamCreate` → `Agent` (with `team_name`) → `TeamDelete`
 
 ### Permission model
 
-Agents inherit the session's pre-approved allowlist from settings.json. For safe ops (reads, analysis, MCP tools), use background agents. For dangerous ops (git, builds, deploys), use foreground agents within a team — the coordinator is briefly blocked only when the user's explicit approval is needed.
+Agents inherit the session's pre-approved allowlist from settings.json.
+
+| Work type | Dispatch | Reason |
+|-----------|----------|--------|
+| Safe ops (reads, analysis, MCP tools) | Background agent in team | No permissions needed |
+| Dangerous ops (git, builds, deploys, writes) | Foreground agent in team | Needs user approval |
+
+The coordinator is briefly blocked only when explicit user approval is needed.
 
 ### Lifecycle
 
 1. `TeamCreate` — name after the task (e.g., `refactor-auth`)
-2. Spawn agents with `team_name` and `run_in_background: true` for parallel work
+2. Spawn agents with `team_name` — background for safe ops, foreground for dangerous ops
 3. Agents store results in agentDB, send key references via `SendMessage`
 4. Coordinator recalls from agentDB, synthesizes, responds to user
-5. Run "After Completing" triggers above BEFORE teardown
+5. Run ruflo "after completing" triggers BEFORE teardown
 6. `TeamDelete` — one team active at a time; delete before creating another
 
 ### Rules
@@ -110,6 +60,16 @@ Agents inherit the session's pre-approved allowlist from settings.json. For safe
 - `SendMessage` for coordination signals only — key refs, status (<500 chars)
 - For complex tasks, plan first: spawn with `mode: "plan"`, then execute
 - Teammates cannot spawn teammates — send spawn request to coordinator
+
+### Sizing
+
+| Task | Agents |
+|------|--------|
+| Single file edit | 1 coder |
+| Multi-file changes | 2-3 coder + reviewer |
+| Code review | 2-3 reviewer + security-auditor (if risk > 0.7) |
+| Architecture | 3-4 planner + researcher + coder |
+| Refactoring | 3-4 coder + reviewer + tester |
 
 ## agentDB Protocol
 
@@ -123,21 +83,37 @@ Include in every agent prompt:
 - Store reusable patterns via agentdb_pattern-store
 - List all agentDB keys in RESULTS section
 - Send coordinator only key references via SendMessage
+- Do NOT spawn agents yourself — send spawn requests to coordinator
 ```
 
 Key format: `{team}-{agent}-{YYYY-MM-DD}` — store with `tier: "working"`, recall by omitting tier.
 
-## Team Sizing
+## Ruflo Triggers
 
-| Task | Agents |
-|------|--------|
-| Simple edit | 1 coder |
-| Multi-file changes | 2-3 coder + reviewer |
-| Code review | 2-3 reviewer + security-auditor (if risk > 0.7) |
-| Architecture | 3-4 planner + researcher + coder |
-| Refactoring | 3-4 coder + reviewer + tester |
+All ruflo tools accessed as `mcp__ruflo__*`. Run automatically — never wait to be asked.
 
-## Ruflo MCP Quick Reference
+### Every task
+- `memory_search` + `agentdb_pattern-search` — check for prior patterns/solutions
+
+### Before spawning agents
+- `agentdb_hierarchical-recall` (omit tier) — load prior context into agent prompt
+- For 2+ prior keys, use `agentdb_context-synthesize`
+
+### Before commits/PRs
+- `analyze_diff` + `analyze_diff-risk` — risk > 0.7 → warn user, include security-auditor
+- `analyze_diff-classify` — categorize the change
+
+### After completing work
+- `agentdb_pattern-store` — store reusable pattern
+- `memory_store` (namespace: `"patterns"`) — cross-session learning
+- `hooks_model-outcome` — record what worked
+
+### Model routing
+Check `[TASK_ROUTING]` from UserPromptSubmit hook:
+- Low complexity → spawn with `model: "haiku"`
+- High complexity / security → spawn with `model: "opus"`
+
+## Ruflo Quick Reference
 
 - **Memory**: `memory_store/search`, `agentdb_hierarchical-store/recall`, `agentdb_context-synthesize`, `agentdb_pattern-store/search`
 - **Analysis**: `analyze_diff`, `analyze_diff-risk`, `analyze_diff-classify`, `analyze_diff-stats`
