@@ -19,13 +19,25 @@ if [ -d "$TEAM_DIR" ]; then
   TEAM=$(ls -t "$TEAM_DIR" 2>/dev/null | head -1)
 fi
 
-# Build prompt summary for window name and pane title
+# Build prompt summary for pane title
 SUMMARY=$(echo "$PROMPT" | head -1 | cut -c1-60)
 
-# Clean summary for window name: strip chars that break tmux, truncate to 40
-WIN_SUMMARY=$(echo "$SUMMARY" | sed 's/[^a-zA-Z0-9 _.,!?-]//g' | sed 's/^[[:space:]]*//' | cut -c1-40 | sed 's/[[:space:]]*$//')
+# Try routing task summary for window name (written by hook-handler.cjs route)
+TASK_FILE="/tmp/claude-tmux-task-summary"
+WIN_SUMMARY=""
+if [ -f "$TASK_FILE" ]; then
+  FILE_AGE=$(( $(date +%s) - $(stat -c %Y "$TASK_FILE" 2>/dev/null || echo 0) ))
+  if [ "$FILE_AGE" -lt 5 ]; then
+    WIN_SUMMARY=$(head -1 "$TASK_FILE" | sed 's/[^a-zA-Z0-9 _.,!?:-]//g' | sed 's/^[[:space:]]*//' | cut -c1-40 | sed 's/[[:space:]]*$//')
+  fi
+fi
 
-# Window name: prompt summary > directory fallback
+# Fall back to prompt-based summary
+if [ -z "$WIN_SUMMARY" ]; then
+  WIN_SUMMARY=$(echo "$SUMMARY" | sed 's/[^a-zA-Z0-9 _.,!?-]//g' | sed 's/^[[:space:]]*//' | cut -c1-40 | sed 's/[[:space:]]*$//')
+fi
+
+# Window name: routing summary > prompt summary > directory fallback
 if [ -n "$WIN_SUMMARY" ]; then
   WIN_NAME="$WIN_SUMMARY"
 else

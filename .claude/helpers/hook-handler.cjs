@@ -99,6 +99,12 @@ const handlers = {
         '  - Complexity: LOW',
       ];
       console.log(output.join('\n'));
+      // Write task summary for tmux window name (read by tmux-pane-title.sh)
+      try {
+        const cleanPrompt = prompt.replace(/[\n\r]+/g, ' ').replace(/\s+/g, ' ').trim();
+        const taskSummary = `${result.agent}: ${cleanPrompt}`.substring(0, 60);
+        fs.writeFileSync('/tmp/claude-tmux-task-summary', taskSummary);
+      } catch (e) { /* non-fatal */ }
       const complexity = result.complexity || (result.confidence >= 0.8 ? 'HIGH' :
                          result.confidence >= 0.6 ? 'MEDIUM' : 'LOW');
       console.log('');
