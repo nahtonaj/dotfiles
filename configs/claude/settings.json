@@ -212,7 +212,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "tmux display-message 'Claude Code needs input'; printf '\\a'"
+            "command": "printf '\\a' > /dev/tty",
+            "timeout": 3000
           }
         ]
       }
@@ -227,7 +228,8 @@
           },
           {
             "type": "command",
-            "command": "tmux display-message 'Claude Code needs input'; printf '\\a'"
+            "command": "printf '\\a' > /dev/tty",
+            "timeout": 3000
           }
         ]
       }
