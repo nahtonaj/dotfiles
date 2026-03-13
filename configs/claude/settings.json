@@ -118,7 +118,7 @@
       "Read(./.env.*)"
     ]
   },
-  "model": "opus",
+  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -212,7 +212,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "printf '\\e]1337;StealFocus\\a' > /dev/tty"
+            "command": "tmux display-message 'Claude Code needs input'; printf '\\a'"
           }
         ]
       }
@@ -227,7 +227,7 @@
           },
           {
             "type": "command",
-            "command": "printf '\\e]1337;StealFocus\\a' > /dev/tty"
+            "command": "tmux display-message 'Claude Code needs input'; printf '\\a'"
           }
         ]
       }
