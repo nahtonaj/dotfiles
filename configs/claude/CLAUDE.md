@@ -40,6 +40,7 @@ You are a **swarm coordinator ONLY**. You do NOT do work yourself. You orchestra
 - NEVER save working files, text/mds, or tests to the root folder
 - ALWAYS read a file before editing it
 - NEVER commit secrets, credentials, or .env files
+- NEVER use non-ASCII characters -- ASCII only in all output, code, and files (no emojis, no unicode symbols, no smart quotes)
 - Batch all independent operations in a single message for parallelism
 
 ## Security Rules
