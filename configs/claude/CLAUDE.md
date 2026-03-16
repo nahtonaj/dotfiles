@@ -269,7 +269,7 @@ agentDB (`mcp__ruflo__agentdb_*`) is the ONLY authoritative channel for sharing 
 | `agentdb_hierarchical-store` | `key` | string | Yes | — | Memory entry key (`{team}-{agent}-{date}` format) |
 | `agentdb_hierarchical-store` | `value` | string | Yes | — | Memory entry value |
 | `agentdb_hierarchical-store` | `tier` | `"working"` \| `"episodic"` \| `"semantic"` | No | `"working"` | Always specify explicitly to avoid mismatches |
-| `agentdb_hierarchical-recall` | `query` | string | Yes | — | Recall query (key or search term) |
+| `agentdb_hierarchical-recall` | `query` | string | Yes | — | Recall query (use descriptive semantic search terms, not exact keys -- context may be stored under different keys than expected) |
 | `agentdb_hierarchical-recall` | `tier` | string | No | *(all tiers)* | Omit to search all tiers; specify to filter |
 | `agentdb_hierarchical-recall` | `topK` | number | No | `5` | Number of results to return |
 | `agentdb_context-synthesize` | `query` | string | Yes | — | Context synthesis query (task/role description) |
@@ -307,7 +307,7 @@ Teammate stores directly in agentDB (tier: "working") -> Sends coordinator agent
 ```
 
 **Verification steps** (after receiving agentDB key reference from ANY teammate):
-1. **Verify agent stored in agentDB**: Call `mcp__ruflo__agentdb_hierarchical-recall` with the key the agent reported (omit `tier` to search all tiers, or use `tier: "working"`). If data exists, storage is confirmed.
+1. **Verify agent stored in agentDB**: Call `mcp__ruflo__agentdb_hierarchical-recall` with descriptive search terms matching the agent's domain/task (omit `tier` to search all tiers, or use `tier: "working"`). Prefer semantic queries (e.g., "tmux passthrough research findings") over exact key lookups -- agents may store under different key names than expected. If data exists, storage is confirmed.
 2. **Fallback**: If recall returns empty (agent failed to store), coordinator stores as fallback using the agent's RESULTS section.
 3. **Persist for cross-session recall**: `mcp__ruflo__memory_store` with pattern key, summary, namespace `"patterns"`.
 4. **For DDD teammates**, verify storage under `category: "ddd"`, `level: "domain"`, `key: "context-map-{project}-{date}"`.
@@ -326,7 +326,7 @@ Before ANY teammate spawn:
      Call `mcp__ruflo__agentdb_context-synthesize` with query describing the teammate's role + task
      Include synthesized context in the prompt under "## Prior agentDB Context (Synthesized)"
   2. If spawning depends on a single prior output or is the first teammate:
-     Call `mcp__ruflo__agentdb_hierarchical-recall` with category matching the teammate's role (omit `tier` to search all tiers)
+     Call `mcp__ruflo__agentdb_hierarchical-recall` with descriptive search terms matching the teammate's role and domain (omit `tier` to search all tiers) -- use semantic queries, not exact keys
      Include recalled context in the prompt under "## Prior agentDB Context"
   3. If no prior context exists, include: "## Prior agentDB Context\nNo prior context found for this category."
 ```
@@ -376,7 +376,7 @@ Every agent prompt MUST include this instruction block:
 ```
 ## agentDB Protocol (MANDATORY)
 - Before starting work, call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_context-synthesize,mcp__ruflo__agentdb_pattern-store,mcp__ruflo__agentdb_pattern-search` to load agentDB tools
-- If prior agentDB keys are provided, call `mcp__ruflo__agentdb_hierarchical-recall` to retrieve context directly (omit `tier` to search all tiers)
+- If prior agentDB context is needed, call `mcp__ruflo__agentdb_hierarchical-recall` with descriptive search terms matching your task domain (not exact keys) to retrieve context (omit `tier` to search all tiers)
 - After completing work, call `mcp__ruflo__agentdb_hierarchical-store` directly with:
   - `key`: `{team}-{agent-name}-{date}` format
   - `value`: your findings/results
