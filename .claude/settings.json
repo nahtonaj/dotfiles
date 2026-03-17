@@ -139,10 +139,6 @@
       }
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "node .claude/helpers/statusline.cjs"
-  },
   "permissions": {
     "allow": [
       "Read",
@@ -245,7 +241,6 @@
       "Read(///home/jon.gao/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/**)",
       "Read(~/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/**)",
       "Skill(bazel-universe:bazel-universe)",
-      "mcp__claude-flow__*",
       "mcp__ruflo__*",
       "mcp__proxy__github__get_pull_request",
       "mcp__proxy__github__get_pull_request_diff",

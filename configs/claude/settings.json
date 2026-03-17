@@ -94,7 +94,6 @@
       "Bash(npx @claude-flow*)",
       "Bash(npx claude-flow*)",
       "Bash(node .claude/*)",
-      "mcp__claude-flow__*",
       "mcp__ruflo__*",
       "Bash(env:*)",
       "Bash(printenv:*)",
@@ -280,10 +279,6 @@
         ]
       }
     ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "node $HOME/.claude/helpers/statusline.cjs"
   },
   "enabledPlugins": {
     "bazel-universe@experimental-plugin-marketplace": true,
