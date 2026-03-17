@@ -2,22 +2,18 @@
 
 {
   home.file."bin/tmux-osc52-copy" = {
-    source = "${flakePath}/bin/tmux-osc52-copy";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-osc52-copy";
   };
 
   home.file."bin/tmux-fzf-url-copy" = {
-    source = "${flakePath}/bin/tmux-fzf-url-copy";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-fzf-url-copy";
   };
 
   home.file."bin/tmux-fix-resurrect" = {
-    source = "${flakePath}/bin/tmux-fix-resurrect";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-fix-resurrect";
   };
 
   home.file."bin/tmux-validate-save" = {
-    source = "${flakePath}/bin/tmux-validate-save";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-validate-save";
   };
 }

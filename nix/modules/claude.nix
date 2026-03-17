@@ -106,7 +106,7 @@ in
 {
   # --- Core config ---
   home.file."CLAUDE.md" = {
-    source = "${flakePath}/configs/claude/CLAUDE.md";
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/claude/CLAUDE.md";
   };
 
   home.file.".claude/settings.json" = {
@@ -115,13 +115,11 @@ in
 
   # --- Commands & skills ---
   home.file.".claude/commands" = {
-    source = "${flakePath}/.claude/commands";
-    recursive = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/commands";
   };
 
   home.file.".claude/skills" = {
-    source = "${flakePath}/.claude/skills";
-    recursive = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/skills";
   };
 
   # --- Agents (model + ruflo workflow block injected at build time) ---
@@ -132,13 +130,11 @@ in
 
   # --- Helpers (tmux integration scripts) ---
   home.file.".claude/helpers/tmux-pane-title.sh" = {
-    source = "${flakePath}/.claude/helpers/tmux-pane-title.sh";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/helpers/tmux-pane-title.sh";
   };
 
   home.file.".claude/helpers/tmux-session-end.sh" = {
-    source = "${flakePath}/.claude/helpers/tmux-session-end.sh";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/helpers/tmux-session-end.sh";
   };
 
   # --- Packages (node needed for claude-flow) ---

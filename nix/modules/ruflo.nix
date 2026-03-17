@@ -4,12 +4,11 @@
   # Custom ruflo overrides — only files we've modified.
   # Default helpers are created by `ruflo init`; these overlay on top.
   home.file.".claude/helpers/router.js" = {
-    source = "${flakePath}/configs/ruflo/router.js";
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/ruflo/router.js";
   };
 
   home.file.".claude/helpers/ddd-tracker.sh" = {
-    source = "${flakePath}/configs/ruflo/ddd-tracker.sh";
-    executable = true;
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/ruflo/ddd-tracker.sh";
   };
 
   home.file.".claude/helpers/agent-enforcement.js" = {
@@ -62,5 +61,8 @@
 
     # Patch diff-classifier.js ESM/CJS mismatch (upstream bug — require() in ESM module)
     ${flakePath}/configs/ruflo/patch-diff-classifier.sh 2>&1 | tee -a "$RUFLO_LOG" || true
+
+    # Patch recall threshold mismatch (upstream bug — 0.5 default vs 0.3 in search)
+    ${flakePath}/configs/ruflo/patch-recall-threshold.sh 2>&1 | tee -a "$RUFLO_LOG" || true
   '';
 }
