@@ -206,17 +206,6 @@
         ]
       }
     ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "printf '\\a' > /dev/tty",
-            "timeout": 3000
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [

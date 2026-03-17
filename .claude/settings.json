@@ -72,16 +72,6 @@
         ]
       }
     ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "printf '\\e]1337;StealFocus\\a' > /dev/tty"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
