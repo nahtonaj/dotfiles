@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# ruflo-daemon -- Manage the shared ruflo HTTP MCP server
+#
+# Usage: ruflo-daemon {start|stop|status|restart}
+#
+# Starts ruflo as a shared HTTP MCP server so multiple Claude Code
+# sessions connect to one instance (avoiding database corruption
+# from concurrent stdio-mode writes).
+
+set -euo pipefail
+
+PORT="${RUFLO_PORT:-3456}"
+HOST="localhost"
+PID_DIR="$HOME/.local/run"
+LOG_DIR="$HOME/.local/log"
+PID_FILE="$PID_DIR/ruflo-http.pid"
+LOG_FILE="$LOG_DIR/ruflo-daemon.log"
+HEALTH_URL="http://${HOST}:${PORT}/health"
+
+# Resolve the launcher script relative to this script
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LAUNCHER="$SCRIPT_DIR/ruflo-http-server.mjs"
+
+# Environment for the ruflo server process (previously in .mcp.json env block)
+export CLAUDE_FLOW_MODE="${CLAUDE_FLOW_MODE:-v3}"
+export CLAUDE_FLOW_HOOKS_ENABLED="${CLAUDE_FLOW_HOOKS_ENABLED:-true}"
+export CLAUDE_FLOW_TOPOLOGY="${CLAUDE_FLOW_TOPOLOGY:-hierarchical-mesh}"
+export CLAUDE_FLOW_MAX_AGENTS="${CLAUDE_FLOW_MAX_AGENTS:-15}"
+export CLAUDE_FLOW_MEMORY_BACKEND="${CLAUDE_FLOW_MEMORY_BACKEND:-hybrid}"
+export npm_config_update_notifier=false
+
+mkdir -p "$PID_DIR" "$LOG_DIR"
+
+# Ensure agentdb controller symlink exists.
+# The agentic-flow runtime patch expects controllers at dist/controllers/
+# but agentdb v1.3.9+ places them at dist/src/controllers/. This symlink
+# bridges the gap and survives daemon restarts (though not npm reinstalls,
+# which is why we recreate it here on every start).
+_agentdb_controllers() {
+  local ruflo_bin agentdb_dist
+  ruflo_bin="$(command -v ruflo 2>/dev/null || true)"
+  if [ -n "$ruflo_bin" ]; then
+    # ruflo bin is a symlink into the global npm prefix; resolve to package root
+    local ruflo_real
+    ruflo_real="$(readlink -f "$ruflo_bin")"
+    # ruflo_real = .../ruflo/bin/ruflo.js -> package root is two dirs up
+    local ruflo_root
+    ruflo_root="$(dirname "$(dirname "$ruflo_real")")"
+    agentdb_dist="$ruflo_root/node_modules/agentdb/dist"
+    if [ -d "$agentdb_dist/src/controllers" ] && [ ! -e "$agentdb_dist/controllers" ]; then
+      ln -s "$agentdb_dist/src/controllers" "$agentdb_dist/controllers" 2>/dev/null || true
+    fi
+  fi
+}
+_agentdb_controllers
+
+is_running() {
+  if [ -f "$PID_FILE" ]; then
+    local pid
+    pid=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      # Double-check with health endpoint
+      if curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+        return 0
+      fi
+      # Process alive but not responding -- stale
+      return 1
+    fi
+  fi
+  # Also check if port is in use (another instance)
+  if curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+    echo "Warning: port $PORT in use by unknown process" >&2
+    return 0
+  fi
+  return 1
+}
+
+do_start() {
+  if is_running; then
+    local pid
+    pid=$(cat "$PID_FILE" 2>/dev/null || echo "unknown")
+    echo "ruflo-daemon already running (PID $pid, port $PORT)"
+    return 0
+  fi
+
+  # Clean stale PID file
+  rm -f "$PID_FILE"
+
+  echo "Starting ruflo HTTP MCP server on port $PORT..."
+  nohup node "$LAUNCHER" --port "$PORT" >> "$LOG_FILE" 2>&1 &
+  local pid=$!
+  echo "$pid" > "$PID_FILE"
+
+  # Wait for health check
+  local attempts=0
+  while [ $attempts -lt 10 ]; do
+    sleep 1
+    if curl -sf "$HEALTH_URL" >/dev/null 2>&1; then
+      echo "ruflo-daemon started (PID $pid, port $PORT)"
+      return 0
+    fi
+    attempts=$((attempts + 1))
+  done
+
+  echo "ERROR: ruflo-daemon failed to start (check $LOG_FILE)" >&2
+  kill "$pid" 2>/dev/null || true
+  rm -f "$PID_FILE"
+  return 1
+}
+
+do_stop() {
+  if [ ! -f "$PID_FILE" ]; then
+    echo "ruflo-daemon not running (no PID file)"
+    return 0
+  fi
+
+  local pid
+  pid=$(cat "$PID_FILE" 2>/dev/null)
+  if [ -z "$pid" ]; then
+    rm -f "$PID_FILE"
+    echo "ruflo-daemon not running (empty PID file)"
+    return 0
+  fi
+
+  echo "Stopping ruflo-daemon (PID $pid)..."
+  kill "$pid" 2>/dev/null || true
+
+  # Wait for graceful shutdown
+  local attempts=0
+  while [ $attempts -lt 5 ]; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      break
+    fi
+    sleep 1
+    attempts=$((attempts + 1))
+  done
+
+  # Force kill if still alive
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -9 "$pid" 2>/dev/null || true
+  fi
+
+  rm -f "$PID_FILE"
+  echo "ruflo-daemon stopped"
+}
+
+do_status() {
+  if is_running; then
+    local pid
+    pid=$(cat "$PID_FILE" 2>/dev/null || echo "unknown")
+    echo "ruflo-daemon running (PID $pid, port $PORT)"
+    curl -s "$HEALTH_URL" 2>/dev/null && echo ""
+  else
+    echo "ruflo-daemon not running"
+    return 1
+  fi
+}
+
+do_restart() {
+  do_stop
+  sleep 1
+  do_start
+}
+
+case "${1:-}" in
+  start)   do_start   ;;
+  stop)    do_stop    ;;
+  status)  do_status  ;;
+  restart) do_restart ;;
+  *)
+    echo "Usage: ruflo-daemon {start|stop|status|restart}" >&2
+    exit 1
+    ;;
+esac
