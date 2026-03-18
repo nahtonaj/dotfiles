@@ -1,5 +1,36 @@
-{ config, pkgs, flakePath, ... }:
+{ config, pkgs, lib, flakePath, ... }:
 
+let
+  homeDir = config.home.homeDirectory;
+
+  rufloServiceScript = pkgs.writeShellScript "ruflo-service" ''
+    mkdir -p "$HOME/.local/log"
+
+    # Find nvm node or fall back to Nix nodejs_22
+    NVM_BIN=""
+    for d in "$HOME"/.nvm/versions/node/*/bin; do
+      [ -x "$d/node" ] && NVM_BIN="$d" && break
+    done
+    if [ -n "$NVM_BIN" ]; then
+      export PATH="$NVM_BIN:$PATH"
+    else
+      export PATH="${pkgs.nodejs_22}/bin:$PATH"
+    fi
+
+    # Ensure agentdb controller symlink (upstream bug workaround)
+    RUFLO_BIN="$(command -v ruflo 2>/dev/null || true)"
+    if [ -n "$RUFLO_BIN" ]; then
+      RUFLO_REAL="$(readlink -f "$RUFLO_BIN")"
+      RUFLO_ROOT="$(dirname "$(dirname "$RUFLO_REAL")")"
+      AGENTDB_DIST="$RUFLO_ROOT/node_modules/agentdb/dist"
+      if [ -d "$AGENTDB_DIST/src/controllers" ] && [ ! -e "$AGENTDB_DIST/controllers" ]; then
+        ln -s "$AGENTDB_DIST/src/controllers" "$AGENTDB_DIST/controllers" 2>/dev/null || true
+      fi
+    fi
+
+    exec node "${homeDir}/bin/ruflo-http-server.mjs" --port "''${RUFLO_PORT:-3456}"
+  '';
+in
 {
   # Custom ruflo overrides — only files we've modified.
   # Default helpers are created by `ruflo init`; these overlay on top.
@@ -65,4 +96,32 @@
     # Patch recall threshold mismatch (upstream bug — 0.5 default vs 0.3 in search)
     ${flakePath}/configs/ruflo/patch-recall-threshold.sh 2>&1 | tee -a "$RUFLO_LOG" || true
   '';
+
+  # Systemd user service for ruflo HTTP MCP server (Linux only)
+  systemd.user.services.ruflo-daemon = lib.mkIf pkgs.stdenv.isLinux {
+    Unit = {
+      Description = "Ruflo HTTP MCP Server";
+      After = [ "default.target" ];
+    };
+    Service = {
+      Type = "simple";
+      ExecStart = "${rufloServiceScript}";
+      Restart = "on-failure";
+      RestartSec = 5;
+      Environment = [
+        "RUFLO_PORT=3456"
+        "CLAUDE_FLOW_MODE=v3"
+        "CLAUDE_FLOW_HOOKS_ENABLED=true"
+        "CLAUDE_FLOW_TOPOLOGY=hierarchical-mesh"
+        "CLAUDE_FLOW_MAX_AGENTS=15"
+        "CLAUDE_FLOW_MEMORY_BACKEND=hybrid"
+        "npm_config_update_notifier=false"
+      ];
+      StandardOutput = "append:%h/.local/log/ruflo-daemon.log";
+      StandardError = "append:%h/.local/log/ruflo-daemon.log";
+    };
+    Install = {
+      WantedBy = [ "default.target" ];
+    };
+  };
 }
