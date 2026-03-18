@@ -35,7 +35,7 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # See: https://nikitabobko.github.io/AeroSpace/guide#layouts
 # The 'accordion-padding' specifies the size of accordion padding
 # You can set 0 to disable the padding feature
-accordion-padding = 60
+accordion-padding = 30
 
 # Possible values: tiles|accordion
 default-root-container-layout = 'tiles'
@@ -61,7 +61,7 @@ inner.horizontal = 10
 inner.vertical =   10
 outer.left =       10
 outer.bottom =     10
-outer.top =        [{ monitor.'built' = 0 }, 40]
+outer.top =        [{ monitor.'built' = 0 }, 42]
 outer.right =      10
 
 # 'main' binding mode declaration
@@ -95,6 +95,7 @@ alt-o = 'exec-and-forget open -a "Obsidian"'
 alt-x = 'exec-and-forget open -a "Cursor"'
 alt-p = 'exec-and-forget open -a "Zen"'
 alt-b = 'exec-and-forget open -a "Google Chrome"'
+alt-y = 'exec-and-forget open -a "YouTube"'
 
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#layout
@@ -231,7 +232,7 @@ ctrl-shift-l = [
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.service.binding]
-esc = ['reload-config', 'mode main', 'exec-and-forget sketchybar --reload']
+esc = ['reload-config', 'mode main', 'exec-and-forget pkill sketchybar']
 r = ['flatten-workspace-tree', 'mode main'] # reset layout
 #s = ['layout sticky tiling', 'mode main'] # sticky is not yet supported https://github.com/nikitabobko/AeroSpace/issues/2
 f = ['layout floating tiling', 'mode main'] # Toggle between floating and tiling layout

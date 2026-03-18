@@ -62,7 +62,7 @@
   @tab q    w    e    r    t    y    u    i    o    p    [    ]    \
   @cap @a   @s   @d   @f   g    h    @j   @k   @l   @;   '    ret
   lsft z    x    c    v    b    n    m    ,    .    /    rsft
-  lctl lalt lmet           @spc           rmet ralt rctl
+  lctl lalt lmet           spc           rmet ralt rctl
 )
 
 ;; NoMods layer - temporarily disables bilateral restrictions
@@ -73,7 +73,7 @@
   @tab q    w    e    r    t    y    u    i    o    p    [    ]    \
   @cap @an  @sn  @dn  @fn  g    h    @jn  @kn  @ln  @;n  '    ret
   lsft z    x    c    v    b    n    m    ,    .    /    rsft
-  lctl lalt lmet           @spc           rmet ralt rctl
+  lctl lalt lmet           spc           rmet ralt rctl
 )
 
 ;; Extend layer
@@ -154,6 +154,6 @@
   cap (tap-hold-release $tap-timeout $hold-timeout esc lctl)
   rld lrld
   spc (tap-hold-release 200 200 spc (layer-while-held extend))
-  tab (tap-hold-release 200 200 tab (layer-while-held fumbol))
+  tab (tap-hold-release 200 200 tab (layer-while-held extend))
 )
 
