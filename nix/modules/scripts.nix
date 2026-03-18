@@ -16,4 +16,12 @@
   home.file."bin/tmux-validate-save" = {
     source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-validate-save";
   };
+
+  home.file."bin/ruflo-daemon" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/ruflo-daemon";
+  };
+
+  home.file."bin/ruflo-http-server.mjs" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/ruflo-http-server.mjs";
+  };
 }
