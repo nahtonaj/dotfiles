@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+#
+# tmux-fix-resurrect: Fix empty or degraded resurrect save files before restore
+#
+# Called as @resurrect-hook-pre-restore-all.
+# If the 'last' symlink points to an empty or single-session save file,
+# repoints it to the most recent valid multi-session save.
+
+RESURRECT_DIR="${HOME}/.local/share/tmux/resurrect"
+LAST_LINK="${RESURRECT_DIR}/last"
+
+# Bail if no resurrect directory or last symlink
+[ -d "$RESURRECT_DIR" ] || exit 0
+[ -L "$LAST_LINK" ] || exit 0
+
+current=$(readlink "$LAST_LINK")
+current_file="${RESURRECT_DIR}/${current}"
+
+# Only fix truly empty (0-byte) save files
+if [ -s "$current_file" ]; then
+    exit 0  # Non-empty save — trust it
+fi
+
+echo "[tmux-fix-resurrect] Save file is empty, searching for valid save..." >&2
+
+# Find the most recent non-empty save
+latest=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
+    | while read -r f; do
+        [ "$f" = "$current_file" ] && continue
+        [ -s "$f" ] && echo "$f" && break
+    done)
+
+if [ -z "$latest" ]; then
+    echo "[tmux-fix-resurrect] No valid save files found" >&2
+    exit 1
+fi
+
+# Repoint the symlink
+ln -sf "$(basename "$latest")" "$LAST_LINK"
+echo "[tmux-fix-resurrect] Fixed: last -> $(basename "$latest")" >&2

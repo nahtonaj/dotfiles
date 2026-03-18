@@ -1,0 +1,15 @@
+#!/bin/bash
+# Copy text to clipboard via OSC 52 (works over SSH)
+# Usage: echo "text" | tmux-osc52-copy
+
+# Read input
+text="$(cat)"
+
+# Get the active tmux pane's tty
+tty=$(tmux display-message -p '#{pane_tty}')
+
+# Send OSC 52 sequence directly to the pane's terminal
+printf "\033]52;c;%s\007" "$(echo -n "$text" | base64)" > "$tty"
+
+# Print confirmation
+echo "Copied to clipboard: $text"

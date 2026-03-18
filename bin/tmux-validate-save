@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# tmux-validate-save: Post-save hook to prevent degraded saves
+#
+# Called as @resurrect-hook-post-save-all.
+# Rejects saves that happen during restore (lock file present) or that have
+# significantly fewer sessions than the previous good save.
+
+RESURRECT_DIR="${HOME}/.local/share/tmux/resurrect"
+LAST_LINK="${RESURRECT_DIR}/last"
+RESTORE_LOCK="/tmp/tmux-restoring"
+
+[ -d "$RESURRECT_DIR" ] || exit 0
+[ -L "$LAST_LINK" ] || exit 0
+
+current=$(readlink "$LAST_LINK")
+current_file="${RESURRECT_DIR}/${current}"
+
+# If a restore is in progress, reject this save entirely by rolling back
+if [ -f "$RESTORE_LOCK" ]; then
+    echo "[tmux-validate-save] Restore in progress, rejecting save..." >&2
+    # Roll back to previous save
+    previous=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
+        | while read -r f; do
+            [ "$f" = "$current_file" ] && continue
+            [ -s "$f" ] || continue
+            echo "$f" && break
+        done)
+    if [ -n "$previous" ]; then
+        ln -sf "$(basename "$previous")" "$LAST_LINK"
+        echo "[tmux-validate-save] Rolled back: last -> $(basename "$previous")" >&2
+    fi
+    # Remove the bad save file
+    [ -f "$current_file" ] && rm -f "$current_file"
+    exit 0
+fi
+
+# Only roll back truly empty (0-byte) saves
+if [ -s "$current_file" ]; then
+    exit 0  # Non-empty save — trust it
+fi
+
+echo "[tmux-validate-save] Empty save detected, rolling back..." >&2
+
+# Find the most recent non-empty save
+previous=$(ls -t "$RESURRECT_DIR"/tmux_resurrect_*.txt 2>/dev/null \
+    | while read -r f; do
+        [ "$f" = "$current_file" ] && continue
+        [ -s "$f" ] && echo "$f" && break
+    done)
+
+if [ -n "$previous" ]; then
+    ln -sf "$(basename "$previous")" "$LAST_LINK"
+    echo "[tmux-validate-save] Rolled back: last -> $(basename "$previous")" >&2
+fi

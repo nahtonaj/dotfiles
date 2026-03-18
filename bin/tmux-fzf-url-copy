@@ -1,0 +1,16 @@
+#!/bin/bash
+# Wrapper script for tmux-fzf-url to copy URLs to clipboard via OSC 52
+# Usage: tmux-fzf-url-copy <url>
+
+url="$1"
+
+if [[ -z "$url" ]]; then
+    echo "Error: No URL provided" >&2
+    exit 1
+fi
+
+# Copy URL to clipboard using OSC 52
+echo -n "$url" | ~/bin/tmux-osc52-copy
+
+# Optional: Also display notification in tmux
+tmux display-message "URL copied to clipboard: $url"
