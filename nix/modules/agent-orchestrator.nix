@@ -71,13 +71,13 @@ in
 
     # Initialize default helpers if missing
     if [ ! -f "$HOME/.claude/helpers/hook-handler.cjs" ]; then
-      echo "Initializing ruflo helpers..." | tee -a "$SETUP_LOG"
+      echo "Initializing agent-orchestrator helpers..." | tee -a "$SETUP_LOG"
       node "${cliBin}" init --minimal --only-claude 2>&1 | tee -a "$SETUP_LOG" || true
     fi
 
     # Ensure sql.js dependency is installed
     if [ -f "$HOME/.claude/helpers/package.json" ] && [ ! -d "$HOME/.claude/helpers/node_modules" ]; then
-      echo "Installing ruflo helper npm dependencies..." | tee -a "$SETUP_LOG"
+      echo "Installing agent-orchestrator helper npm dependencies..." | tee -a "$SETUP_LOG"
       (cd "$HOME/.claude/helpers" && npm install --no-audit --no-fund 2>&1 | tee -a "$SETUP_LOG") || true
     fi
 
