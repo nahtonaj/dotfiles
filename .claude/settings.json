@@ -231,7 +231,7 @@
       "Read(///home/jon.gao/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/**)",
       "Read(~/.claude/plugins/cache/experimental-plugin-marketplace/bazel-universe/1.0.0/**)",
       "Skill(bazel-universe:bazel-universe)",
-      "mcp__ruflo__*",
+      "mcp__agent-orchestrator__*",
       "mcp__proxy__github__get_pull_request",
       "mcp__proxy__github__get_pull_request_diff",
       "mcp__proxy__github__get_pull_requests_by_user",

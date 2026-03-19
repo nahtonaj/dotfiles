@@ -7,7 +7,7 @@ let
   # All upstream bugs (ControllerRegistry, memory-bridge, diff-classifier,
   # recall-threshold, protocolVersion, SSE, auto-init) are fixed in source.
   agentOrchestratorHome = "${homeDir}/agent-orchestrator";
-  cliBin = "${agentOrchestratorHome}/v3/@claude-flow/cli/bin/cli.js";
+  cliBin = "${agentOrchestratorHome}/bin/cli.js";
 
   serviceScript = pkgs.writeShellScript "agent-orchestrator-service" ''
     mkdir -p "$HOME/.local/log"
@@ -58,15 +58,9 @@ in
     echo "--- agent-orchestrator setup $(date -Iseconds) ---" >> "$SETUP_LOG"
 
     # Install agent-orchestrator deps if needed
-    if [ -d "${agentOrchestratorHome}/v3" ] && [ ! -d "${agentOrchestratorHome}/v3/node_modules" ]; then
+    if [ -d "${agentOrchestratorHome}" ] && [ ! -d "${agentOrchestratorHome}/node_modules" ]; then
       echo "Installing agent-orchestrator dependencies..." | tee -a "$SETUP_LOG"
-      (cd "${agentOrchestratorHome}/v3" && npm install --legacy-peer-deps 2>&1 | tee -a "$SETUP_LOG") || true
-    fi
-
-    # Build CLI if dist is missing
-    if [ -d "${agentOrchestratorHome}/v3/@claude-flow/cli" ] && [ ! -d "${agentOrchestratorHome}/v3/@claude-flow/cli/dist" ]; then
-      echo "Building agent-orchestrator CLI..." | tee -a "$SETUP_LOG"
-      (cd "${agentOrchestratorHome}/v3/@claude-flow/cli" && npx tsc --skipLibCheck 2>&1 | tee -a "$SETUP_LOG") || true
+      (cd "${agentOrchestratorHome}" && npm install --legacy-peer-deps 2>&1 | tee -a "$SETUP_LOG") || true
     fi
 
     # Initialize default helpers if missing
