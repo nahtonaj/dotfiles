@@ -300,6 +300,10 @@
     "plugin-builder@experimental-plugin-marketplace": true,
     "superpowers@claude-plugins-official": true
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node $HOME/.claude/helpers/statusline.cjs"
+  },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "claudeFlow": {
