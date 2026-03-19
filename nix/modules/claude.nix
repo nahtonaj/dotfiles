@@ -1,6 +1,9 @@
 { config, pkgs, flakePath, ... }:
 
 let
+  # ── Dotfiles directory (writable source for all mutable symlinks) ──
+  dotfilesDir = "${config.home.homeDirectory}/dotfiles";
+
   # ── Single source of truth for the Claude agent model ──
   # Change this ONE variable to update the model in ALL agent definitions.
   claudeAgentModel = "claude-opus-4-6";
@@ -43,36 +46,45 @@ let
     ```
   '';
 
-  # Build a derivation that injects `model:` and the ruflo workflow block into
-  # every agent .md file at build time, handling three cases:
-  #   1. Frontmatter with existing `model:` line → replace it
-  #   2. Frontmatter without `model:` line       → inject before closing `---`
-  #   3. No frontmatter at all                   → prepend one
-  # The ruflo block is injected after the closing `---` but before the body,
+  # ── Activation script to process agents at switch time ──
+  # Injects model: and ruflo workflow block into every agent .md file,
+  # writing results to ~/.claude/agents/ (mutable, not in Nix store).
+  # Handles three cases:
+  #   1. Frontmatter with existing model: line -> replace it
+  #   2. Frontmatter without model: line       -> inject before closing ---
+  #   3. No frontmatter at all                 -> prepend one
+  # The ruflo block is injected after the closing --- but before the body,
   # skipped if the file already contains the marker (idempotent).
-  processedAgents = pkgs.runCommand "claude-agents" {
-    nativeBuildInputs = with pkgs; [ findutils gawk coreutils ];
-  } ''
-    src="${flakePath}/.claude/agents"
+  processAgentsScript = pkgs.writeShellScript "process-claude-agents" ''
+    set -euo pipefail
+
+    src="${dotfilesDir}/.claude/agents"
+    dest="$HOME/.claude/agents"
     model="${claudeAgentModel}"
     ruflo_block="${rufloWorkflowBlock}"
 
-    # Recreate full directory tree
+    if [ ! -d "$src" ]; then
+      echo "claude.nix: agent source $src not found, skipping" >&2
+      exit 0
+    fi
+
+    # Clean destination and recreate directory tree
+    rm -rf "$dest"
     find "$src" -type d -printf '%P\n' | while IFS= read -r d; do
-      mkdir -p "$out/$d"
+      mkdir -p "$dest/$d"
     done
 
     # Process each .md file
     find "$src" -type f -name '*.md' -printf '%P\n' | while IFS= read -r rel; do
       infile="$src/$rel"
-      outfile="$out/$rel"
+      outfile="$dest/$rel"
 
       # Check if ruflo block already exists in source (idempotent)
       has_ruflo=0
       grep -q "MANDATORY: Ruflo Workflow Protocol" "$infile" && has_ruflo=1
 
       if head -1 "$infile" | grep -q '^---$'; then
-        # Has YAML frontmatter — use awk to inject/replace model + ruflo block
+        # Has YAML frontmatter -- use awk to inject/replace model + ruflo block
         ${pkgs.gawk}/bin/awk -v model="$model" -v has_ruflo="$has_ruflo" -v ruflo_file="$ruflo_block" '
           NR==1 && /^---$/ { in_fm=1; print; next }
           in_fm && /^model:/ { print "model: \"" model "\""; replaced=1; next }
@@ -88,7 +100,7 @@ let
           { print }
         ' "$infile" > "$outfile"
       else
-        # No frontmatter — prepend one with model field + ruflo block
+        # No frontmatter -- prepend one with model field + ruflo block
         printf '%s\n' '---' "model: \"$model\"" '---' > "$outfile"
         if [ "$has_ruflo" = "0" ]; then
           cat "$ruflo_block" >> "$outfile"
@@ -99,42 +111,48 @@ let
 
     # Copy non-.md files verbatim (if any)
     find "$src" -type f ! -name '*.md' -printf '%P\n' | while IFS= read -r rel; do
-      cp "$src/$rel" "$out/$rel"
+      cp "$src/$rel" "$dest/$rel"
     done
+
+    echo "claude.nix: processed agents -> $dest"
   '';
 in
 {
-  # --- Core config ---
+  # --- Core config (mutable symlinks via mkOutOfStoreSymlink) ---
   home.file."CLAUDE.md" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/claude/CLAUDE.md";
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/configs/claude/CLAUDE.md";
   };
 
   home.file.".claude/settings.json" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/claude/settings.json";
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/configs/claude/settings.json";
   };
 
-  # --- Commands & skills ---
+  # --- Commands & skills (mutable symlinks) ---
   home.file.".claude/commands" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/commands";
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/commands";
   };
 
   home.file.".claude/skills" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/skills";
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/skills";
   };
 
-  # --- Agents (model + ruflo workflow block injected at build time) ---
-  home.file.".claude/agents" = {
-    source = processedAgents;
-    recursive = true;
-  };
+  # --- Agents (mutable, processed via activation script) ---
+  # Agent .md files need build-time injection (model + ruflo block), so they
+  # cannot be simple symlinks.  Instead of a Nix-store derivation (immutable),
+  # an activation script copies and processes them into ~/.claude/agents/ at
+  # home-manager switch time, keeping the result writable.
+  home.activation.processClaudeAgents = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    PATH="${pkgs.findutils}/bin:${pkgs.gawk}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:$PATH"
+    ${processAgentsScript}
+  '';
 
-  # --- Helpers (tmux integration scripts) ---
+  # --- Helpers (mutable symlinks) ---
   home.file.".claude/helpers/tmux-pane-title.sh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/helpers/tmux-pane-title.sh";
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/helpers/tmux-pane-title.sh";
   };
 
   home.file.".claude/helpers/tmux-session-end.sh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/helpers/tmux-session-end.sh";
+    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/helpers/tmux-session-end.sh";
   };
 
   # --- Packages (node needed for claude-flow) ---

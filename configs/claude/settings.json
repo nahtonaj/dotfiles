@@ -104,6 +104,8 @@
       "Bash(date:*)",
       "Bash(id:*)",
       "Bash(hostname:*)",
+      "Bash(mkdir:*)",
+      "Bash(curl:*)",
       "Bash(nix eval:*)",
       "Bash(nix flake show:*)",
       "Bash(nix flake metadata:*)",
@@ -126,11 +128,11 @@
       "Read(./.env.*)"
     ]
   },
+  "model": "opus[1m]",
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "agent-orchestrator"
   ],
-  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -282,6 +284,10 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node $HOME/.claude/helpers/statusline.cjs"
+  },
   "enabledPlugins": {
     "bazel-universe@experimental-plugin-marketplace": true,
     "spec-driven-workflow@experimental-plugin-marketplace": false,
@@ -299,10 +305,6 @@
     "ralph-loop@claude-plugins-official": true,
     "plugin-builder@experimental-plugin-marketplace": true,
     "superpowers@claude-plugins-official": true
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "node $HOME/.claude/helpers/statusline.cjs"
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
