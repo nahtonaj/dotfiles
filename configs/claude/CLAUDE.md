@@ -161,9 +161,10 @@ The coordinator MUST NOT:
 
 Every Agent spawn MUST include these elements in the prompt. The SubagentStart hook injects the agentDB Protocol via `additionalContext` as a fallback, but hook-injected context is advisory -- agents do not reliably follow it. The coordinator MUST include the protocol directly in the prompt for enforcement.
 
-1. **Prior Pattern Context** from `mcp__agent-orchestrator__memory_search` results (summarized)
-2. **Domain routing** result from `mcp__agent-orchestrator__hooks_route`
-3. **Output structure instruction**: Tell agents to end their response with:
+1. **agentDB Protocol**: Include the mandatory agentDB Protocol instruction block (see Agent-Side Instructions under Inter-Agent Communication Protocol)
+2. **Prior Pattern Context** from `mcp__agent-orchestrator__memory_search` results (summarized)
+3. **Domain routing** result from `mcp__agent-orchestrator__hooks_route`
+4. **Output structure instruction**: Tell agents to end their response with:
    ```
    ## RESULTS
    - **Status**: completed | partial | blocked
@@ -175,8 +176,7 @@ Every Agent spawn MUST include these elements in the prompt. The SubagentStart h
    - **agentDB Dependencies Consumed**: list of agentDB keys this agent received context from (or "none" if first agent)
    - **Intermediate State**: any partial work products that should be persisted for continuation (or "none")
    ```
-4. **Task context**: Reference to task list and relevant agent names
-5. **agentDB Protocol**: Include the mandatory agentDB Protocol instruction block (see Agent-Side Instructions under Inter-Agent Communication Protocol)
+5. **Task context**: Reference to task list and relevant agent names
 6. **Diff analysis** (for reviewer/security-auditor agents only): Include `analyze_diff` and `analyze_diff-risk` results when the task involves reviewing code changes
 
 **VIOLATION**: Spawning an agent without prior memory_search and hooks_route calls.
