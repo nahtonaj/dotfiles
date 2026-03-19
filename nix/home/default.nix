@@ -17,7 +17,7 @@
     ../modules/tridactyl.nix
     ../modules/ssh.nix
     ../modules/claude.nix
-    ../modules/ruflo.nix
+    ../modules/agent-orchestrator.nix
   ];
 
   home.username = "jon.gao";
