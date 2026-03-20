@@ -158,6 +158,38 @@ function getContextDisplay(input) {
 
 // ─── Orchestrator metrics (agents + tasks) ───────────────────────
 
+// Check whether a store file is stale (no active session and file older than threshold)
+function isStoreStale(storePath, projectDir, maxAgeMs) {
+  if (!maxAgeMs) maxAgeMs = 5 * 60 * 1000; // 5 minutes default
+  try {
+    // If there is an active session, stores are never considered stale
+    var sessionPaths = [
+      path.join(projectDir, '.arche', 'session', 'current.json'),
+      path.join(projectDir, '.arche', 'sessions', 'current.json'),
+      path.join(projectDir, '.arche', 'state.json'),
+    ];
+    for (var i = 0; i < sessionPaths.length; i++) {
+      if (fs.existsSync(sessionPaths[i])) {
+        // Session indicator exists -- check if it also looks active
+        try {
+          var sessionData = JSON.parse(fs.readFileSync(sessionPaths[i], 'utf-8'));
+          if (sessionData && sessionData.status === 'active') return false;
+        } catch (e) {
+          // File exists but unreadable/unparseable -- treat as active to be safe
+          return false;
+        }
+      }
+    }
+    // No active session found -- check store file age
+    if (fs.existsSync(storePath)) {
+      var stat = fs.statSync(storePath);
+      var age = Date.now() - stat.mtimeMs;
+      if (age > maxAgeMs) return true;
+    }
+  } catch (e) { /* ignore, treat as not stale */ }
+  return false;
+}
+
 function getOrchestratorMetrics(input) {
   // Determine project dir: prefer workspace.project_dir injected by Claude Code
   var projectDir = null;
@@ -174,9 +206,9 @@ function getOrchestratorMetrics(input) {
   var taskDone = 0;
 
   // Read agent store -- {projectDir}/.arche/agents/store.json
+  var agentPath = path.join(projectDir, '.arche', 'agents', 'store.json');
   try {
-    var agentPath = path.join(projectDir, '.arche', 'agents', 'store.json');
-    if (fs.existsSync(agentPath)) {
+    if (fs.existsSync(agentPath) && !isStoreStale(agentPath, projectDir)) {
       var agentStore = JSON.parse(fs.readFileSync(agentPath, 'utf-8'));
       if (agentStore && agentStore.agents) {
         var agents = Object.values(agentStore.agents);
@@ -189,9 +221,9 @@ function getOrchestratorMetrics(input) {
   } catch (e) { /* ignore */ }
 
   // Read task store -- {projectDir}/.arche/tasks/store.json
+  var taskPath = path.join(projectDir, '.arche', 'tasks', 'store.json');
   try {
-    var taskPath = path.join(projectDir, '.arche', 'tasks', 'store.json');
-    if (fs.existsSync(taskPath)) {
+    if (fs.existsSync(taskPath) && !isStoreStale(taskPath, projectDir)) {
       var taskStore = JSON.parse(fs.readFileSync(taskPath, 'utf-8'));
       if (taskStore && taskStore.tasks) {
         var tasks = Object.values(taskStore.tasks);

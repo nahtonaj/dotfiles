@@ -204,6 +204,25 @@ const handlers = {
     } else {
       console.log('[OK] Session ended');
     }
+
+    // Clean up .arche/ stores to prevent stale data in statusline
+    // This resets agent and task stores so the next statusline render shows clean metrics
+    try {
+      const cwd = process.cwd();
+      const archeStores = [
+        path.join(cwd, '.arche', 'agents', 'store.json'),
+        path.join(cwd, '.arche', 'tasks', 'store.json'),
+      ];
+      for (const storePath of archeStores) {
+        if (fs.existsSync(storePath)) {
+          fs.writeFileSync(storePath, '[]', 'utf-8');
+        }
+      }
+      console.log('[OK] Cleared .arche agent/task stores');
+    } catch (e) {
+      // Non-fatal: cleanup failure should not break session end
+      console.log(`[WARN] Failed to clear .arche stores: ${e.message}`);
+    }
   },
 
   'pre-task': () => {

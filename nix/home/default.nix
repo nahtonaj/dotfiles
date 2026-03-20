@@ -18,6 +18,7 @@
     ../modules/ssh.nix
     ../modules/claude.nix
     ../modules/agent-orchestrator.nix
+    ../modules/arche.nix
   ];
 
   home.username = "jon.gao";
