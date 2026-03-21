@@ -60,6 +60,12 @@ result-*
 .config/yazi/yazi.toml
 .oh-my-zsh/
 
+# Claude Code project-local config files (auto-generated, not for committing)
+.claude/settings.json
+.claude/settings.local.json
+.claude/mcp.json
+.claude/mcp.local.json
+
 # Unused .config dirs
 .config/ada/
 .config/doom/
