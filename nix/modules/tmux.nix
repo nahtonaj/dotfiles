@@ -1,9 +1,13 @@
 { config, pkgs, lib, flakePath, ... }:
 
 {
-  programs.tmux = {
-    enable = true;
-    extraConfig = builtins.readFile "${flakePath}/configs/tmux/tmux.conf";
+  programs.tmux.enable = true;
+
+  # Mutable symlink so edits to the dotfiles source take effect immediately
+  # (no home-manager switch required after changing tmux.conf)
+  xdg.configFile."tmux/tmux.conf" = {
+    source = config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/dotfiles/configs/tmux/tmux.conf";
   };
 
   # Auto-clone TPM on first activation
