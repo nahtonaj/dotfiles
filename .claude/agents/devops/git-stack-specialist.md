@@ -375,6 +375,71 @@ Child branches typically don't need re-pushing.
 
 **Prevention**: After committing to any branch in a stack, always verify the push landed with `git log origin/<branch> --oneline -1`. Use `git stack push` rather than manual `git push` to ensure all branches are updated atomically.
 
+### 10. Stale Stack After Parent Branch Grows (Duplicate Commits / Wrong PR Diff)
+
+**Symptom**: PR shows commits from the parent layer that should not be there, or descendant branches contain duplicate commits with different SHAs. `git stack ls` may look fine locally but PR diffs on GitHub include unexpected changes.
+
+**Root Cause 1 -- Stale `parent_commit` in `stack.conf`**:
+
+When new commits are added to a parent branch (e.g., via cherry-pick, additional development, or a master merge), `stack.conf` still records the old `parent_commit` value from when the child was created or last synced. `git stack push` does NOT automatically update `parent_commit` for descendant branches. The stale `parent_commit` causes the PR diff to show the gap between the old parent_commit and the new parent tip as "new" commits in the child PR.
+
+**Root Cause 2 -- Descendant branch re-committed parent's work**:
+
+If a descendant branch was originally branched off an old ancestor tip, and the ancestor later grew (new commits added), rebasing the descendant with the wrong OLD_BASE replays commits that already exist in the parent -- creating duplicate commits with different SHAs in the descendant's history. This is especially common when the ancestor received a large master merge that introduces conflicts in unrelated files.
+
+**Diagnosis**:
+```shell
+# Check if merge-base equals parent tip (it should)
+git merge-base stack/parent stack/child
+git rev-parse stack/parent
+# If these differ, the child is rooted on a stale point
+
+# Check for duplicate commits (same message, different SHA)
+git log --oneline stack/parent..stack/child
+# Compare with parent's unique commits -- overlapping messages = duplicates
+```
+
+**Fix** (targeted `rebase --onto` with correct OLD_BASE):
+```shell
+# 1. Find the ACTUAL merge-base (not the branch tip, not an arbitrary commit)
+ACTUAL_MERGE_BASE=$(git merge-base stack/parent stack/child)
+
+# 2. Rebase child onto current parent tip, replaying only child-unique commits
+git rebase --onto stack/parent $ACTUAL_MERGE_BASE stack/child
+
+# 3. Resolve any conflicts (typically BUILD files -- merge import sets)
+
+# 4. Repeat for each descendant in order (parent-to-child)
+
+# 5. Push all fixed branches (skip already-correct ancestors)
+git stack push --skip-ancestors
+```
+
+**Why `git stack sync --fetch` fails here**: If the parent branch contains a large master merge (hundreds of commits), `git stack sync` attempts to rebase through all of those changes, causing conflicts in unrelated files (e.g., `dbl/http/rust_http/ffi.rs`). Targeted `rebase --onto` avoids this by replaying only the child's unique commits.
+
+**Prevention Checklist** (run after ANY commits added to any branch in the stack):
+
+```shell
+# 1. Verify merge-bases are correct (each should equal the parent's tip)
+git merge-base stack/parent stack/child
+# Expected output: same as `git rev-parse stack/parent`
+
+# 2. If merge-base != parent tip, fix with targeted rebase:
+ACTUAL_MERGE_BASE=$(git merge-base stack/parent stack/child)
+git rebase --onto stack/parent $ACTUAL_MERGE_BASE stack/child
+
+# 3. Never use `git stack sync --fetch` on a stack containing large master merges
+#    Use targeted `rebase --onto` instead to avoid unrelated conflicts
+
+# 4. After rebase, push all descendants:
+git stack push --skip-ancestors
+# Do NOT use the -a flag (it pulls in unrelated branches with broken parent_commit)
+
+# 5. Verify the fix landed:
+git merge-base stack/parent stack/child  # should now equal stack/parent tip
+git log --oneline stack/parent..stack/child  # should show only child-unique commits
+```
+
 ## Stack Configuration
 
 Stack state lives at `.git/stack/stack.conf` (JSON). Each branch entry:
