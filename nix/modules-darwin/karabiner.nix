@@ -1,5 +1,7 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  xdg.configFile."karabiner".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.config/karabiner";
+  home.activation.createKarabinerSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    ln -sfn "${config.home.homeDirectory}/dotfiles/.config/karabiner" "${config.xdg.configHome}/karabiner"
+  '';
 }

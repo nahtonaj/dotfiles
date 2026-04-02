@@ -1,5 +1,7 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  xdg.configFile."aerospace".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.config/aerospace";
+  home.activation.createAerospaceSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    ln -sfn "${config.home.homeDirectory}/dotfiles/.config/aerospace" "${config.xdg.configHome}/aerospace"
+  '';
 }

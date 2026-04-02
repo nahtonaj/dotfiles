@@ -118,23 +118,16 @@ let
   '';
 in
 {
-  # --- Core config (mutable symlinks via mkOutOfStoreSymlink) ---
-  home.file."CLAUDE.md" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/configs/claude/CLAUDE.md";
-  };
-
-  home.file.".claude/settings.json" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/configs/claude/settings.json";
-  };
-
-  # --- Commands & skills (mutable symlinks) ---
-  home.file.".claude/commands" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/commands";
-  };
-
-  home.file.".claude/skills" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/skills";
-  };
+  # --- Direct symlinks (bypass nix store, point straight to dotfiles repo) ---
+  home.activation.createClaudeSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "$HOME/.claude/helpers"
+    ln -sfn "${dotfilesDir}/configs/claude/CLAUDE.md" "$HOME/CLAUDE.md"
+    ln -sfn "${dotfilesDir}/configs/claude/settings.json" "$HOME/.claude/settings.json"
+    ln -sfn "${dotfilesDir}/.claude/commands" "$HOME/.claude/commands"
+    ln -sfn "${dotfilesDir}/.claude/skills" "$HOME/.claude/skills"
+    ln -sfn "${dotfilesDir}/.claude/helpers/tmux-pane-title.sh" "$HOME/.claude/helpers/tmux-pane-title.sh"
+    ln -sfn "${dotfilesDir}/.claude/helpers/tmux-session-end.sh" "$HOME/.claude/helpers/tmux-session-end.sh"
+  '';
 
   # --- Agents (mutable, processed via activation script) ---
   # Agent .md files need build-time injection (model + ruflo block), so they
@@ -145,15 +138,6 @@ in
     PATH="${pkgs.findutils}/bin:${pkgs.gawk}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:$PATH"
     ${processAgentsScript}
   '';
-
-  # --- Helpers (mutable symlinks) ---
-  home.file.".claude/helpers/tmux-pane-title.sh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/helpers/tmux-pane-title.sh";
-  };
-
-  home.file.".claude/helpers/tmux-session-end.sh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${dotfilesDir}/.claude/helpers/tmux-session-end.sh";
-  };
 
   # --- Packages (node needed for claude-flow) ---
   home.packages = with pkgs; [

@@ -121,20 +121,30 @@
       "Bash(npm view:*)",
       "Bash(tmux:*)",
       "mcp__arche__*",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(*ralph-loop*)",
+      "Bash(*setup-ralph-loop.sh*)"
     ],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)"
     ]
   },
-  "model": "opus[1m]",
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "arche"
   ],
   "hooks": {
     "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/jon.gao/arche/scripts/permission-hook.cjs",
+            "timeout": 315
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
@@ -170,6 +180,11 @@
             "type": "command",
             "command": "bash $HOME/.claude/helpers/tmux-pane-title.sh",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "node /home/jon.gao/.claude/helpers/lifecycle-hook.cjs route",
+            "timeout": 10000
           }
         ]
       }
@@ -189,8 +204,8 @@
           },
           {
             "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs daemon-init",
-            "timeout": 5000
+            "command": "node /home/jon.gao/.claude/helpers/lifecycle-hook.cjs session-start",
+            "timeout": 10000
           }
         ]
       }
@@ -231,8 +246,13 @@
           },
           {
             "type": "command",
-            "command": "printf '\\a' > /dev/tty",
+            "command": "printf '\\a' > /dev/tty 2>/dev/null || true",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "node /home/jon.gao/.claude/helpers/lifecycle-hook.cjs stop",
+            "timeout": 10000
           }
         ]
       }
@@ -267,6 +287,17 @@
         ]
       }
     ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/jon.gao/.claude/helpers/lifecycle-hook.cjs post-compact",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "SubagentStart": [
       {
         "hooks": [
@@ -274,6 +305,42 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs status",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs');let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);const fields=Object.keys(j).map(k=>k+': '+JSON.stringify(j[k]).substring(0,200)).join('\\n  ');fs.appendFileSync('/tmp/arche-subagent-start.log',new Date().toISOString()+'\\nFIELDS:\\n  '+fields+'\\n\\n');}catch(e){fs.appendFileSync('/tmp/arche-subagent-start.log',new Date().toISOString()+' RAW: '+d+'\\n\\n');}});\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs');let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);const fields=Object.keys(j).map(k=>k+': '+JSON.stringify(j[k]).substring(0,200)).join('\\n  ');fs.appendFileSync('/tmp/arche-subagent-stop.log',new Date().toISOString()+'\\nFIELDS:\\n  '+fields+'\\n\\n');}catch(e){fs.appendFileSync('/tmp/arche-subagent-stop.log',new Date().toISOString()+' RAW: '+d+'\\n\\n');}});\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/jon.gao/.config/llm-cli/hooks/claude_notification_hook.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/jon.gao/.config/llm-cli/hooks/claude_notification_hook.sh"
           }
         ]
       }
@@ -286,12 +353,11 @@
   "enabledPlugins": {
     "bazel-universe@experimental-plugin-marketplace": true,
     "spec-driven-workflow@experimental-plugin-marketplace": false,
-    "pr-review-toolkit@claude-plugins-official": false,
-    "commit-commands@claude-plugins-official": false,
-    "feature-dev@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "code-review@claude-plugins-official": false,
-    "github@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
     "atlassian@claude-plugins-official": false,
     "slack@claude-plugins-official": false,
     "claude-hud@experimental-plugin-marketplace": false,
@@ -312,7 +378,7 @@
     },
     "agentTeams": {
       "enabled": true,
-      "teammateMode": "auto",
+      "teammateMode": "in-process",
       "taskListEnabled": true,
       "mailboxEnabled": true,
       "coordination": {
@@ -355,19 +421,8 @@
       "enabled": true
     },
     "daemon": {
-      "autoStart": true,
-      "workers": [
-        "map",
-        "audit",
-        "optimize",
-        "consolidate",
-        "testgaps",
-        "ultralearn",
-        "deepdive",
-        "document",
-        "refactor",
-        "benchmark"
-      ],
+      "autoStart": false,
+      "workers": [],
       "schedules": {
         "audit": {
           "interval": "1h",
@@ -426,10 +481,10 @@
       "directory": "/docs/ddd"
     },
     "security": {
-      "autoScan": true,
-      "scanOnEdit": true,
-      "cveCheck": true,
-      "threatModel": true
+      "autoScan": false,
+      "scanOnEdit": false,
+      "cveCheck": false,
+      "threatModel": false
     }
   }
 }

@@ -29,17 +29,13 @@ in
 {
   # Custom helper overrides -- only files we've modified.
   # Default helpers are created by `agent-orchestrator init`; these overlay on top.
-  home.file.".claude/helpers/router.js" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/agent-orchestrator/router.js";
-  };
-
-  home.file.".claude/helpers/agent-enforcement.js" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/agent-orchestrator/agent-enforcement.js";
-  };
-
-  home.file.".claude/helpers/post-agent-hook.js" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/agent-orchestrator/post-agent-hook.js";
-  };
+  # Direct symlinks bypass nix store, point straight to dotfiles repo.
+  home.activation.createAgentOrchestratorSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "$HOME/.claude/helpers"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/configs/agent-orchestrator/router.js" "$HOME/.claude/helpers/router.js"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/configs/agent-orchestrator/agent-enforcement.js" "$HOME/.claude/helpers/agent-enforcement.js"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/configs/agent-orchestrator/post-agent-hook.js" "$HOME/.claude/helpers/post-agent-hook.js"
+  '';
 
   # Build agent-orchestrator fork on activation (idempotent).
   home.activation.agentOrchestratorSetup = config.lib.dag.entryAfter [ "writeBoundary" ] ''

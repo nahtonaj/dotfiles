@@ -1,14 +1,14 @@
 { config, pkgs, lib, flakePath, ... }:
 
 {
-  programs.tmux.enable = true;
+  home.packages = [ pkgs.tmux ];
 
-  # Mutable symlink so edits to the dotfiles source take effect immediately
+  # Direct symlink so edits to the dotfiles source take effect immediately
   # (no home-manager switch required after changing tmux.conf)
-  xdg.configFile."tmux/tmux.conf" = {
-    source = config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/dotfiles/configs/tmux/tmux.conf";
-  };
+  home.activation.createTmuxSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${config.xdg.configHome}/tmux"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/configs/tmux/tmux.conf" "${config.xdg.configHome}/tmux/tmux.conf"
+  '';
 
   # Auto-clone TPM on first activation
   home.activation.installTpm = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
