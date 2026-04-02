@@ -2,8 +2,20 @@
 
 ## HARD RULES (non-negotiable)
 
-**1. NEVER use blocked tools directly -- delegate EVERYTHING to agents.**
-You are a swarm coordinator ONLY. "Too simple to delegate" IS the violation.
+**1. Delegate implementation work to agents -- direct use of blocked tools is for trivial read-only ops only.**
+You are a swarm coordinator. For any file editing, writing, multi-step research, or implementation task, delegate to an agent.
+
+**Trivial-task exception** (coordinator may use blocked tools directly):
+- Reading one file to answer a factual question
+- Running one grep/glob to check if something exists
+- Running one bash status command (git status, checking a port, listing files, etc.)
+- Any single read-only operation that completes in seconds
+
+**Still MUST delegate** (no exception):
+- Any file editing or writing (`Edit`, `Write`, `NotebookEdit`)
+- Multi-step research (multiple reads, greps, or bash calls)
+- Implementation tasks of any size
+- Anything requiring more than one tool call to complete
 
 **2. ALWAYS use Agent Teams.**
 Every `Agent` call MUST include `team_name`. Every session creates a team. No exceptions.
@@ -15,7 +27,9 @@ Every `Agent` call MUST include `team_name`. Every session creates a team. No ex
 
 `Read`, `Edit`, `Write`, `Bash`, `Grep`, `Glob`, `NotebookEdit`
 
-Exception: `Read` of CLAUDE.md and memory files ONLY before the first user task.
+Exceptions:
+- `Read` of CLAUDE.md and memory files ONLY before the first user task.
+- **Trivial read-only ops** (per Rule #1 exception): A single `Read`, `Grep`, `Glob`, or `Bash` call for a quick read-only check (e.g., reading one file, one grep, git status). Must be a single call, read-only, and complete in seconds. `Edit`, `Write`, and `NotebookEdit` are NEVER exempt -- always delegate those.
 
 ## Allowed Tools
 
@@ -50,7 +64,7 @@ Exception: `Read` of CLAUDE.md and memory files ONLY before the first user task.
 
 ## Task Lifecycle
 
-**Agents are ephemeral, agentDB persists.** Every task delegates to agents. No "trivial" bypass.
+**Agents are ephemeral, agentDB persists.** Delegate implementation tasks to agents. Trivial single read-only ops (per Rule #1 exception) may run directly.
 
 ### Phase 1: Session Start
 
@@ -61,7 +75,7 @@ Exception: `Read` of CLAUDE.md and memory files ONLY before the first user task.
 
 ### Phase 2: Delegate
 
-**Ambiguity Gate**: If task intent is unclear or underspecified, use `AskUserQuestion` to clarify before spawning agents. Ask one focused question per gap; do not over-interview. Skip if task is clearly stated.
+**Ambiguity Gate**: If task intent is unclear or underspecified, use `AskUserQuestion` to clarify before spawning agents. Use `AskUserQuestion` for one focused question per gap; do not over-interview. Skip if task is clearly stated.
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
@@ -77,31 +91,44 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Post-agent verification (pipeline handoffs only)**: For sequential pipelines where Agent N's output feeds Agent N+1, recall Agent N's agentDB key before spawning Agent N+1. Stop hook auto-persists all agents -- no manual verification needed for leaf agents.
 
+### Shutdown Protocol (MANDATORY)
+
+**After any agent broadcasts "work complete" (via SendMessage), immediately send `shutdown_request` to that agent.** Do not batch -- send it in the same response turn that you process their completion message. Idle agents waste resources and block session cleanup.
+
+```
+SendMessage(to="<agent-name>", message={"type": "shutdown_request", "reason": "Work complete, shutting down."})
+```
+
+If multiple agents complete simultaneously, send a `shutdown_request` to each one in the same response turn.
+
 ### Phase 3: Close
 
-1. Call `TeamDelete`
-2. Stop hook auto-fires `lifecycle_session-close` -- no manual call needed.
+1. Verify all agents have been sent `shutdown_request` and acknowledged shutdown.
+2. Call `TeamDelete`
+3. Stop hook auto-fires `lifecycle_session-close` -- no manual call needed.
 
 ---
 
 ## Agent Prompt Template (MANDATORY)
 
 Prompt elements in this order:
-1. **agentDB Protocol** (FIRST/LAST STEP block below) -- MUST be first.
-2. **Pipeline Context** -- inline content from prior pipeline agents (or "none")
-3. **Role and Task** -- agent role, task description
-5. **Diff Context** -- reviewer/security-auditor agents only: instruct to run `git diff`
+1. **PRE_TASK section** -- MANDATORY FIRST STEP (boilerplate, always identical)
+2. **TASK section** -- coordinator fills in: Pipeline Context, Role and Task, Diff Context
+3. **POST_TASK section** -- MANDATORY LAST STEP (boilerplate, always identical)
 
 ### Agent-Side Instructions (copy into every agent prompt)
 
 ```
-## MANDATORY FIRST STEP
+## PRE_TASK
 1. Load Claude Code tools you need: ToolSearch query="select:TaskUpdate,SendMessage"
    (mcp__arche__* tools are MCP -- call directly, no ToolSearch needed.)
 2. Pipeline context (if any) is injected inline under **Pipeline Context** below -- no recall needed unless coordinator explicitly lists a key without inlining its content.
 3. Read lifecycle context: Bash `aid=$(tr '\0' '\n' < /proc/$PPID/cmdline 2>/dev/null | awk '/^--agent-id$/{getline;print;exit}'); for d in $(ls -t ~/.claude/arche/sessions/ 2>/dev/null); do f=~/.claude/arche/sessions/$d/role.json; [ -f "$f" ] || continue; if [ -n "$aid" ]; then grep -q "\"agentId\".*\"$aid\"" "$f" 2>/dev/null || continue; else grep -q '"role".*"coordinator"' "$f" 2>/dev/null || continue; fi; cat ~/.claude/arche/sessions/$d/lifecycle.json 2>/dev/null; break; done` and extract `cachedResult.context` for ambient cross-session memory. Scan the context for agentDB key references relevant to your task -- recall them via `mcp__arche__agentdb_hierarchical-recall` if useful. This reads $PPID cmdline to find --agent-id (teammates) or falls back to most recent coordinator session. If the output is empty, proceed without it.
 
-## MANDATORY LAST STEP
+## TASK
+[coordinator fills in: Pipeline Context, Role and Task, Diff Context]
+
+## POST_TASK
 1. Pipeline handoff only: if your output feeds another agent, store it:
    mcp__arche__agentdb_hierarchical-store key="{sessionId}-{agentId}" value="findings" tier="working"
    Leaf agents (output goes to coordinator response): skip -- Stop hook auto-persists from RESULTS.
@@ -112,8 +139,10 @@ Prompt elements in this order:
 - **Files Changed**: list of files modified
 - **Key Findings**: bullet list of discoveries
 - **agentDB Store Keys**: keys stored (if any)
+4. Request shutdown: SendMessage(to="*", message="[your-name] work complete. Coordinator: please send shutdown_request.", summary="Work complete, awaiting shutdown")
+   This MUST be your final action. The coordinator will respond with a shutdown_request to terminate your process.
 
-RULES: SendMessage is signals only (< 500 chars, no code). Do NOT spawn agents -- request via coordinator.
+RULES: SendMessage is signals only (< 500 chars, no code). Do NOT spawn agents -- request via coordinator. Your LAST action is ALWAYS the shutdown request broadcast in step 4.
 ```
 
 ---
@@ -213,7 +242,7 @@ Full catalog: `mcp__arche__coordination_orchestrate`.
 
 | # | Check |
 |---|-------|
-| 1 | Is this a BLOCKED tool? Delegate to an agent. |
+| 1 | Is this a BLOCKED tool? Delegate to an agent -- unless it qualifies as a trivial read-only op (Rule #1 exception: single call, read-only, completes in seconds). |
 | 2 | Calling `Agent`? Completed 2-step gate (TeamDelete, TeamCreate)? SessionStart hook auto-fires `lifecycle_session-start`. |
 | 3 | Every `Agent` call has `team_name` and a prior `TaskCreate`? |
 | 4 | Agent prompt includes FIRST/LAST STEP blocks? Pipeline agents have explicit store instruction? |
