@@ -17,7 +17,6 @@
     ../modules/tridactyl.nix
     ../modules/ssh.nix
     ../modules/claude.nix
-    ../modules/agent-orchestrator.nix
     ../modules/arche.nix
   ];
 

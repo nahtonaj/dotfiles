@@ -2,12 +2,12 @@
 /**
  * Global Claude Code Statusline
  *
- * Output: <cwd> | <branch>[*][+N/-N] | <Model> [| agents:N] [| tasks:X/Y] [| ctx:N%]
+ * Styled after the zsh PROMPT from ~/.zshrc (databricks.zsh-theme):
+ *   # <user> at <host> in <dir> (git:<branch>[*][+N/-N]) [HH:MM:SS] | <Model> [| ctx:N%]
  *
  * Reads Claude Code JSON from stdin when invoked as a statusLine command.
  * Falls back gracefully to process.cwd() when stdin is a TTY.
  * The ctx segment only appears once there is an active API call (used_percentage != null).
- * The agents and tasks segments only appear when there is orchestrator activity.
  */
 
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -19,12 +19,18 @@ const os = require('os');
 // ANSI colors
 const c = {
   reset: '\x1b[0m',
+  bold: '\x1b[1m',
   dim: '\x1b[2m',
   red: '\x1b[0;31m',
   green: '\x1b[0;32m',
   yellow: '\x1b[0;33m',
+  blue: '\x1b[0;34m',
   purple: '\x1b[0;35m',
   cyan: '\x1b[0;36m',
+  white: '\x1b[0;37m',
+  boldBlue: '\x1b[1;34m',
+  boldYellow: '\x1b[1;33m',
+  boldRed: '\x1b[1;31m',
 };
 
 // Safe spawnSync wrapper -- returns trimmed stdout or empty string on failure
@@ -41,16 +47,16 @@ function safeSpawn(cmd, args, timeoutMs) {
 }
 
 
-// ─── Git info (three separate spawnSync calls, no shell interpolation) ──────
+// ─── Git info ────────────────────────────────────────────────────────────────
 
-function getGitInfo() {
-  var result = { gitBranch: '', modified: 0, untracked: 0, staged: 0, ahead: 0, behind: 0 };
+function getGitInfo(cwd) {
+  var result = { gitBranch: '', modified: 0, untracked: 0, staged: 0, ahead: 0, behind: 0, isWorktree: false, worktreeName: '' };
 
   // Branch
-  result.gitBranch = safeSpawn('git', ['branch', '--show-current'], 2000);
+  result.gitBranch = safeSpawn('git', ['-C', cwd, '--no-optional-locks', 'branch', '--show-current'], 2000);
 
   // Porcelain status
-  var porcelain = safeSpawn('git', ['status', '--porcelain'], 2000);
+  var porcelain = safeSpawn('git', ['-C', cwd, '--no-optional-locks', 'status', '--porcelain'], 2000);
   if (porcelain) {
     var lines = porcelain.split('\n');
     for (var i = 0; i < lines.length; i++) {
@@ -64,20 +70,56 @@ function getGitInfo() {
   }
 
   // Ahead/behind
-  var ab = safeSpawn('git', ['rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], 2000);
+  var ab = safeSpawn('git', ['-C', cwd, '--no-optional-locks', 'rev-list', '--left-right', '--count', 'HEAD...@{upstream}'], 2000);
   if (ab) {
-    var parts = ab.split(/\s+/);
-    result.ahead = parseInt(parts[0]) || 0;
-    result.behind = parseInt(parts[1]) || 0;
+    var abParts = ab.split(/\s+/);
+    result.ahead = parseInt(abParts[0]) || 0;
+    result.behind = parseInt(abParts[1]) || 0;
+  }
+
+  // Worktree detection: git-dir != git-common-dir means we're in a linked worktree
+  var gitDir = safeSpawn('git', ['-C', cwd, '--no-optional-locks', 'rev-parse', '--git-dir'], 1000);
+  var gitCommonDir = safeSpawn('git', ['-C', cwd, '--no-optional-locks', 'rev-parse', '--git-common-dir'], 1000);
+  result.isWorktree = !!(gitDir && gitCommonDir && gitDir !== gitCommonDir);
+
+  // Worktree name: last path component of the worktree directory
+  if (result.isWorktree) {
+    // gitDir is something like /path/to/.git/worktrees/<name>
+    var parts = gitDir.split('/');
+    var wtIdx = parts.indexOf('worktrees');
+    if (wtIdx !== -1 && parts[wtIdx + 1]) {
+      result.worktreeName = parts[wtIdx + 1];
+    } else {
+      // Fallback: use last component of cwd
+      result.worktreeName = cwd.split('/').pop() || '';
+    }
   }
 
   return result;
 }
 
-// ─── Model name ─────────────────────────────────────────────────
+// ─── Model name ──────────────────────────────────────────────────────────────
+
+// Extract short display name from a model ID string.
+// e.g. "claude-opus-4-6" -> "Opus 4.6", "claude-haiku-4-5-20251001" -> "Haiku 4.5"
+function parseModelId(id) {
+  if (!id || typeof id !== 'string') return null;
+  var m = id.match(/claude-(\w+)-(\d+)-(\d+)/);
+  if (!m) return null;
+  var tier = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+  return tier + ' ' + m[2] + '.' + m[3];
+}
 
 // Prefer Claude Code's injected JSON; fall back to .claude.json project lookup
 function resolveModelName(input) {
+  // Primary path: Claude Code injects model as a plain string ID
+  if (input && typeof input.model === 'string') {
+    var parsed = parseModelId(input.model);
+    if (parsed) return parsed;
+    return input.model;
+  }
+
+  // Secondary path: model as an object with display_name
   if (input && input.model && input.model.display_name) {
     var dn = input.model.display_name;
     if (dn.toLowerCase().indexOf('opus') !== -1) return 'Opus';
@@ -127,136 +169,39 @@ function resolveModelName(input) {
 }
 
 
-// ─── Current working directory (short display) ───────────────────
+// ─── Current working directory (tilde-abbreviated) ───────────────────────────
 
 function getCwdDisplay(input) {
-  // Prefer the CWD injected by Claude Code via stdin JSON
   var dir = (input && input.cwd) ? input.cwd : process.cwd();
   var home = os.homedir();
-  // Replace home prefix with ~
   if (dir === home) return '~';
   if (dir.indexOf(home + '/') === 0) dir = '~' + dir.slice(home.length);
-  // Show last two path segments for context (e.g. ~/arche)
-  var parts = dir.split('/');
-  if (parts.length > 2) {
-    return '~/' + parts.slice(-1)[0];
-  }
   return dir;
 }
 
-// ─── Context window usage ─────────────────────────────────────────
+// ─── Context window usage ─────────────────────────────────────────────────────
 
 function getContextDisplay(input) {
   if (!input || !input.context_window) return '';
-  var used = input.context_window.used_percentage;
+  var cw = input.context_window;
+  var used = cw.used_percentage;
+  if ((used === null || used === undefined) && cw.max_tokens > 0) {
+    used = ((cw.used_tokens || 0) / cw.max_tokens) * 100;
+  }
+  // No messages yet -- skip entirely rather than showing 0%
   if (used === null || used === undefined) return '';
   var pct = Math.round(used);
-  // Color: green < 50%, yellow 50-80%, red > 80%
-  var color = pct < 50 ? c.green : pct < 80 ? c.yellow : c.red;
-  return color + 'ctx:' + pct + '%' + c.reset;
+  if (pct === 0) return '';
+  var rem = 100 - pct;
+  // Color by usage level: green < 50%, yellow 50-80%, red > 80%
+  var usedColor = pct < 50 ? c.green : pct < 80 ? c.yellow : c.red;
+  // Mini bar: filled blocks out of 10
+  var filled = Math.round(pct / 10);
+  var bar = '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
+  return usedColor + 'ctx ' + bar + ' ' + pct + '%' + c.dim + ' (' + rem + '% left)' + c.reset;
 }
 
-// ─── Orchestrator metrics (agents + tasks) ───────────────────────
-
-// Check whether a store file is stale (no active session and file older than threshold)
-function isStoreStale(storePath, projectDir, maxAgeMs) {
-  if (!maxAgeMs) maxAgeMs = 5 * 60 * 1000; // 5 minutes default
-  try {
-    // If there is an active session, stores are never considered stale
-    var sessionPaths = [
-      path.join(projectDir, '.arche', 'session', 'current.json'),
-      path.join(projectDir, '.arche', 'sessions', 'current.json'),
-      path.join(projectDir, '.arche', 'state.json'),
-    ];
-    for (var i = 0; i < sessionPaths.length; i++) {
-      if (fs.existsSync(sessionPaths[i])) {
-        // Session indicator exists -- check if it also looks active
-        try {
-          var sessionData = JSON.parse(fs.readFileSync(sessionPaths[i], 'utf-8'));
-          if (sessionData && sessionData.status === 'active') return false;
-        } catch (e) {
-          // File exists but unreadable/unparseable -- treat as active to be safe
-          return false;
-        }
-      }
-    }
-    // No active session found -- check store file age
-    if (fs.existsSync(storePath)) {
-      var stat = fs.statSync(storePath);
-      var age = Date.now() - stat.mtimeMs;
-      if (age > maxAgeMs) return true;
-    }
-  } catch (e) { /* ignore, treat as not stale */ }
-  return false;
-}
-
-function getOrchestratorMetrics(input) {
-  // Determine project dir: prefer workspace.project_dir injected by Claude Code
-  var projectDir = null;
-  if (input && input.workspace && input.workspace.project_dir) {
-    projectDir = input.workspace.project_dir;
-  } else if (input && input.cwd) {
-    projectDir = input.cwd;
-  } else {
-    projectDir = process.cwd();
-  }
-
-  var agentCount = 0;
-  var taskTotal = 0;
-  var taskDone = 0;
-
-  // Read agent store -- {projectDir}/.arche/agents/store.json
-  var agentPath = path.join(projectDir, '.arche', 'agents', 'store.json');
-  try {
-    if (fs.existsSync(agentPath) && !isStoreStale(agentPath, projectDir)) {
-      var agentStore = JSON.parse(fs.readFileSync(agentPath, 'utf-8'));
-      if (agentStore && agentStore.agents) {
-        var agents = Object.values(agentStore.agents);
-        // Count non-terminated agents as active
-        agentCount = agents.filter(function(a) {
-          return a.status !== 'terminated';
-        }).length;
-      }
-    }
-  } catch (e) { /* ignore */ }
-
-  // Read task store -- {projectDir}/.arche/tasks/store.json
-  var taskPath = path.join(projectDir, '.arche', 'tasks', 'store.json');
-  try {
-    if (fs.existsSync(taskPath) && !isStoreStale(taskPath, projectDir)) {
-      var taskStore = JSON.parse(fs.readFileSync(taskPath, 'utf-8'));
-      if (taskStore && taskStore.tasks) {
-        var tasks = Object.values(taskStore.tasks);
-        taskTotal = tasks.length;
-        taskDone = tasks.filter(function(t) {
-          return t.status === 'completed' || t.status === 'done';
-        }).length;
-      }
-    }
-  } catch (e) { /* ignore */ }
-
-  var parts = [];
-
-  // agents:N — only show when there are active agents
-  if (agentCount > 0) {
-    parts.push(c.cyan + 'agents:' + agentCount + c.reset);
-  }
-
-  // tasks:X/Y — only show when tasks exist
-  if (taskTotal > 0) {
-    var taskColor;
-    if (taskDone === taskTotal) {
-      taskColor = c.green;    // all done
-    } else {
-      taskColor = c.yellow;   // in progress
-    }
-    parts.push(taskColor + 'tasks:' + taskDone + '/' + taskTotal + c.reset);
-  }
-
-  return parts;
-}
-
-// ─── Read stdin JSON (Claude Code injects context) ───────────────
+// ─── Read stdin JSON (Claude Code injects context) ────────────────────────────
 
 function readStdinSync() {
   try {
@@ -267,44 +212,85 @@ function readStdinSync() {
   return null;
 }
 
-// ─── Main ────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 var stdinInput = readStdinSync();
-var git = getGitInfo();
+// Use process.cwd() for git detection -- Claude Code sets the subprocess CWD
+// to the actual worktree path for agent processes. stdinInput.cwd is always
+// the project dir (same for all sessions) and cannot distinguish worktrees.
+var gitCwd = (function() {
+  var pcwd = process.cwd();
+  var test = safeSpawn('git', ['-C', pcwd, '--no-optional-locks', 'rev-parse', '--git-dir'], 500);
+  if (test) return pcwd;
+  return (stdinInput && stdinInput.cwd) || pcwd;
+}());
+var git = getGitInfo(gitCwd);
 var modelName = resolveModelName(stdinInput);
 var cwdDisplay = getCwdDisplay(stdinInput);
 var ctxDisplay = getContextDisplay(stdinInput);
-var orchMetrics = getOrchestratorMetrics(stdinInput);
 
-var sep = ' ' + c.dim + '|' + c.reset + ' ';
-var parts = [];
+// ─── Assemble prompt line styled after the zsh theme ─────────────────────────
+// Format: # <user> at <host> in <dir> (git:<branch>[*][+N/-N]) [HH:MM:SS] | <Model> [| ctx:N%]
 
-// Segment 1: CWD
-parts.push(c.dim + cwdDisplay + c.reset);
+var user = os.userInfo().username || 'user';
+var hostname = os.hostname().split('.')[0]; // short hostname
 
-// Segment 2: Git
+// Time: HH:MM:SS
+var now = new Date();
+var hh = String(now.getHours()).padStart(2, '0');
+var mm = String(now.getMinutes()).padStart(2, '0');
+var ss = String(now.getSeconds()).padStart(2, '0');
+var timeStr = hh + ':' + mm + ':' + ss;
+
+// Worktree metadata from Claude Code JSON input (may supplement git detection)
+var jsonWorktree = stdinInput && stdinInput.worktree ? stdinInput.worktree : null;
+
+// Resolve worktree name: prefer JSON field, then git-derived name
+var resolvedWtName = '';
+if (jsonWorktree && jsonWorktree.name) {
+  resolvedWtName = jsonWorktree.name;
+} else if (git.isWorktree && git.worktreeName) {
+  resolvedWtName = git.worktreeName;
+}
+
+// isWorktree: either git detection or JSON presence
+var isWorktree = git.isWorktree || !!jsonWorktree;
+
+// Git portion
+var gitStr = '';
 if (git.gitBranch) {
-  var gitPart = c.cyan + git.gitBranch + c.reset;
+  var branchDisplay = git.gitBranch;
   var dirty = git.staged + git.modified + git.untracked;
-  if (dirty > 0) gitPart += c.yellow + '*' + c.reset;
-  if (git.ahead > 0) gitPart += c.green + '+' + git.ahead + c.reset;
-  if (git.behind > 0) gitPart += c.red + '-' + git.behind + c.reset;
-  parts.push(gitPart);
-} else {
-  parts.push(c.dim + 'no-git' + c.reset);
+  if (dirty > 0) branchDisplay += c.yellow + '*' + c.reset + c.cyan;
+  if (git.ahead > 0) branchDisplay += c.green + '+' + git.ahead + c.reset + c.cyan;
+  if (git.behind > 0) branchDisplay += c.red + '-' + git.behind + c.reset + c.cyan;
+
+  if (isWorktree) {
+    // Worktree sessions: show [WT:<name>] in bold magenta before the branch
+    var wtLabel = resolvedWtName ? 'WT:' + resolvedWtName : 'WT';
+    gitStr = c.white + ' (' + '\x1b[1;35m' + wtLabel + c.reset + c.white + ' git:' + c.cyan + branchDisplay + c.white + ')' + c.reset;
+  } else {
+    // Main (non-worktree) sessions: standard display
+    gitStr = c.white + ' (git:' + c.cyan + branchDisplay + c.white + ')' + c.reset;
+  }
 }
 
-// Segment 3: Model
-parts.push(c.purple + modelName + c.reset);
+// Build the main prompt segment
+var line = ''
+  + c.boldBlue + '#' + c.reset
+  + ' ' + c.cyan + user + c.reset
+  + ' ' + c.white + 'at' + c.reset
+  + ' ' + c.green + hostname + c.reset
+  + ' ' + c.white + 'in' + c.reset
+  + ' ' + c.boldYellow + cwdDisplay + c.reset
+  + gitStr
+  + ' ' + c.white + '[' + timeStr + ']' + c.reset;
 
-// Segment 4: Orchestrator metrics (agents and tasks, only when present)
-for (var i = 0; i < orchMetrics.length; i++) {
-  parts.push(orchMetrics[i]);
-}
-
-// Segment 5: Context window usage (only shown when data is available)
+// Append model and context separated by dim pipe
+var sep = ' ' + c.dim + '|' + c.reset + ' ';
+line += sep + c.purple + modelName + c.reset;
 if (ctxDisplay) {
-  parts.push(ctxDisplay);
+  line += sep + ctxDisplay;
 }
 
-process.stdout.write(parts.join(sep) + '\n');
+process.stdout.write(line + '\n');

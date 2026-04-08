@@ -22,9 +22,11 @@
     Unit = {
       Description = "tmux default session (detached)";
       Documentation = "man:tmux(1)";
+      X-SwitchMethod = "keep-old";
     };
     Service = {
       Type = "forking";
+      Environment = "PATH=${config.home.homeDirectory}/.nix-profile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
       ExecStart = "${pkgs.tmux}/bin/tmux new-session -d";
       # Save is handled solely by continuum auto-save (every 15 min)
       # Restore is handled solely by @continuum-restore 'on' in tmux.conf

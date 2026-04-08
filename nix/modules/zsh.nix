@@ -93,6 +93,7 @@ in
         # Java configuration for Metals
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
         export PATH=$JAVA_HOME/bin:$PATH
+
       '')
 
       ''
@@ -188,8 +189,8 @@ in
         [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
         # # Auto-start tmux and restore session
-        if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
-          tmux
+        if [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+          ${pkgs.tmux}/bin/tmux
         fi
       ''
     ];
