@@ -35,9 +35,9 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Pipeline handoff**: Agent N stores in agentDB -> coordinator recalls by exact key -> spawns Agent N+1 with recalled context.
 
-**Stop hook extraction**: The Stop hook reads each agent's `## RESULTS` block and **auto-stores the full text** into agentDB working tier under key `{sessionId}-{agentId}`. This is the primary data channel -- the entire RESULTS block is stored verbatim, so agents should put ALL findings, decisions, and output there. Agents do NOT need to call `hierarchical-store` manually for their main findings -- just ensure the `## RESULTS` block is complete and thorough (all fields populated, especially `Key Findings`). For large payloads or pipeline handoffs that exceed what fits in RESULTS, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
+**Stop hook extraction**: The Stop hook reads `resultKey` from lifecycle.json (generated at agent-start) and stores the full `## RESULTS` block under that key in agentDB working tier. This is the primary data channel -- the entire RESULTS block is stored verbatim. Agents echo `resultKey` in their completion message so the coordinator can recall directly. For large payloads or pipeline handoffs, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
 
-**Post-agent verification**: Coordinator MUST recall each agent's `{sessionId}-{agentId}` key from agentDB before using their findings. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
+**Post-agent verification**: Coordinator MUST recall each agent's result key from agentDB before using their findings. Use the key from the agent's inline return, or fall back to `{sessionId}-{agentId}`. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
 
 ### Phase 3: Close
 
@@ -53,7 +53,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 | 1 | Is this a BLOCKED tool? Delegate to an agent -- unless it qualifies as a trivial read-only op (Rule #1 exception: single call, read-only, completes in seconds). |
 | 2 | Every `Agent` call has a prior `TaskCreate`? |
 | 3 | Agent prompt includes FIRST/LAST STEP blocks? POST_TASK includes complete `## RESULTS` block (Stop hook auto-stores it to agentDB)? |
-| 4 | Responding to user? Recalled ALL agents' full findings from agentDB by `{sessionId}-{agentId}` key -- both pipeline and leaf agents. Stop hook auto-persisted complete RESULTS there. Then check `agentDB Store Keys` in the recalled RESULTS -- recall any listed keys for additional context. |
+| 4 | Responding to user? Recalled ALL agents' result keys from agentDB -- use the key from the agent's inline return or fall back to `{sessionId}-{agentId}`. Then check `agentDB Store Keys` in the recalled RESULTS for additional context. |
 | 5 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 6 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
 | 7 | Calling `Agent`? Set `isolation: "worktree"` when the working directory is inside a git repo. Outside git repos, omit `isolation`. Without worktree isolation in git repos, concurrent `git checkout` operations across agents clobber each other, corrupting BUILD files and causing false test failures. |

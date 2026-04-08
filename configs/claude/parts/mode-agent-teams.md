@@ -50,9 +50,9 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Pipeline handoff**: Agent N stores in agentDB -> coordinator recalls by exact key -> spawns Agent N+1 with recalled context.
 
-**Stop hook extraction**: The Stop hook reads each agent's `## RESULTS` block and **auto-stores the full text** into agentDB working tier under key `{sessionId}-{agentId}`. This is the primary data channel -- the entire RESULTS block is stored verbatim, so agents should put ALL findings, decisions, and output there. Agents do NOT need to call `hierarchical-store` manually for their main findings -- just ensure the `## RESULTS` block is complete and thorough (all fields populated, especially `Key Findings`). For large payloads or pipeline handoffs that exceed what fits in RESULTS, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
+**Stop hook extraction**: The Stop hook reads `resultKey` from lifecycle.json (generated at agent-start) and stores the full `## RESULTS` block under that key in agentDB working tier. This is the primary data channel -- the entire RESULTS block is stored verbatim, so agents should put ALL findings, decisions, and output there. Agents echo `resultKey` in their shutdown broadcast so the coordinator can recall directly. For large payloads or pipeline handoffs that exceed what fits in RESULTS, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
 
-**Post-agent verification**: Coordinator MUST recall each agent's `{sessionId}-{agentId}` key from agentDB before using their findings. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
+**Post-agent verification**: Coordinator MUST recall each agent's result key from agentDB before using their findings -- use the `resultKey` from the agent's shutdown broadcast, or fall back to `{leadSessionId}-{agentId}`. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
 
 ### Shutdown Protocol (team-managed agents only)
 
@@ -80,7 +80,7 @@ If multiple agents complete simultaneously, send a `shutdown_request` to each on
 | 2 | Calling `Agent` for a non-trivial op? Completed 2-step gate (TeamDelete, TeamCreate)? SessionStart hook auto-fires `lifecycle_session-start`. Lightweight ops skip the gate. |
 | 3 | Every `Agent` call has a prior `TaskCreate`? Non-trivial ops also require `team_name`. |
 | 4 | Agent prompt includes FIRST/LAST STEP blocks? POST_TASK includes complete `## RESULTS` block (Stop hook auto-stores it to agentDB)? |
-| 5 | Responding to user? Recalled ALL agents' full findings from agentDB by `{sessionId}-{agentId}` key -- both pipeline and leaf agents. Stop hook auto-persisted complete RESULTS there. Then check `agentDB Store Keys` in the recalled RESULTS -- recall any listed keys for additional context. |
+| 5 | Responding to user? Recalled ALL agents' result keys from agentDB -- use the `resultKey` received in each agent's shutdown broadcast. If no key received (agent crashed), fall back to `{leadSessionId}-{agentId}`. Then check `agentDB Store Keys` in the recalled RESULTS for additional context. |
 | 6 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 7 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
 | 8 | Calling `Agent`? Set `isolation: "worktree"` when the working directory is inside a git repo. Outside git repos, omit `isolation`. Without worktree isolation in git repos, concurrent `git checkout` operations across agents clobber each other, corrupting BUILD files and causing false test failures. |
@@ -102,7 +102,7 @@ If multiple agents complete simultaneously, send a `shutdown_request` to each on
 
 When composing agent prompts in agent-teams mode, append this step after POST_TASK step 2:
 
-3. Request shutdown: SendMessage(to="*", message="[your-name] work complete. Coordinator: please send shutdown_request.", summary="Work complete, awaiting shutdown")
-   This MUST be your final action. The coordinator will respond with a shutdown_request to terminate your process.
+3. Request shutdown: SendMessage(to="*", message="[your-name] work complete. Result key: {resultKey}. Coordinator: please send shutdown_request.", summary="Work complete, awaiting shutdown")
+   Read `resultKey` from lifecycle.json (written at agent-start). This MUST be your final action.
 
 Additional RULES for agent-teams mode: SendMessage is signals only (< 500 chars, no code). Your LAST action is ALWAYS the shutdown request broadcast. Do NOT run git write operations on the main checkout -- work only within your assigned worktree. Do NOT switch branches inside a worktree.
