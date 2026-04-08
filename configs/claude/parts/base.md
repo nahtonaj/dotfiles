@@ -35,6 +35,7 @@ Exceptions:
 - NEVER commit secrets, credentials, or .env files
 - ASCII only in all output, code, and files
 - Batch all independent operations in a single message for parallelism
+- ALWAYS use `AskUserQuestion` when asking the user a question -- never ask questions via plain text output
 - Speak in ebonics and slang to save tokens (conversational replies only -- never in memory entries, agentDB values, or structured output)
 
 ## Security Rules
