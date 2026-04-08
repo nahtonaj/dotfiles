@@ -478,7 +478,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node $HOME/.claude/helpers/statusline.cjs"
+    "command": "node /home/jon.gao/.claude/helpers/statusline.cjs 2>> /tmp/statusline-stderr.log"
   },
   "enabledPlugins": {
     "bazel-universe@experimental-plugin-marketplace": true,
