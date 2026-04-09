@@ -1,16 +1,18 @@
 <!-- Mode: agent-teams -- Team-based multi-agent coordination -->
 
-**2. Use Agent Teams for non-trivial operations.**
-A **non-trivial op** is one that involves > 2 tool calls OR is expected to take > 1 minute. Non-trivial ops MUST use the full team lifecycle (`TeamDelete` -> `TeamCreate`, `team_name` on every `Agent` call). Lightweight single-agent ops (at most 2 tool calls, < 1 minute) may skip the team lifecycle -- no `TeamCreate`/`TeamDelete` needed, no `team_name` on the `Agent` call.
+**2. ALWAYS use Agent Teams when spawning agents.**
+Every `Agent` call MUST use the full team lifecycle (`TeamDelete` -> `TeamCreate`, `team_name` on every `Agent` call). There are NO exceptions based on task size, complexity, or expected duration. If you are spawning an agent, you are using a team.
 
-**3. Complete the 2-step pre-spawn gate for non-trivial ops.**
-When spawning a team (non-trivial op): `TeamDelete` (defensive) -> `TeamCreate`. `lifecycle_session-start` fires automatically via SessionStart hook -- do not call it manually. Then spawn teammates with `Agent(name, team_name, prompt)`. Teammates self-register and self-close via their MANDATORY FIRST/LAST STEP blocks. For lightweight ops, skip directly to `Agent(name, prompt)`.
+**Sole exception**: A single `Explore` or `Glob`/`Grep` agent for a quick codebase lookup (< 30 seconds, read-only, no edits) may skip the team lifecycle. Everything else -- including single-agent edits, single-file changes, and "simple" tasks -- MUST use teams.
+
+**3. Complete the 2-step pre-spawn gate before ANY agent spawn.**
+Before spawning: `TeamDelete` (defensive) -> `TeamCreate`. `lifecycle_session-start` fires automatically via SessionStart hook -- do not call it manually. Then spawn teammates with `Agent(name, team_name, prompt)`. Teammates self-register and self-close via their MANDATORY FIRST/LAST STEP blocks.
 
 ## Allowed Tools
 
 - `mcp__arche__lifecycle_*` -- Session lifecycle tools (session-start, session-close, agent-start, agent-close, memory-start, memory-close). All auto-fire via hooks -- no direct invocation needed. Note: `lifecycle_context-pull` auto-fires via the `UserPromptSubmit` hook (first prompt only) -- do NOT call from SessionStart.
 - `mcp__arche__*` -- All other Arche MCP tools (memory, agentDB, coordination, hooks, etc.)
-- `Agent` -- Spawn agents (with team lifecycle for non-trivial ops; directly for lightweight ops)
+- `Agent` -- Spawn agents (ALWAYS with team lifecycle; `team_name` required on every call)
 - `TeamCreate` / `TeamDelete` -- Team lifecycle (1:1 with sessions)
 - `TaskCreate` / `TaskUpdate` / `TaskGet` / `TaskList` / `TaskOutput` / `TaskStop` -- Task management
 - `SendMessage` -- Coordination signals only (< 500 chars, no code). **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
@@ -28,11 +30,9 @@ When spawning a team (non-trivial op): `TeamDelete` (defensive) -> `TeamCreate`.
 
 `lifecycle_session-start` fires automatically via the SessionStart hook. Coordinator receives `[CONTEXT]` (synthesized memory paragraph) and routing signals via system-reminder -- no manual call needed.
 
-If spawning a team (non-trivial op):
+Before spawning any agent:
 1. Call `TeamDelete` (defensive -- clears stale team state; ignore errors)
 2. Call `TeamCreate` with `team_name` = sessionId. Retry once if it fails.
-
-For lightweight ops, skip these steps.
 
 ### Phase 2: Delegate
 
@@ -40,9 +40,7 @@ For lightweight ops, skip these steps.
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
-**Per-agent (non-trivial op / team)**: `TaskCreate` -> `agentdb_hierarchical-store key="agent-task-{name}@{teamName}" value="{2-3 sentence task summary}" tier="working"` -> `Agent(name, team_name=teamName, run_in_background=true)` (omit `isolation` outside git repos)
-
-**Per-agent (lightweight op / no team)**: `TaskCreate` -> `Agent(name, run_in_background=true)` (omit `isolation` outside git repos)
+**Per-agent**: `TaskCreate` -> `agentdb_hierarchical-store key="agent-task-{name}@{teamName}" value="{2-3 sentence task summary}" tier="working"` -> `Agent(name, team_name=teamName, isolation="worktree", run_in_background=true)`
 
 ALL agents use `run_in_background: true`. Coordinator waits for SendMessage notifications, never polls. Teammates self-register (SessionStart hook) and self-persist (Stop hook) -- no manual lifecycle management needed.
 
@@ -54,7 +52,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Post-agent verification**: Coordinator MUST recall each agent's result key from agentDB before using their findings -- use the `resultKey` from the agent's shutdown broadcast, or fall back to `{leadSessionId}-{agentId}`. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
 
-### Shutdown Protocol (team-managed agents only)
+### Shutdown Protocol (MANDATORY)
 
 **After any agent broadcasts "work complete" (via SendMessage), immediately send `shutdown_request` to that agent.** Do not batch -- send it in the same response turn that you process their completion message. Idle agents waste resources and block session cleanup.
 
@@ -66,8 +64,8 @@ If multiple agents complete simultaneously, send a `shutdown_request` to each on
 
 ### Phase 3: Close
 
-1. Verify all team-managed agents have been sent `shutdown_request` and acknowledged shutdown.
-2. Call `TeamDelete` (only if a team was created)
+1. Verify all agents have been sent `shutdown_request` and acknowledged shutdown.
+2. Call `TeamDelete`
 3. Stop hook auto-fires `lifecycle_session-close` -- no manual call needed.
 
 ---
@@ -77,13 +75,13 @@ If multiple agents complete simultaneously, send a `shutdown_request` to each on
 | # | Check |
 |---|-------|
 | 1 | Is this a BLOCKED tool? Delegate to an agent -- unless it qualifies as a trivial read-only op (Rule #1 exception: single call, read-only, completes in seconds). |
-| 2 | Calling `Agent` for a non-trivial op? Completed 2-step gate (TeamDelete, TeamCreate)? SessionStart hook auto-fires `lifecycle_session-start`. Lightweight ops skip the gate. |
-| 3 | Every `Agent` call has a prior `TaskCreate`? Non-trivial ops also require `team_name`. |
+| 2 | Calling `Agent`? Completed 2-step gate (TeamDelete, TeamCreate)? SessionStart hook auto-fires `lifecycle_session-start`. |
+| 3 | Every `Agent` call has a prior `TaskCreate` AND `team_name`? Both are mandatory. |
 | 4 | Agent prompt includes FIRST/LAST STEP blocks? POST_TASK includes complete `## RESULTS` block (Stop hook auto-stores it to agentDB)? |
 | 5 | Responding to user? Recalled ALL agents' result keys from agentDB -- use the `resultKey` received in each agent's shutdown broadcast. If no key received (agent crashed), fall back to `{leadSessionId}-{agentId}`. Then check `agentDB Store Keys` in the recalled RESULTS for additional context. |
 | 6 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 7 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
-| 8 | Calling `Agent`? Set `isolation: "worktree"` when the working directory is inside a git repo. Outside git repos, omit `isolation`. Without worktree isolation in git repos, concurrent `git checkout` operations across agents clobber each other, corrupting BUILD files and causing false test failures. |
+| 8 | Calling `Agent`? `isolation: "worktree"` is MANDATORY in git repos. Each agent gets its OWN worktree -- NEVER share a worktree between concurrent agents. Omit `isolation` ONLY outside git repos. |
 
 ---
 
