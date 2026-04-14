@@ -57,23 +57,19 @@ Prompt elements in this order:
 
 ```
 ## PRE_TASK
-1. Load Claude Code tools you need: ToolSearch query="select:TaskUpdate,SendMessage"
-   (mcp__arche__* tools are MCP -- call directly, no ToolSearch needed.)
-2. Pipeline context (if any) is injected inline under **Pipeline Context** below -- no recall needed unless coordinator explicitly lists a key without inlining its content.
-3. Pull context: call `mcp__arche__lifecycle_context-pull` with `{taskDescription: "<2-3 sentence summary of your task>"}` (no sessionId needed -- agents call without it). Note the returned `context` field as ambient cross-session memory. Scan it for agentDB key references and recall via `mcp__arche__agentdb_hierarchical-recall` if useful. If the call fails or returns no context, proceed without it.
-4. Read `resultKey` and `taskKey` from `~/.claude/arche/sessions/{sessionId}/lifecycle.json` -> `cachedResult`. The `resultKey` is the agentDB key where the stop hook will store your RESULTS. Include it in your shutdown broadcast.
+1. Pipeline context (if any) is injected inline under **Pipeline Context** below -- no recall needed unless coordinator explicitly lists a key without inlining its content.
+2. Proceed with the task below.
 
 ## TASK
 [coordinator fills in: Pipeline Context, Role and Task, Diff Context]
 
 ## POST_TASK
 1. Reusable patterns only: mcp__arche__agentdb_pattern-store with details.
-2. End your response with a complete ## RESULTS block -- the Stop hook reads `resultKey` from lifecycle.json and stores this block under that key in agentDB working tier. This is the **primary data channel** to the coordinator, so be thorough:
+2. End your response with a complete ## RESULTS block:
 ## RESULTS
 - **Status**: completed | partial | blocked
 - **Files Changed**: list of files modified (or "none")
-- **Key Findings**: thorough bullet list of ALL discoveries, decisions, and output -- this block is stored in full by the Stop hook and is the primary data channel
-- **agentDB Store Keys**: keys explicitly stored via hierarchical-store (if any) -- coordinator will recall these for additional context
+- **Key Findings**: thorough bullet list of ALL discoveries, decisions, and output
 RULES: Do NOT spawn agents -- request via coordinator. In git repos: do NOT run git write operations on the main checkout -- work only within your assigned worktree. Outside git repos: no worktree is assigned.
 ```
 
@@ -81,33 +77,29 @@ RULES: Do NOT spawn agents -- request via coordinator. In git repos: do NOT run 
 
 ## Inter-Agent Communication
 
-**agentDB is the ONLY data channel. SendMessage is for signals only.**
+**SendMessage is the primary communication channel between agents and coordinator.**
 
 ### Memory Flow (per session)
 
 1. **Coordinator starts** -- `lifecycle_memory-start` (broad synthesis) -> `[CONTEXT]` in system-reminder
-2. **Before each spawn** -- `agentdb_hierarchical-store key="agent-task-{name}@{scope}"` (task description, clean keywords only) (scope = teamName in agent-teams mode, sessionId in bare-agent mode)
-3. **Teammate starts** -- `lifecycle_agent-start` reads that key -> task-scoped synthesis -> `lifecycle.json cachedResult.context`
-4. **Teammate reads** -- MANDATORY FIRST STEP reads `lifecycle.json`, decides whether to recall referenced agentDB keys, coordinator injects Pipeline Context inline
-5. **Findings flow** -- The Stop hook reads `resultKey` from lifecycle.json (generated at agent-start) and stores the full `## RESULTS` block under that key in agentDB working tier. Agents echo the key in their shutdown broadcast so the coordinator can recall directly.
-6. **Session closes** -- Stop hook promotes patterns to semantic tier, creates episodic entry
+2. **Teammates receive context** -- Pipeline Context block in agent prompt is the coordinator's explicit injection channel
+3. **Findings flow** -- Agents send results via SendMessage; Stop hook auto-stores `## RESULTS` to agentDB working tier
+4. **Session closes** -- Stop hook promotes patterns to semantic tier, creates episodic entry
 
 ### Channel Roles
 
 | Channel | Allowed Use | NEVER Use For |
 |---------|------------|---------------|
-| `agentDB hierarchical-store/recall` | Inter-agent exact-key data sharing within a session. Stop hook auto-populates working tier with full agent `## RESULTS` under system-generated `resultKey` (from lifecycle.json). Agents echo this key in shutdown broadcasts. | Semantic queries |
 | `agentDB pattern-store/search` | Discovered patterns (bridges sessions). Pattern-store keys: derived from label prefix (`text-before-colon` if <=60 chars) or first 64 chars of kebab-cased pattern text -- use `label: description` format for retrievable keys via `hierarchical-recall` exact-key match | -- |
 | `memory_store/search` (namespace: `"patterns"` ONLY) | Cross-session semantic search | Inter-agent data sharing |
-| `SendMessage` | Coordination signals, agentDB key references | Findings, code, file contents |
+| `SendMessage` | Agent results, coordination signals, status updates | Large code blocks (> 50 lines) |
 | `Task metadata` | Status, assignment, dependencies | Context or data payloads |
-| `lifecycle.json cachedResult.context` | Synthesized ambient memory delivered to teammates at startup -- read in MANDATORY FIRST STEP | Any write; coordinator already receives this via system-reminder |
 
 ### agentDB Parameter Reference
 
 | Tool | Parameter | Type | Required | Notes |
 |------|-----------|------|----------|-------|
-| `hierarchical-store` | `key` | string | Yes | Result keys: system-generated by `agentResultKey()` at agent-start, stored in lifecycle.json, echoed in shutdown broadcasts. Task keys: `agent-task-{name}@{scope}` (scope = teamName in agent-teams mode, sessionId in bare-agent mode) -- task description must be clean (no cross-topic keywords) for synthesis keyword-overlap filter |
+| `hierarchical-store` | `key` | string | Yes | Keys for explicit data sharing |
 | `hierarchical-store` | `value` | string | Yes | Memory entry value |
 | `hierarchical-store` | `tier` | `"working"` / `"episodic"` / `"semantic"` | No | Always specify explicitly |
 | `hierarchical-recall` | `query` | string | Yes | **Exact key match first, then semantic similarity fallback** |
@@ -128,12 +120,9 @@ This is fully automatic -- agents pass plain-text values; lifecycle hooks handle
 
 ### Data Flow Rules (one-liners)
 
-1. **Store-Before-Share**: Agent A stores in agentDB BEFORE Agent B spawns (pipeline handoffs only).
-2. **Recall-Before-Spawn**: For pipeline handoffs, coordinator recalls prior agent keys and injects full content into the next agent's prompt. Agents receiving inline content skip the recall step. First agent: "No prior context found."
-3. **SendMessage Boundary**: Signals only (< 500 chars, no code blocks). ALWAYS include `summary` (5-10 words) when message is a string -- omitting it throws `Error: summary is required when message is a string`.
-4. **Recall Before Responding**: Coordinator MUST recall ALL agents' result keys from agentDB before using their findings. Agents echo their `resultKey` (from lifecycle.json) in shutdown broadcasts -- use that exact key for recall. If no key was received (agent crashed), fall back to `{leadSessionId}-{agentId}`. If the recalled RESULTS lists keys under `agentDB Store Keys`, recall those keys too for overflow context.
-5. **Spawn via Coordinator Only**: Agents MUST NOT spawn other agents.
-6. **Teammate Memory**: Teammates read synthesized context from `~/.claude/arche/sessions/<sessionId>/lifecycle.json` -> `cachedResult.context` in MANDATORY FIRST STEP, then decide whether to recall any referenced agentDB keys via `mcp__arche__agentdb_hierarchical-recall`. Pipeline Context block in agent prompt is coordinator's explicit injection channel -- the only guaranteed delivery.
+1. **SendMessage Boundary**: ALWAYS include `summary` (5-10 words) when message is a string -- omitting it throws `Error: summary is required when message is a string`.
+2. **Spawn via Coordinator Only**: Agents MUST NOT spawn other agents.
+3. **Pipeline Context**: Coordinator injects prior agent output into the next agent's prompt via the Pipeline Context block -- the only guaranteed delivery channel.
 
 ---
 

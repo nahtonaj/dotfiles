@@ -15,7 +15,7 @@ Before spawning: `TeamDelete` (defensive) -> `TeamCreate`. `lifecycle_session-st
 - `Agent` -- Spawn agents (ALWAYS with team lifecycle; `team_name` required on every call)
 - `TeamCreate` / `TeamDelete` -- Team lifecycle (1:1 with sessions)
 - `TaskCreate` / `TaskUpdate` / `TaskGet` / `TaskList` / `TaskOutput` / `TaskStop` -- Task management
-- `SendMessage` -- Coordination signals only (< 500 chars, no code). **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
+- `SendMessage` -- Agent results, coordination signals, status updates. **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
 - `AskUserQuestion`, `ToolSearch`, `Skill` -- User interaction and tool discovery
 - `EnterPlanMode` / `ExitPlanMode` -- Planning for complex tasks
 - `EnterWorktree` / `ExitWorktree` -- Isolated agent work (or pass `isolation: "worktree"` on `Agent`)
@@ -40,7 +40,7 @@ Before spawning any agent:
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
-**Per-agent**: `TaskCreate` -> `agentdb_hierarchical-store key="agent-task-{name}@{teamName}" value="{2-3 sentence task summary}" tier="working"` -> `Agent(name, team_name=teamName, isolation="worktree", run_in_background=true)`
+**Per-agent**: `TaskCreate` -> `Agent(name, team_name=teamName, isolation="worktree", run_in_background=true)`
 
 ALL agents use `run_in_background: true`. Coordinator waits for SendMessage notifications, never polls. Teammates self-register (SessionStart hook) and self-persist (Stop hook) -- no manual lifecycle management needed.
 
@@ -48,25 +48,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Pipeline handoff**: Agent N stores in agentDB -> coordinator recalls by exact key -> spawns Agent N+1 with recalled context.
 
-**Stop hook extraction**: The Stop hook reads `resultKey` from lifecycle.json (generated at agent-start) and stores the full `## RESULTS` block under that key in agentDB working tier. This is the primary data channel -- the entire RESULTS block is stored verbatim, so agents should put ALL findings, decisions, and output there. Agents echo `resultKey` in their shutdown broadcast so the coordinator can recall directly. For large payloads or pipeline handoffs that exceed what fits in RESULTS, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
-
-**Post-agent verification**: Coordinator MUST recall each agent's result key from agentDB before using their findings -- use the `resultKey` from the agent's shutdown broadcast, or fall back to `{leadSessionId}-{agentId}`. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
-
-### Shutdown Protocol (MANDATORY)
-
-**After any agent broadcasts "work complete" (via SendMessage), immediately send `shutdown_request` to that agent.** Do not batch -- send it in the same response turn that you process their completion message. Idle agents waste resources and block session cleanup.
-
-```
-SendMessage(to="<agent-name>", message={"type": "shutdown_request", "reason": "Work complete, shutting down."})
-```
-
-If multiple agents complete simultaneously, send a `shutdown_request` to each one in the same response turn.
-
-### Phase 3: Close
-
-1. Verify all agents have been sent `shutdown_request` and acknowledged shutdown.
-2. Call `TeamDelete`
-3. Stop hook auto-fires `lifecycle_session-close` -- no manual call needed.
+**Stop hook extraction**: The Stop hook auto-stores each agent's full `## RESULTS` block to agentDB working tier. Agents should put ALL findings, decisions, and output in their RESULTS block.
 
 ---
 
@@ -78,7 +60,7 @@ If multiple agents complete simultaneously, send a `shutdown_request` to each on
 | 2 | Calling `Agent`? Completed 2-step gate (TeamDelete, TeamCreate)? SessionStart hook auto-fires `lifecycle_session-start`. |
 | 3 | Every `Agent` call has a prior `TaskCreate` AND `team_name`? Both are mandatory. |
 | 4 | Agent prompt includes FIRST/LAST STEP blocks? POST_TASK includes complete `## RESULTS` block (Stop hook auto-stores it to agentDB)? |
-| 5 | Responding to user? Recalled ALL agents' result keys from agentDB -- use the `resultKey` received in each agent's shutdown broadcast. If no key received (agent crashed), fall back to `{leadSessionId}-{agentId}`. Then check `agentDB Store Keys` in the recalled RESULTS for additional context. |
+| 5 | Responding to user? Received agent RESULTS via SendMessage? |
 | 6 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 7 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
 | 8 | Calling `Agent`? `isolation: "worktree"` is MANDATORY in git repos. Each agent gets its OWN worktree -- NEVER share a worktree between concurrent agents. Omit `isolation` ONLY outside git repos. |
@@ -92,15 +74,13 @@ If multiple agents complete simultaneously, send a `shutdown_request` to each on
 | `[CONTEXT]` missing from system-reminder | SessionStart hook may have failed. Proceed without ambient context -- agents self-load what they can via their own SessionStart hooks. |
 | `TeamCreate` fails | Retry once. If still failing, proceed without team but log warning. |
 | Agent times out/crashes | Coordinator fallback-stores any available output, proceeds to next agent. |
-| `TeamDelete` fails | Proceed to `lifecycle_session-close`; cleanup is best-effort. |
 | `TeamCreate` returns "Already leading team" | Call `TeamDelete` first to clear stale team state, then retry `TeamCreate`. |
-| Stop hook / `lifecycle_session-close` fails | Log warning; session data may be lost but task is complete. |
 
-### Agent Prompt: Shutdown Addendum (append to POST_TASK)
+### Agent Prompt: Completion Addendum (append to POST_TASK)
 
 When composing agent prompts in agent-teams mode, append this step after POST_TASK step 2:
 
-3. Request shutdown: SendMessage(to="*", message="[your-name] work complete. Result key: {resultKey}. Coordinator: please send shutdown_request.", summary="Work complete, awaiting shutdown")
-   Read `resultKey` from lifecycle.json (written at agent-start). This MUST be your final action.
+3. Signal completion: SendMessage(to="*", message="[your-name] work complete.", summary="Work complete")
+   This MUST be your final action.
 
-Additional RULES for agent-teams mode: SendMessage is signals only (< 500 chars, no code). Your LAST action is ALWAYS the shutdown request broadcast. Do NOT run git write operations on the main checkout -- work only within your assigned worktree. Do NOT switch branches inside a worktree.
+Additional RULES for agent-teams mode: Do NOT run git write operations on the main checkout -- work only within your assigned worktree. Do NOT switch branches inside a worktree.

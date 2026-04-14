@@ -6,7 +6,7 @@
 - `mcp__arche__*` -- All other Arche MCP tools (memory, agentDB, coordination, hooks, etc.)
 - `Agent` -- Spawn agents (with `isolation: "worktree"`)
 - `TaskCreate` / `TaskUpdate` / `TaskGet` / `TaskList` / `TaskOutput` / `TaskStop` -- Task management
-- `SendMessage` -- Coordination signals only (< 500 chars, no code). **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
+- `SendMessage` -- Agent results, coordination signals, status updates. **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
 - `AskUserQuestion`, `ToolSearch`, `Skill` -- User interaction and tool discovery
 - `EnterPlanMode` / `ExitPlanMode` -- Planning for complex tasks
 - `EnterWorktree` / `ExitWorktree` -- Isolated agent work (or pass `isolation: "worktree"` on `Agent`)
@@ -27,7 +27,7 @@
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
-**Per-agent**: `TaskCreate` -> `agentdb_hierarchical-store key="agent-task-{name}@{sessionId}" value="{2-3 sentence task summary}" tier="working"` -> `Agent(name, isolation="worktree", run_in_background=true)` (omit `isolation` outside git repos)
+**Per-agent**: `TaskCreate` -> `Agent(name, isolation="worktree", run_in_background=true)` (omit `isolation` outside git repos)
 
 ALL agents use `run_in_background: true`. Coordinator waits for SendMessage notifications, never polls. Teammates self-register (SessionStart hook) and self-persist (Stop hook) -- no manual lifecycle management needed.
 
@@ -35,14 +35,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Pipeline handoff**: Agent N stores in agentDB -> coordinator recalls by exact key -> spawns Agent N+1 with recalled context.
 
-**Stop hook extraction**: The Stop hook reads `resultKey` from lifecycle.json (generated at agent-start) and stores the full `## RESULTS` block under that key in agentDB working tier. This is the primary data channel -- the entire RESULTS block is stored verbatim. Agents echo `resultKey` in their completion message so the coordinator can recall directly. For large payloads or pipeline handoffs, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
-
-**Post-agent verification**: Coordinator MUST recall each agent's result key from agentDB before using their findings. Use the key from the agent's inline return, or fall back to `{sessionId}-{agentId}`. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
-
-### Phase 3: Close
-
-1. Coordinator receives task-notification when each agent finishes.
-2. Stop hook auto-fires `lifecycle_session-close` -- no manual call needed.
+**Stop hook extraction**: The Stop hook auto-stores each agent's full `## RESULTS` block to agentDB working tier. Agents should put ALL findings, decisions, and output in their RESULTS block.
 
 ---
 
@@ -53,7 +46,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 | 1 | Is this a BLOCKED tool? Delegate to an agent -- unless it qualifies as a trivial read-only op (Rule #1 exception: single call, read-only, completes in seconds). |
 | 2 | Every `Agent` call has a prior `TaskCreate`? |
 | 3 | Agent prompt includes FIRST/LAST STEP blocks? POST_TASK includes complete `## RESULTS` block (Stop hook auto-stores it to agentDB)? |
-| 4 | Responding to user? Recalled ALL agents' result keys from agentDB -- use the key from the agent's inline return or fall back to `{sessionId}-{agentId}`. Then check `agentDB Store Keys` in the recalled RESULTS for additional context. |
+| 4 | Responding to user? Received agent RESULTS via SendMessage or inline return? |
 | 5 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 6 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
 | 7 | Calling `Agent`? Set `isolation: "worktree"` when the working directory is inside a git repo. Outside git repos, omit `isolation`. Without worktree isolation in git repos, concurrent `git checkout` operations across agents clobber each other, corrupting BUILD files and causing false test failures. |

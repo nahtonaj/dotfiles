@@ -38,7 +38,7 @@ Exceptions:
 - `Agent` -- Spawn agents (after 2-step gate: TeamDelete + TeamCreate)
 - `TeamCreate` / `TeamDelete` -- Team lifecycle (1:1 with sessions)
 - `TaskCreate` / `TaskUpdate` / `TaskGet` / `TaskList` / `TaskOutput` / `TaskStop` -- Task management
-- `SendMessage` -- Coordination signals only (< 500 chars, no code). **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
+- `SendMessage` -- Agent results, coordination signals, status updates. **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
 - `AskUserQuestion`, `ToolSearch`, `Skill` -- User interaction and tool discovery
 - `EnterPlanMode` / `ExitPlanMode` -- Planning for complex tasks
 - `EnterWorktree` / `ExitWorktree` -- Isolated agent work (or pass `isolation: "worktree"` on `Agent`)
@@ -80,7 +80,7 @@ Exceptions:
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
-**Per-agent**: `TaskCreate` -> `agentdb_hierarchical-store key="agent-task-{name}@{teamName}" value="{2-3 sentence task summary}" tier="working"` -> `Agent(name, team_name=teamName, run_in_background=true)`
+**Per-agent**: `TaskCreate` -> `Agent(name, team_name=teamName, isolation="worktree", run_in_background=true)`
 
 ALL agents use `run_in_background: true`. Coordinator waits for SendMessage notifications, never polls. Teammates self-register (SessionStart hook) and self-persist (Stop hook) -- no manual lifecycle management needed.
 
@@ -88,25 +88,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 
 **Pipeline handoff**: Agent N stores in agentDB -> coordinator recalls by exact key -> spawns Agent N+1 with recalled context.
 
-**Stop hook extraction**: The Stop hook reads each agent's `## RESULTS` block and **auto-stores the full text** into agentDB working tier under key `{sessionId}-{agentId}`. This is the primary data channel -- the entire RESULTS block is stored verbatim, so agents should put ALL findings, decisions, and output there. Agents do NOT need to call `hierarchical-store` manually for their main findings -- just ensure the `## RESULTS` block is complete and thorough (all fields populated, especially `Key Findings`). For large payloads or pipeline handoffs that exceed what fits in RESULTS, agents may additionally use `hierarchical-store` and list those keys under `agentDB Store Keys` in RESULTS.
-
-**Post-agent verification**: Coordinator MUST recall each agent's `{sessionId}-{agentId}` key from agentDB before using their findings. For sequential pipelines, recall Agent N's key before spawning Agent N+1. For leaf agents, recall the key before responding to the user.
-
-### Shutdown Protocol (MANDATORY)
-
-**After any agent broadcasts "work complete" (via SendMessage), immediately send `shutdown_request` to that agent.** Do not batch -- send it in the same response turn that you process their completion message. Idle agents waste resources and block session cleanup.
-
-```
-SendMessage(to="<agent-name>", message={"type": "shutdown_request", "reason": "Work complete, shutting down."})
-```
-
-If multiple agents complete simultaneously, send a `shutdown_request` to each one in the same response turn.
-
-### Phase 3: Close
-
-1. Verify all agents have been sent `shutdown_request` and acknowledged shutdown.
-2. Call `TeamDelete`
-3. Stop hook auto-fires `lifecycle_session-close` -- no manual call needed.
+**Stop hook extraction**: The Stop hook auto-stores each agent's full `## RESULTS` block to agentDB working tier. Agents should put ALL findings, decisions, and output in their RESULTS block.
 
 ---
 
@@ -121,59 +103,52 @@ Prompt elements in this order:
 
 ```
 ## PRE_TASK
-1. Load Claude Code tools you need: ToolSearch query="select:TaskUpdate,SendMessage"
-   (mcp__arche__* tools are MCP -- call directly, no ToolSearch needed.)
-2. Pipeline context (if any) is injected inline under **Pipeline Context** below -- no recall needed unless coordinator explicitly lists a key without inlining its content.
-3. Read lifecycle context: Bash `aid=$(tr '\0' '\n' < /proc/$PPID/cmdline 2>/dev/null | awk '/^--agent-id$/{getline;print;exit}'); for d in $(ls -t ~/.claude/arche/sessions/ 2>/dev/null); do f=~/.claude/arche/sessions/$d/role.json; [ -f "$f" ] || continue; if [ -n "$aid" ]; then grep -q "\"agentId\".*\"$aid\"" "$f" 2>/dev/null || continue; else grep -q '"role".*"coordinator"' "$f" 2>/dev/null || continue; fi; cat ~/.claude/arche/sessions/$d/lifecycle.json 2>/dev/null; break; done` and extract `cachedResult.context` for ambient cross-session memory. Scan the context for agentDB key references relevant to your task -- recall them via `mcp__arche__agentdb_hierarchical-recall` if useful. This reads $PPID cmdline to find --agent-id (teammates) or falls back to most recent coordinator session. If the output is empty, proceed without it.
+1. Pipeline context (if any) is injected inline under **Pipeline Context** below -- no recall needed unless coordinator explicitly lists a key without inlining its content.
+2. Proceed with the task below.
 
 ## TASK
 [coordinator fills in: Pipeline Context, Role and Task, Diff Context]
 
 ## POST_TASK
 1. Reusable patterns only: mcp__arche__agentdb_pattern-store with details.
-2. End your response with a complete ## RESULTS block -- the Stop hook parses and auto-stores this block in full to agentDB working tier under key `{sessionId}-{agentId}`. This is the **primary data channel** to the coordinator, so be thorough:
+2. End your response with a complete ## RESULTS block:
 ## RESULTS
 - **Status**: completed | partial | blocked
 - **Files Changed**: list of files modified (or "none")
-- **Key Findings**: thorough bullet list of ALL discoveries, decisions, and output -- this block is stored in full by the Stop hook and is the primary data channel
-- **agentDB Store Keys**: keys explicitly stored via hierarchical-store (if any) -- coordinator will recall these for additional context
-3. Request shutdown: SendMessage(to="*", message="[your-name] work complete. Coordinator: please send shutdown_request.", summary="Work complete, awaiting shutdown")
-   This MUST be your final action. The coordinator will respond with a shutdown_request to terminate your process.
+- **Key Findings**: thorough bullet list of ALL discoveries, decisions, and output
+3. Signal completion: SendMessage(to="*", message="[your-name] work complete.", summary="Work complete")
+   This MUST be your final action.
 
-RULES: SendMessage is signals only (< 500 chars, no code). Do NOT spawn agents -- request via coordinator. Your LAST action is ALWAYS the shutdown request broadcast in step 3.
+RULES: Do NOT spawn agents -- request via coordinator. In git repos: do NOT run git write operations on the main checkout -- work only within your assigned worktree. Do NOT switch branches inside a worktree.
 ```
 
 ---
 
 ## Inter-Agent Communication
 
-**agentDB is the ONLY data channel. SendMessage is for signals only.**
+**SendMessage is the primary communication channel between agents and coordinator.**
 
 ### Memory Flow (per session)
 
 1. **Coordinator starts** -- `lifecycle_memory-start` (broad synthesis) -> `[CONTEXT]` in system-reminder
-2. **Before each spawn** -- `agentdb_hierarchical-store key="agent-task-{name}@{teamName}"` (task description, clean keywords only)
-3. **Teammate starts** -- `lifecycle_agent-start` reads that key -> task-scoped synthesis -> `lifecycle.json cachedResult.context`
-4. **Teammate reads** -- MANDATORY FIRST STEP reads `lifecycle.json`, decides whether to recall referenced agentDB keys, coordinator injects Pipeline Context inline
-5. **Findings flow** -- The Stop hook auto-stores each agent's full `## RESULTS` block to agentDB working tier under key `{sessionId}-{agentId}`; no explicit `hierarchical-store` call needed
-6. **Session closes** -- Stop hook promotes patterns to semantic tier, creates episodic entry
+2. **Teammates receive context** -- Pipeline Context block in agent prompt is the coordinator's explicit injection channel
+3. **Findings flow** -- Agents send results via SendMessage; Stop hook auto-stores `## RESULTS` to agentDB working tier
+4. **Session closes** -- Stop hook promotes patterns to semantic tier, creates episodic entry
 
 ### Channel Roles
 
 | Channel | Allowed Use | NEVER Use For |
 |---------|------------|---------------|
-| `agentDB hierarchical-store/recall` | Inter-agent exact-key data sharing within a session. Stop hook auto-populates working tier with full agent `## RESULTS` under `{sessionId}-{agentId}` keys | Semantic queries |
 | `agentDB pattern-store/search` | Discovered patterns (bridges sessions). Pattern-store keys: derived from label prefix (`text-before-colon` if <=60 chars) or first 64 chars of kebab-cased pattern text -- use `label: description` format for retrievable keys via `hierarchical-recall` exact-key match | -- |
 | `memory_store/search` (namespace: `"patterns"` ONLY) | Cross-session semantic search | Inter-agent data sharing |
-| `SendMessage` | Coordination signals, agentDB key references | Findings, code, file contents |
+| `SendMessage` | Agent results, coordination signals, status updates | Large code blocks (> 50 lines) |
 | `Task metadata` | Status, assignment, dependencies | Context or data payloads |
-| `lifecycle.json cachedResult.context` | Synthesized ambient memory delivered to teammates at startup -- read in MANDATORY FIRST STEP | Any write; coordinator already receives this via system-reminder |
 
 ### agentDB Parameter Reference
 
 | Tool | Parameter | Type | Required | Notes |
 |------|-----------|------|----------|-------|
-| `hierarchical-store` | `key` | string | Yes | `{sessionId}-{agentId}` format (coordinator) or `{parentSessionId}-{agentId}` (teammate). For `agent-task-{name}@{teamName}` keys: task description must be clean (no cross-topic keywords) -- keyword-overlap filter (>=2 matching 4+ char non-stop-words) uses it for context relevancy during synthesis |
+| `hierarchical-store` | `key` | string | Yes | Keys for explicit data sharing |
 | `hierarchical-store` | `value` | string | Yes | Memory entry value |
 | `hierarchical-store` | `tier` | `"working"` / `"episodic"` / `"semantic"` | No | Always specify explicitly |
 | `hierarchical-recall` | `query` | string | Yes | **Exact key match first, then semantic similarity fallback** |
@@ -194,12 +169,9 @@ This is fully automatic -- agents pass plain-text values; lifecycle hooks handle
 
 ### Data Flow Rules (one-liners)
 
-1. **Store-Before-Share**: Agent A stores in agentDB BEFORE Agent B spawns (pipeline handoffs only).
-2. **Recall-Before-Spawn**: For pipeline handoffs, coordinator recalls prior agent keys and injects full content into the next agent's prompt. Agents receiving inline content skip the recall step. First agent: "No prior context found."
-3. **SendMessage Boundary**: Signals only (< 500 chars, no code blocks). ALWAYS include `summary` (5-10 words) when message is a string -- omitting it throws `Error: summary is required when message is a string`.
-4. **Recall Before Responding**: Coordinator MUST recall ALL agents' `{sessionId}-{agentId}` keys from agentDB before using their findings -- both pipeline and leaf agents. The Stop hook auto-stores the full `## RESULTS` block verbatim, so the recalled data contains complete findings. If the recalled RESULTS lists keys under `agentDB Store Keys`, recall those keys too for overflow context (large payloads, pipeline handoff data).
-5. **Spawn via Coordinator Only**: Agents MUST NOT spawn other agents.
-6. **Teammate Memory**: Teammates read synthesized context from `~/.claude/arche/sessions/<sessionId>/lifecycle.json` -> `cachedResult.context` in MANDATORY FIRST STEP, then decide whether to recall any referenced agentDB keys via `mcp__arche__agentdb_hierarchical-recall`. Pipeline Context block in agent prompt is coordinator's explicit injection channel -- the only guaranteed delivery.
+1. **SendMessage Boundary**: ALWAYS include `summary` (5-10 words) when message is a string -- omitting it throws `Error: summary is required when message is a string`.
+2. **Spawn via Coordinator Only**: Agents MUST NOT spawn other agents.
+3. **Pipeline Context**: Coordinator injects prior agent output into the next agent's prompt via the Pipeline Context block -- the only guaranteed delivery channel.
 
 ---
 
@@ -244,7 +216,7 @@ Full catalog: `mcp__arche__coordination_orchestrate`.
 | 2 | Calling `Agent`? Completed 2-step gate (TeamDelete, TeamCreate)? SessionStart hook auto-fires `lifecycle_session-start`. |
 | 3 | Every `Agent` call has `team_name` and a prior `TaskCreate`? |
 | 4 | Agent prompt includes FIRST/LAST STEP blocks? POST_TASK includes complete `## RESULTS` block (Stop hook auto-stores it to agentDB)? |
-| 5 | Responding to user? Recalled ALL agents' full findings from agentDB by `{sessionId}-{agentId}` key -- both pipeline and leaf agents. Stop hook auto-persisted complete RESULTS there. Then check `agentDB Store Keys` in the recalled RESULTS -- recall any listed keys for additional context. |
+| 5 | Responding to user? Received agent RESULTS via SendMessage? |
 | 6 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 7 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
 | 8 | Calling `Agent`? Set `isolation: "worktree"` on every spawn -- no exceptions, including read-only agents. Without worktree isolation, concurrent `git checkout` operations across agents clobber each other, corrupting BUILD files and causing false test failures. |
@@ -258,9 +230,7 @@ Full catalog: `mcp__arche__coordination_orchestrate`.
 | `[CONTEXT]` missing from system-reminder | SessionStart hook may have failed. Proceed without ambient context -- agents self-load what they can via their own SessionStart hooks. |
 | `TeamCreate` fails | Retry once. If still failing, proceed without team but log warning. |
 | Agent times out/crashes | Coordinator fallback-stores any available output, proceeds to next agent. |
-| `TeamDelete` fails | Proceed to `lifecycle_session-close`; cleanup is best-effort. |
 | `TeamCreate` returns "Already leading team" | Call `TeamDelete` first to clear stale team state, then retry `TeamCreate`. |
-| Stop hook / `lifecycle_session-close` fails | Log warning; session data may be lost but task is complete. |
 
 ## MCP Call Failure Handling
 
