@@ -77,3 +77,14 @@ result-*
 .config/mechanic/
 .config/systemd/
 .config/configstore/
+
+# Runtime state / logs (not for committing)
+.config/claude-scheduler/
+.config/db-agents/
+.config/slack-forward/
+.config/slack-relay/
+.swarm/
+.claude/worktrees/
+.claude/tmp.json
+tmp.json
+tmux-client-*.log
