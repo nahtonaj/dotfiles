@@ -4,7 +4,7 @@
 
 - `mcp__arche__lifecycle_*` -- Session lifecycle tools (session-start, session-close, agent-start, agent-close, memory-start, memory-close). All auto-fire via hooks -- no direct invocation needed. Note: `lifecycle_context-pull` auto-fires via the `UserPromptSubmit` hook (first prompt only) -- do NOT call from SessionStart.
 - `mcp__arche__*` -- All other Arche MCP tools (memory, agentDB, coordination, hooks, etc.)
-- `Agent` -- Spawn agents (with `isolation: "worktree"`)
+- `Agent` -- Spawn agents (optionally with `isolation: "worktree"` for concurrent edits)
 - `TaskCreate` / `TaskUpdate` / `TaskGet` / `TaskList` / `TaskOutput` / `TaskStop` -- Task management
 - `SendMessage` -- Agent results, coordination signals, status updates. **ALWAYS include `summary`** (5-10 word preview) when message is a string -- Claude Code requires it.
 - `AskUserQuestion`, `ToolSearch`, `Skill` -- User interaction and tool discovery
@@ -27,7 +27,7 @@
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
-**Per-agent**: `TaskCreate` -> `Agent(name, isolation="worktree", run_in_background=true)` (omit `isolation` outside git repos)
+**Per-agent**: `TaskCreate` -> `Agent(name, run_in_background=true)` (add `isolation: "worktree"` for concurrent agents editing files)
 
 ALL agents use `run_in_background: true`. Coordinator waits for SendMessage notifications, never polls. Teammates self-register (SessionStart hook) and self-persist (Stop hook) -- no manual lifecycle management needed.
 
@@ -49,7 +49,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 | 4 | Responding to user? Received agent RESULTS via SendMessage or inline return? |
 | 5 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 6 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
-| 7 | Calling `Agent`? Set `isolation: "worktree"` when the working directory is inside a git repo. Outside git repos, omit `isolation`. Without worktree isolation in git repos, concurrent `git checkout` operations across agents clobber each other, corrupting BUILD files and causing false test failures. |
+| 7 | Calling `Agent`? Consider `isolation: "worktree"` when multiple agents edit files concurrently in a git repo. Not needed for single-agent tasks or read-only agents. |
 
 ---
 

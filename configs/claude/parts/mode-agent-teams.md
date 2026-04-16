@@ -40,7 +40,7 @@ Before spawning any agent:
 
 **Skills Check**: Before spawning agents, check whether a skill matches the task domain (e.g., `github:*`, `hooks:*`, `swarm:*`, `sparc:*`). If one applies, invoke it via `Skill` to get specialized guidance -- skills override default coordination strategy.
 
-**Per-agent**: `TaskCreate` -> `Agent(name, team_name=teamName, isolation="worktree", run_in_background=true)`
+**Per-agent**: `TaskCreate` -> `Agent(name, team_name=teamName, run_in_background=true)`
 
 ALL agents use `run_in_background: true`. Coordinator waits for SendMessage notifications, never polls. Teammates self-register (SessionStart hook) and self-persist (Stop hook) -- no manual lifecycle management needed.
 
@@ -63,7 +63,7 @@ ALL agents use `run_in_background: true`. Coordinator waits for SendMessage noti
 | 5 | Responding to user? Received agent RESULTS via SendMessage? |
 | 6 | Complex task (Plan First? = Yes)? Planned and stored plan before execution? |
 | 7 | Relevant skill for this task? Invoke via `Skill` before spawning agents -- skills take precedence over default behavior. |
-| 8 | Calling `Agent`? `isolation: "worktree"` is MANDATORY in git repos. Each agent gets its OWN worktree -- NEVER share a worktree between concurrent agents. Omit `isolation` ONLY outside git repos. |
+| 8 | Calling `Agent`? Consider `isolation: "worktree"` when multiple agents edit files concurrently in a git repo. Not needed for single-agent tasks or read-only agents. |
 
 ---
 
