@@ -193,3 +193,5 @@ function y() {
 if [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
   /nix/store/hpbyvg0zwk8bi642cc3vksmabxmy8vw4-tmux-3.6a/bin/tmux
 fi
+
+alias claude-mem='bun "/home/jon.gao/.claude/plugins/cache/thedotmack/claude-mem/12.1.6/scripts/worker-service.cjs"'

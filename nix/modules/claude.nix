@@ -8,11 +8,6 @@ let
   # Change this ONE variable to update the model in ALL agent definitions.
   claudeAgentModel = "claude-opus-4-6";
 
-  # ── Claude coordination mode ──
-  # "agent-teams" = full team lifecycle (TeamCreate/Delete, team_name on Agent calls)
-  # "bare-agent"  = direct agent delegation without team overhead
-  claudeMode = "agent-teams";
-
   # ── Ruflo workflow block injected into every agent definition ──
   rufloWorkflowBlock = pkgs.writeText "ruflo-workflow-block.md" ''
 
@@ -126,10 +121,9 @@ in
   # --- Direct symlinks (bypass nix store, point straight to dotfiles repo) ---
   home.activation.createClaudeSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.claude/helpers"
-    # Compose CLAUDE.md from modular parts
-    cat "${dotfilesDir}/configs/claude/parts/base.md" \
-        "${dotfilesDir}/configs/claude/parts/mode-${claudeMode}.md" \
-        > "$HOME/CLAUDE.md"
+    # Mutable bidirectional symlink -- edits on either side reflect immediately.
+    rm -f "$HOME/CLAUDE.md"
+    ln -sfn "${dotfilesDir}/configs/claude/CLAUDE.md" "$HOME/CLAUDE.md"
     ln -sfn "${dotfilesDir}/configs/claude/settings.json" "$HOME/.claude/settings.json"
     ln -sfn "${dotfilesDir}/.claude/commands" "$HOME/.claude/commands"
     ln -sfn "${dotfilesDir}/.claude/skills" "$HOME/.claude/skills"

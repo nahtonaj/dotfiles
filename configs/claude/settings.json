@@ -260,6 +260,7 @@
     "defaultMode": "default",
     "disableBypassPermissionsMode": "disable"
   },
+  "model": "opus[1m]",
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "arche"
@@ -492,11 +493,11 @@
     "slack@claude-plugins-official": false,
     "claude-hud@experimental-plugin-marketplace": false,
     "ralph-wiggum@experimental-plugin-marketplace": false,
-    "memory-ctrl@experimental-plugin-marketplace": true,
     "ralph-loop@claude-plugins-official": true,
     "plugin-builder@experimental-plugin-marketplace": true,
     "superpowers@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "claude-mem@thedotmack": true
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
@@ -617,6 +618,5 @@
       "cveCheck": false,
       "threatModel": false
     }
-  },
-  "model": "opus[1m]"
+  }
 }
