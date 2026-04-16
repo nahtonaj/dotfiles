@@ -1,8 +1,5 @@
 { config, pkgs, flakePath, ... }:
 
-let
-  obsidian-mcp-server = pkgs.callPackage ../packages/obsidian-mcp-server.nix {};
-in
 {
   imports = [
     ../modules/zsh.nix
@@ -36,6 +33,5 @@ in
     tree
     curl
     wget
-    obsidian-mcp-server
   ];
 }
