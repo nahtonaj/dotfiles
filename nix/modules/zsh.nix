@@ -1,8 +1,5 @@
 { config, pkgs, lib, flakePath, ... }:
 
-let
-  themeFile = builtins.readFile "${flakePath}/configs/zsh/databricks.zsh-theme";
-in
 {
   programs.zsh = {
     enable = true;
@@ -10,8 +7,6 @@ in
       enable = true;
       highlight = "fg=28";
     };
-    # Syntax highlighting sourced manually in initContent after registering
-    # autocomplete widget stubs to avoid "unhandled ZLE widget" warnings.
     syntaxHighlighting.enable = false;
 
     plugins = [
@@ -76,123 +71,10 @@ in
       SDKMAN_DIR = "$HOME/.sdkman";
       NVM_DIR = "$HOME/.nvm";
     };
-
-    initContent = lib.mkMerge [
-      (lib.mkBefore ''
-        # Nix profile (ensures nix/home-manager available in all shells)
-        if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-          . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-        fi
-
-        # PATH setup
-        export PATH=/home/linuxbrew/.linuxbrew/bin:$PATH
-        export PATH=$HOME/bin:/usr/local/bin:$PATH
-        export PATH=$HOME/.local/share/coursier/bin:$PATH
-        export PATH=$HOME/.local/bin:$PATH
-
-        # Java configuration for Metals
-        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-        export PATH=$JAVA_HOME/bin:$PATH
-
-      '')
-
-      ''
-        # Register zsh-autocomplete widget stubs so syntax-highlighting
-        # doesn't warn about unhandled ZLE widgets
-        function insert-unambiguous-or-complete() { zle .insert-unambiguous-or-complete 2>/dev/null || zle .expand-or-complete; }
-        function menu-search() { zle .menu-search 2>/dev/null || zle .expand-or-complete; }
-        function recent-paths() { zle .recent-paths 2>/dev/null || zle .expand-or-complete; }
-        zle -N insert-unambiguous-or-complete
-        zle -N menu-search
-        zle -N recent-paths
-
-        # Now safe to source syntax-highlighting (widgets are registered)
-        source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-        # Load colors for prompt
-        autoload -U colors && colors
-
-        # Enable prompt substitution (needed for $(git branch ...) in PROMPT)
-        setopt PROMPT_SUBST
-
-        # Prompt (from databricks.zsh-theme)
-        ${themeFile}
-
-        # Completion style
-        COMPLETION_WAITING_DOTS="true"
-
-        # Vi-mode arrow key fix
-        () {
-          while (( ARGC )); do
-            bindkey -M $1 '^[OA' up-line-or-history
-            bindkey -M $1 '^[[A' up-line-or-history
-            bindkey -M $1 '^[OB' down-line-or-history
-            bindkey -M $1 '^[[B' down-line-or-history
-            shift
-          done
-        } emacs viins vicmd
-
-        # Autocomplete settings
-        zstyle ':autocomplete:*' widget-style menu-select
-        bindkey -M menuselect '\r' accept-line
-        zstyle ':autocomplete:*' list-lines 7
-
-        # Custom functions
-        set-title() {
-            echo -e "\e]0;$*\007"
-        }
-
-        ssh() {
-            set-title $*;
-            /usr/bin/ssh -2 $*;
-            set-title $HOST;
-        }
-
-        separator() {
-            if [[ -z $COLUMNS ]]; then
-                COLUMNS=$(tput cols)
-            fi
-            lengthOfTitle=$((''${#1}+2))
-            numberOfCharacters=$(( ($COLUMNS - $lengthOfTitle)/2 ))
-            printf "=%.0s"  $(seq 1 ''${numberOfCharacters}); printf " ''${1} "; printf "=%.0s"  $(seq 1 ''${numberOfCharacters}); printf "\n"
-        }
-
-        mkcd () {
-          case "$1" in
-            */..|*/../) cd -- "$1";;
-            /*/../*) (cd "''${1%/../*}/.." && mkdir -p "./''${1##*/../}") && cd -- "$1";;
-            /*) mkdir -p "$1" && cd "$1";;
-            */../*) (cd "./''${1%/../*}/.." && mkdir -p "./''${1##*/../}") && cd "./$1";;
-            ../*) (cd .. && mkdir -p "''${1#.}") && cd "$1";;
-            *) mkdir -p "./$1" && cd "./$1";;
-          esac
-        }
-
-        # Yazi helper for changing current working directory
-        function y() {
-          local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
-          yazi "$@" --cwd-file="$tmp"
-          if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-            builtin cd -- "$cwd"
-          fi
-          rm -f -- "$tmp"
-        }
-
-        # Kiro integration (conditional)
-        [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
-
-        # SDKMAN (conditional)
-        [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-        # NVM (conditional)
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-        # # Auto-start tmux and restore session
-        if [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
-          ${pkgs.tmux}/bin/tmux
-        fi
-      ''
-    ];
   };
+
+  # mkOutOfStoreSymlink needs the real filesystem path, not nix store path from self
+  home.file.".zshrc".source = lib.mkForce
+    (config.lib.file.mkOutOfStoreSymlink
+      "${config.home.homeDirectory}/dotfiles/configs/zsh/zshrc");
 }
