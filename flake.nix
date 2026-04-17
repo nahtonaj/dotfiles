@@ -35,7 +35,7 @@
       };
 
       # nix-darwin + home-manager for macOS
-      darwinConfigurations."jon.gao-mac" = nix-darwin.lib.darwinSystem {
+      darwinConfigurations.jon-gao-mac = nix-darwin.lib.darwinSystem {
         system = darwinSystem;
         specialArgs = { flakePath = self; };
         modules = [
@@ -44,6 +44,7 @@
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "before-nix";
             home-manager.extraSpecialArgs = { flakePath = self; };
             home-manager.users."jon.gao" = { ... }: {
               imports = [

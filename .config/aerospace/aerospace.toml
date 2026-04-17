@@ -14,13 +14,13 @@ after-login-command = []
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
 # after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=10.0']
 exec-on-workspace-change = ['/bin/bash', '-c',
-  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | awk "{print $1}")',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | cut -d" " -f1)',
 ]
 # Notify Sketchybar about focus change
 # See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
 on-focus-changed = [
-  'exec-and-forget sketchybar --trigger aerospace_focus_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
-  'move-mouse window-lazy-center'
+  'move-mouse window-lazy-center',
+  'exec-and-forget sketchybar --trigger aerospace_focus_change FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)'
 ]
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
@@ -35,7 +35,7 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # See: https://nikitabobko.github.io/AeroSpace/guide#layouts
 # The 'accordion-padding' specifies the size of accordion padding
 # You can set 0 to disable the padding feature
-accordion-padding = 30
+accordion-padding = 60
 
 # Possible values: tiles|accordion
 default-root-container-layout = 'tiles'
@@ -87,7 +87,7 @@ outer.right =      10
 # See: https://nikitabobko.github.io/AeroSpace/commands#exec-and-forget
 # Application launchers
 
-alt-i = 'exec-and-forget open -a "iTerm"'
+alt-i = 'exec-and-forget open -a "Ghostty"'
 alt-s = 'exec-and-forget open -a "Slack"'
 alt-m = 'exec-and-forget open -a "Gmail"'
 alt-c = 'exec-and-forget open -a "Google Calendar"'
@@ -232,7 +232,7 @@ ctrl-shift-l = [
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.service.binding]
-esc = ['reload-config', 'mode main', 'exec-and-forget pkill sketchybar']
+esc = ['reload-config', 'mode main', 'exec-and-forget sketchybar --reload']
 r = ['flatten-workspace-tree', 'mode main'] # reset layout
 #s = ['layout sticky tiling', 'mode main'] # sticky is not yet supported https://github.com/nikitabobko/AeroSpace/issues/2
 f = ['layout floating tiling', 'mode main'] # Toggle between floating and tiling layout

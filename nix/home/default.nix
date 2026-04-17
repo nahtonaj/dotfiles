@@ -17,7 +17,6 @@
     ../modules/tridactyl.nix
     ../modules/ssh.nix
     ../modules/claude.nix
-    ../modules/ruflo.nix
   ];
 
   home.username = "jon.gao";
@@ -33,5 +32,6 @@
     tree
     curl
     wget
+    autossh
   ];
 }

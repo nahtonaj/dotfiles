@@ -4,6 +4,16 @@ let
   themeFile = builtins.readFile "${flakePath}/configs/zsh/databricks.zsh-theme";
 in
 {
+  # Bidirectional symlinks for zsh-related dotfiles
+  home.file.".aliasrc" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/aliasrc";
+    force = true;
+  };
+  home.file.".oh-my-zsh" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.oh-my-zsh";
+    force = true;
+  };
+
   programs.zsh = {
     enable = true;
     autosuggestion = {
@@ -69,6 +79,8 @@ in
       gst = "git status";
       gsw = "git switch";
       gswc = "git switch --create";
+      # Nix rebuild
+      nrs = "sudo nix run --extra-experimental-features 'nix-command flakes' nix-darwin -- switch --flake ~/dotfiles#jon-gao-mac";
     };
 
     sessionVariables = {
@@ -89,6 +101,7 @@ in
         export PATH=$HOME/bin:/usr/local/bin:$PATH
         export PATH=$HOME/.local/share/coursier/bin:$PATH
         export PATH=$HOME/.local/bin:$PATH
+        export PATH="$HOME/Library/Application Support/waveterm/bin:$PATH"
 
         # Java configuration for Metals
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
@@ -141,6 +154,21 @@ in
             echo -e "\e]0;$*\007"
         }
 
+        # Start Arca, then open resilient port-forwarding tunnels via autossh.
+        # Local forwards: 13100, 13101, 37777. Remote forward: 27124.
+        aa() {
+            arca start "$@" || return
+            AUTOSSH_POLL=30 AUTOSSH_GATETIME=0 autossh -M 0 -N \
+                -o ServerAliveInterval=30 \
+                -o ServerAliveCountMax=3 \
+                -o ExitOnForwardFailure=yes \
+                -L 13100:localhost:13100 \
+                -L 13101:localhost:13101 \
+                -L 37777:localhost:37777 \
+                -R 27124:localhost:27124 \
+                arca.ssh
+        }
+
         ssh() {
             set-title $*;
             /usr/bin/ssh -2 $*;
@@ -177,9 +205,6 @@ in
           rm -f -- "$tmp"
         }
 
-        # Kiro integration (conditional)
-        [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
-
         # SDKMAN (conditional)
         [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
@@ -187,10 +212,6 @@ in
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-        # # Auto-start tmux and restore session
-        if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
-          tmux
-        fi
       ''
     ];
   };

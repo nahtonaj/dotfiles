@@ -1,0 +1,142 @@
+{
+  "env": {},
+  "attribution": {},
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "WebFetch(domain:*)",
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(rg:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(cd:*)",
+      "Bash(ps:*)",
+      "Bash(top:*)",
+      "Bash(df:*)",
+      "Bash(du:*)",
+      "Bash(which:*)",
+      "Bash(whereis:*)",
+      "Bash(whoami:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh api:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(kubectl describe:*)",
+      "Bash(kubectl get:*)",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl version)",
+      "Bash(bazel query:*)",
+      "Bash(bazel build:*)",
+      "Bash(bazel test:*)",
+      "Skill(bazel-universe:bazel-universe)",
+      "mcp__devportal__get_pr_details",
+      "mcp__devportal__get_test_results",
+      "mcp__devportal__get_test_run_details",
+      "mcp__devportal__get_run_logs",
+      "mcp__jira__jira_get_issue",
+      "mcp__glean__search",
+      "mcp__glean__get_document_content",
+      "mcp__github__get_pull_request",
+      "mcp__github__get_pull_request_diff",
+      "mcp__github__get_pull_requests_by_user",
+      "Bash(zsh --version:*)",
+      "Bash(compaudit:*)",
+      "Bash(find:*)",
+      "Bash(env:*)",
+      "Bash(printenv:*)",
+      "Bash(uname:*)",
+      "Bash(file:*)",
+      "Bash(tree:*)",
+      "Bash(date:*)",
+      "Bash(id:*)",
+      "Bash(hostname:*)",
+      "Bash(nix eval:*)",
+      "Bash(nix flake show:*)",
+      "Bash(nix flake metadata:*)",
+      "Bash(home-manager generations:*)",
+      "Bash(npm list:*)",
+      "Bash(npm ls:*)",
+      "Bash(pip list:*)",
+      "Bash(pip show:*)",
+      "Bash(sudo darwin-rebuild switch --flake:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "model": "opus[1m]",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/helpers/tmux-pane-title.sh",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\a' > /dev/tty",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\a' > /dev/tty",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\a' > /dev/tty",
+            "timeout": 3000
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "bazel-universe@experimental-plugin-marketplace": true,
+    "security-guidance@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "plugin-builder@experimental-plugin-marketplace": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "auto"
+}

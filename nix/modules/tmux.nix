@@ -1,9 +1,23 @@
 { config, pkgs, lib, flakePath, ... }:
 
 {
-  programs.tmux = {
-    enable = true;
-    extraConfig = builtins.readFile "${flakePath}/configs/tmux/tmux.conf";
+  programs.tmux.enable = true;
+
+  # Symlink tmux.conf for bidirectional editing (no rebuild needed to reload)
+  home.file.".tmux.conf" = {
+    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/tmux/tmux.conf";
+    force = true;
+  };
+
+  # Platform-specific tmux settings (sourced from tmux.conf)
+  home.file.".tmux-platform.conf" = {
+    text = if pkgs.stdenv.isDarwin then ''
+      # macOS: do not auto-start tmux on boot
+      set -g @continuum-boot 'off'
+    '' else ''
+      # Linux: auto-start tmux on boot
+      set -g @continuum-boot 'on'
+    '';
   };
 
   # Auto-clone TPM on first activation
@@ -13,8 +27,8 @@
     fi
   '';
 
-  # Tmux systemd service for session persistence
-  systemd.user.services.tmux = {
+  # Tmux systemd service for session persistence (Linux only)
+  systemd.user.services.tmux = lib.mkIf pkgs.stdenv.isLinux {
     Unit = {
       Description = "tmux default session (detached)";
       Documentation = "man:tmux(1)";
@@ -22,8 +36,6 @@
     Service = {
       Type = "forking";
       ExecStart = "${pkgs.tmux}/bin/tmux new-session -d";
-      # Save is handled solely by continuum auto-save (every 15 min)
-      # Restore is handled solely by @continuum-restore 'on' in tmux.conf
       ExecStop = "${pkgs.tmux}/bin/tmux kill-server";
       KillMode = "control-group";
       RestartSec = 2;
