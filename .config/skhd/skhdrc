@@ -62,32 +62,12 @@ alt - t : yabai -m window --toggle float;\
 # toggle window split type
 alt - e : yabai -m window --toggle split
 
-# Focus space N (via Hammerspoon; SIP-free SLS API).
-alt - 1 : open "hammerspoon://space_focus?n=1"
-alt - 2 : open "hammerspoon://space_focus?n=2"
-alt - 3 : open "hammerspoon://space_focus?n=3"
-alt - 4 : open "hammerspoon://space_focus?n=4"
-alt - 5 : open "hammerspoon://space_focus?n=5"
-alt - 6 : open "hammerspoon://space_focus?n=6"
-alt - 7 : open "hammerspoon://space_focus?n=7"
-alt - 8 : open "hammerspoon://space_focus?n=8"
-alt - 9 : open "hammerspoon://space_focus?n=9"
-
-# Move focused window to space N and follow (via Hammerspoon).
-alt + shift - 1 : open "hammerspoon://window_to_space_and_follow?n=1"
-alt + shift - 2 : open "hammerspoon://window_to_space_and_follow?n=2"
-alt + shift - 3 : open "hammerspoon://window_to_space_and_follow?n=3"
-alt + shift - 4 : open "hammerspoon://window_to_space_and_follow?n=4"
-alt + shift - 5 : open "hammerspoon://window_to_space_and_follow?n=5"
-alt + shift - 6 : open "hammerspoon://window_to_space_and_follow?n=6"
-alt + shift - 7 : open "hammerspoon://window_to_space_and_follow?n=7"
-alt + shift - 8 : open "hammerspoon://window_to_space_and_follow?n=8"
-alt + shift - 9 : open "hammerspoon://window_to_space_and_follow?n=9"
-
-
-
-# Removed: space --create / window --space both need the SA.
-# Create new spaces via Mission Control (Ctrl+Up, then "+") instead.
+# Space switching: use macOS's native Switch-to-Desktop-N shortcuts
+# (ctrl+1..9), enabled in System Settings → Keyboard → Shortcuts → Mission
+# Control. Hammerspoon-based alt+N / alt+shift+N bindings were removed —
+# hs.spaces.moveWindowToSpace is broken on macOS 26 (returns success but
+# no-ops). No SIP-free way to move windows between spaces currently works.
+# Create new spaces via Mission Control (ctrl+up, "+") instead.
 
 # Reload sketchybar and kill yabai/skhd; launchd KeepAlive=true relaunches
 # them with the fresh configs. Simpler and more reliable than the multi-line

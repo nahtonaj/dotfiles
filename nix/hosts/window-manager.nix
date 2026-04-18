@@ -17,9 +17,6 @@ assert lib.assertMsg (isAerospace || isYabai)
   "windowManager must be \"aerospace\" or \"yabai\", got \"${windowManager}\"";
 
 {
-  # Hammerspoon ships as a raw macOS .app and isn't in nixpkgs, so install it
-  # via `brew install --cask hammerspoon` separately. Nix manages the config
-  # symlink (nix/modules-darwin/hammerspoon.nix) and the launchd agent below.
   environment.systemPackages =
     lib.optionals isAerospace [ pkgs.aerospace ]
     ++ lib.optionals isYabai [ pkgs.yabai pkgs.skhd pkgs.jq ];
@@ -71,21 +68,4 @@ assert lib.assertMsg (isAerospace || isYabai)
     };
   };
 
-  # Hammerspoon provides SIP-free cross-space ops (space focus, move-window-
-  # to-space) that yabai can't do without the scripting addition. Triggered
-  # from skhd via hammerspoon:// URL scheme. Installed via:
-  #   brew install --cask hammerspoon
-  launchd.user.agents.hammerspoon = lib.mkIf isYabai {
-    serviceConfig = {
-      ProgramArguments = [
-        "/usr/bin/open"
-        "-a"
-        "/Applications/Hammerspoon.app"
-      ];
-      RunAtLoad = true;
-      KeepAlive = false;
-      StandardOutPath = "/tmp/hammerspoon.out.log";
-      StandardErrorPath = "/tmp/hammerspoon.err.log";
-    };
-  };
 }

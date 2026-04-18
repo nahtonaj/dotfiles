@@ -6,7 +6,6 @@
   imports = [
     ../modules-darwin/aerospace.nix
     ../modules-darwin/yabai.nix
-    ../modules-darwin/hammerspoon.nix
     ../modules-darwin/sketchybar.nix
     ../modules-darwin/karabiner.nix
   ];
