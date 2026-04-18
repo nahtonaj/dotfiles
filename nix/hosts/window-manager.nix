@@ -72,8 +72,12 @@ assert lib.assertMsg (isAerospace || isYabai)
   # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in
   # aerospace mode so aerospace's own alt+N bindings aren't shadowed.
   #
-  # After darwin-rebuild switch, you may need to `killall cfprefsd` and
-  # logout/login for macOS to pick these up — the plist is cached.
+  # Caveat: on macOS 26 (Tahoe), the plist write alone doesn't always
+  # register the hotkeys with WindowServer — verified in practice. One-time
+  # fix per machine: open System Settings → Keyboard → Keyboard Shortcuts →
+  # Mission Control and toggle each "Switch to Desktop N" entry (or just
+  # check them if unchecked). After that, the nix-managed enabled=1 value
+  # persists correctly. `killall cfprefsd && killall Dock` may also help.
   system.defaults.CustomUserPreferences."com.apple.symbolichotkeys".AppleSymbolicHotKeys =
     let
       mkHotkey = char: keycode: {
