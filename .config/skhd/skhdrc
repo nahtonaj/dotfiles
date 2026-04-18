@@ -25,6 +25,19 @@ alt + cmd - l : yabai -m window east --resize left:100:0 2> /dev/null || yabai -
 # balance size of windows
 alt + cmd - 0 : yabai -m space --balance
 
+# Smart grow/shrink (aerospace alt-minus/equal analog). yabai doesn't expose
+# the parent split orientation cleanly, so we cascade: try horizontal (right,
+# then left for right-edge windows); if both fail we must be in a pure
+# vertical split, so fall back to vertical (bottom, then top). 0x1B=- 0x18==.
+alt - 0x1B : yabai -m window --resize right:-50:0 2>/dev/null \
+           || yabai -m window --resize left:50:0   2>/dev/null \
+           || yabai -m window --resize bottom:0:-50 2>/dev/null \
+           || yabai -m window --resize top:0:50
+alt - 0x18 : yabai -m window --resize right:50:0  2>/dev/null \
+           || yabai -m window --resize left:-50:0 2>/dev/null \
+           || yabai -m window --resize bottom:0:50 2>/dev/null \
+           || yabai -m window --resize top:0:-50
+
 # rotate tree
 alt - r : yabai -m space --rotate 90
 
@@ -43,11 +56,8 @@ alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
 alt - t : yabai -m window --toggle float;\
           yabai -m window --grid 20:20:1:1:18:18
 
-# float / unfloat window and bottom-left on screen (sticky dropped - needs SA)
-alt - p : yabai -m window --toggle float;\
-          yabai -m window --grid 20:20:12:12:18:18
-
-alt - m : yabai -m window --minimize
+# alt - p / alt - m / alt - b moved: now app launchers (see bottom).
+# macOS cmd-m still minimizes.
 
 # toggle window split type
 alt - e : yabai -m window --toggle split
@@ -79,19 +89,22 @@ alt + shift - 9 : open "hammerspoon://window_to_space_and_follow?n=9"
 # Removed: space --create / window --space both need the SA.
 # Create new spaces via Mission Control (Ctrl+Up, then "+") instead.
 
-# Reload sketchybar + restart yabai (Dock kill was for SA refresh; dropped).
-ctrl + alt - r: sketchybar --reload && yabai --restart-service
+# Reload sketchybar and kill yabai/skhd; launchd KeepAlive=true relaunches
+# them with the fresh configs. Simpler and more reliable than the multi-line
+# launchctl kickstart chain, which skhd's parser was mishandling.
+ctrl + alt - r : sketchybar --reload; pkill -x yabai; pkill -x skhd
 
-# alt - b : yabai -m query --windows --window | jq -re '.["is-topmost"]' | xargs -I {} bash -c "if [[ '{}' = 'true' ]]; then yabai -m window --sub-layer normal; elif [[ '{}' = 'false' ]]; then yabai -m window --sub-layer above; fi" 
-alt - b : yabai -m space --layout $(yabai -m query --spaces --space | jq -r '.type' | grep -q bsp && echo stack || echo bsp)
+# toggle bsp/stack layout (moved from alt-b since that now launches Chrome).
+ctrl + alt - b : yabai -m space --layout $(yabai -m query --spaces --space | jq -r '.type' | grep -q bsp && echo stack || echo bsp)
 
-# Application launchers
-alt + shift - c : open -a "Google Chrome"
-alt + shift - g : open -a "Gmail"
-alt + shift - a : open -a "Google Calendar"
-alt + shift - i : open -a "iTerm"
-alt + shift - x : open -a "Cursor"
-alt + shift - p : open -a "Comet"
-alt + shift - s : open -a "Slack"
-alt + shift - o : open -a "Obsidian"
+# Application launchers (matching aerospace.toml bindings)
+alt - i : open -a "Ghostty"
+alt - s : open -a "Slack"
+alt - m : open -a "Gmail"
+alt - c : open -a "Google Calendar"
+alt - o : open -a "Obsidian"
+alt - x : open -a "Cursor"
+alt - p : open -a "Zen"
+alt - b : open -a "Google Chrome"
+alt - y : open -a "YouTube"
 

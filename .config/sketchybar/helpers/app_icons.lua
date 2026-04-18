@@ -100,6 +100,7 @@ return {
 	["System Settings"] = ":gear:",
 	["系统设置"] = ":gear:",
 	["Réglages Système"] = ":gear:",
+	["Ghostty"] = ":terminal:",
 	["GitHub Desktop"] = ":git_hub:",
 	["Godot"] = ":godot:",
 	["GoLand"] = ":goland:",

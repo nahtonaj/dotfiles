@@ -1,6 +1,8 @@
--- Yabai spaces widget: native macOS Spaces, queried via `yabai`.
--- Uses sketchybar's built-in `space` item type which auto-handles highlight
--- via `associated_space` — no manual subscription needed for focus changes.
+-- Yabai spaces widget: leans on sketchybar's native macOS Spaces integration.
+-- - `sbar.add("space", name, { space = i, ... })` binds the item to space i.
+-- - `space_change` fires with env.SELECTED="true" when this space becomes active.
+-- - `space_windows_change` fires with env.INFO.apps and env.INFO.space — the
+--   app list is populated by sketchybar automatically for space-bound items.
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
@@ -20,39 +22,8 @@ local function popen_text(cmd)
     return out
 end
 
-local function list_windows_cmd(space_index)
-    return table.concat({
-        "yabai -m query --windows --space ", tostring(space_index),
-        [[ | jq -c '[.[] | {"app-name": .app}]']],
-    })
-end
-
-local function focus_cmd(space_index)
-    return "yabai -m space --focus " .. tostring(space_index)
-end
-
-local num_spaces = tonumber(popen_text("yabai -m query --spaces | jq 'length'")) or 0
-if num_spaces == 0 then
-    -- Fallback: if yabai isn't responsive at startup, create 10 slots so
-    -- the bar still renders something useful.
-    num_spaces = 10
-end
-
-local function update_space_label(space_item, apps)
-    local icon_line = ""
-    local no_app = true
-    for _, app in ipairs(apps) do
-        no_app = false
-        local app_name = app["app-name"]
-        local lookup = app_icons[app_name]
-        local icon = ((lookup == nil) and app_icons["default"] or lookup)
-        icon_line = icon_line .. " " .. icon
-    end
-    if no_app then icon_line = " —" end
-    sbar.animate("tanh", 10, function()
-        space_item:set({ label = icon_line })
-    end)
-end
+local num_spaces = tonumber(popen_text("yabai -m query --spaces | jq 'length'")) or 10
+if num_spaces < 1 then num_spaces = 10 end
 
 for i = 1, num_spaces do
     local space = sbar.add("space", "space." .. i, {
@@ -84,32 +55,33 @@ for i = 1, num_spaces do
 
     spaces[i] = space
 
-    sbar.exec(list_windows_cmd(i), function(apps)
-        update_space_label(space, apps)
-    end)
-
-    sbar.add("item", "space." .. i .. "padding", {
+    sbar.add("space", "space.padding." .. i, {
+        space = i,
         script = "",
-        width = settings.items.gap * scale
+        width = settings.items.gap * scale,
     })
 
     space:subscribe("space_change", function(env)
-        local is_active = tostring(env.SELECTED) == "true"
+        local selected = env.SELECTED == "true"
         space:set({
+            icon = { highlight = selected },
+            label = { highlight = selected },
             background = {
-                border_color = is_active and settings.items.highlight_color(i) or settings.items.default_color(i)
+                border_color = selected and settings.items.highlight_color(i) or settings.items.default_color(i)
             }
         })
     end)
 
-    space:subscribe("mouse.clicked", function(_)
-        sbar.exec(focus_cmd(i))
+    -- Focus space on click. Uses Hammerspoon (SIP-free) since yabai's own
+    -- `--focus` needs the scripting addition.
+    space:subscribe("mouse.clicked", function(env)
+        sbar.exec("open 'hammerspoon://space_focus?n=" .. env.SID .. "'")
     end)
 end
 
 local space_window_observer = sbar.add("item", {
     drawing = false,
-    updates = true
+    updates = true,
 })
 
 local spaces_indicator = sbar.add("item", {
@@ -119,37 +91,65 @@ local spaces_indicator = sbar.add("item", {
         padding_left = 8 * scale,
         padding_right = 9 * scale,
         color = colors.grey,
-        string = icons.switch.on
+        string = icons.switch.on,
     },
     label = {
         width = 0,
         padding_left = 0,
         padding_right = 8 * scale,
         string = "Spaces",
-        color = colors.bg1
+        color = colors.bg1,
     },
     background = {
         color = colors.with_alpha(colors.grey, 0.0),
-        border_color = colors.with_alpha(colors.bg1, 0.0)
+        border_color = colors.with_alpha(colors.bg1, 0.0),
     }
 })
 
-local function refresh_all_space_labels()
-    for i = 1, num_spaces do
-        if spaces[i] then
-            sbar.exec(list_windows_cmd(i), function(apps)
-                update_space_label(spaces[i], apps)
-            end)
+-- env.INFO.apps from sketchybar's native integration turned out to be
+-- incomplete (only covers a subset of yabai's window list), so query yabai
+-- directly for each space and rebuild labels.
+local function refresh_space(idx)
+    if not spaces[idx] then return end
+    -- Filter to standard, visible windows so ghost entries (apps with an
+    -- empty AXRole, invisible helper windows, etc.) don't inflate the label.
+    local cmd = "yabai -m query --windows --space " .. idx ..
+        [[ 2>/dev/null | jq -r '.[] | select(."is-minimized" == false and ."is-hidden" == false and .role == "AXWindow" and .subrole == "AXStandardWindow") | .app' | sort -u]]
+    sbar.exec(cmd, function(output)
+        local icon_line = ""
+        local no_app = true
+        for app in string.gmatch(tostring(output), "([^\n]+)") do
+            no_app = false
+            local icon = app_icons[app] or app_icons["default"] or ":default:"
+            icon_line = icon_line .. " " .. icon
         end
-    end
+        if no_app then icon_line = " —" end
+        sbar.animate("tanh", 10, function()
+            spaces[idx]:set({ label = icon_line })
+        end)
+    end)
 end
 
-space_window_observer:subscribe("space_windows_change", function(_)
-    refresh_all_space_labels()
+local function refresh_all_spaces()
+    for i = 1, num_spaces do refresh_space(i) end
+end
+
+-- Populate labels at startup.
+refresh_all_spaces()
+
+space_window_observer:subscribe("space_windows_change", function(env)
+    local idx = env.INFO and tonumber(env.INFO.space)
+    if idx then
+        refresh_space(idx)
+    else
+        refresh_all_spaces()
+    end
 end)
 
+-- Window focus change — covers app launches / closes that don't produce a
+-- space_windows_change event (e.g. newly unmanaged windows).
 space_window_observer:subscribe("wm_focus_change", function(_)
-    refresh_all_space_labels()
+    refresh_all_spaces()
 end)
 
 spaces_indicator:subscribe("swap_menus_and_spaces", function(_)
@@ -162,10 +162,7 @@ end)
 spaces_indicator:subscribe("mouse.entered", function(_)
     sbar.animate("tanh", 30, function()
         spaces_indicator:set({
-            background = {
-                color = { alpha = 1.0 },
-                border_color = { alpha = 1.0 }
-            },
+            background = { color = { alpha = 1.0 }, border_color = { alpha = 1.0 } },
             icon = { color = colors.bg1 },
             label = { width = "dynamic" }
         })
@@ -175,10 +172,7 @@ end)
 spaces_indicator:subscribe("mouse.exited", function(_)
     sbar.animate("tanh", 30, function()
         spaces_indicator:set({
-            background = {
-                color = { alpha = 0.0 },
-                border_color = { alpha = 0.0 }
-            },
+            background = { color = { alpha = 0.0 }, border_color = { alpha = 0.0 } },
             icon = { color = colors.grey },
             label = { width = 0 }
         })

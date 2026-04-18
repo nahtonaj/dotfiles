@@ -41,6 +41,8 @@ assert lib.assertMsg (isAerospace || isYabai)
     };
   };
 
+  # PATH for yabai/skhd includes /opt/homebrew/bin so brew-installed tools
+  # (notably sketchybar, which yabai signals call) resolve at runtime.
   launchd.user.agents.yabai = lib.mkIf isYabai {
     serviceConfig = {
       ProgramArguments = [ "${pkgs.yabai}/bin/yabai" ];
@@ -48,7 +50,7 @@ assert lib.assertMsg (isAerospace || isYabai)
       RunAtLoad = true;
       ProcessType = "Interactive";
       EnvironmentVariables = {
-        PATH = "${pkgs.yabai}/bin:${pkgs.jq}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+        PATH = "${pkgs.yabai}/bin:${pkgs.jq}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       };
       StandardOutPath = "/tmp/yabai.out.log";
       StandardErrorPath = "/tmp/yabai.err.log";
@@ -62,7 +64,7 @@ assert lib.assertMsg (isAerospace || isYabai)
       RunAtLoad = true;
       ProcessType = "Interactive";
       EnvironmentVariables = {
-        PATH = "${pkgs.yabai}/bin:${pkgs.jq}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+        PATH = "${pkgs.yabai}/bin:${pkgs.jq}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin";
       };
       StandardOutPath = "/tmp/skhd.out.log";
       StandardErrorPath = "/tmp/skhd.err.log";

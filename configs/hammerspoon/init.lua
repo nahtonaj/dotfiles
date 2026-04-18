@@ -34,22 +34,31 @@ hs.urlevent.bind("space_focus", function(_, params)
     if target then hs.spaces.gotoSpace(target) end
 end)
 
+-- `force=true` so windows that aren't strictly "standard" still move.
+-- moveWindowToSpace returns (true) or (nil, errMsg) — surface failures.
+local function move_window_to(target)
+    local win = hs.window.focusedWindow()
+    if not win then return false, "no focused window" end
+    local ok, err = hs.spaces.moveWindowToSpace(win, target, true)
+    if not ok then return false, tostring(err) end
+    return true
+end
+
 hs.urlevent.bind("window_to_space", function(_, params)
     local target = nth_space(tonumber(params.n))
-    local win = hs.window.focusedWindow()
-    if target and win then
-        hs.spaces.moveWindowToSpace(win:id(), target)
-    end
+    if not target then return end
+    local ok, err = move_window_to(target)
+    if not ok then hs.alert.show("move failed: " .. err) end
 end)
 
 hs.urlevent.bind("window_to_space_and_follow", function(_, params)
     local target = nth_space(tonumber(params.n))
-    local win = hs.window.focusedWindow()
     if not target then return end
-    if win then
-        hs.spaces.moveWindowToSpace(win:id(), target)
-    end
-    hs.spaces.gotoSpace(target)
+    local ok, err = move_window_to(target)
+    if not ok then hs.alert.show("move failed: " .. err) end
+    -- Small delay so the move completes before we follow; WindowServer
+    -- processes the request asynchronously.
+    hs.timer.doAfter(0.05, function() hs.spaces.gotoSpace(target) end)
 end)
 
 -- Auto-reload when this file changes — handy since it's mkOutOfStoreSymlink'd

@@ -10,38 +10,43 @@ yabai -m signal --add event=window_focused action="sketchybar --trigger window_f
 yabai -m signal --add event=space_changed action="sketchybar --trigger wm_workspace_change FOCUSED_WORKSPACE=\$YABAI_SPACE_ID"
 yabai -m signal --add event=display_changed action="sketchybar --trigger wm_focus_change"
 
-yabai -m config external_bar all:$(sketchybar --query bar | jq .height):0 \
-                layout                     bsp            \
-                mouse_follows_focus        on             \
-                focus_follows_mouse        off            \
-                window_zoom_persist        off            \
-                window_origin_display      default        \
-                window_placement           second_child   \
-                window_topmost             on             \
-                window_shadow              on             \
-                window_opacity             off             \
-                window_opacity_duration    0.2            \
-                active_window_opacity      1.0            \
-                normal_window_opacity      0.9            \
-                window_animation_duration  0.1            \
-                window_animation_easing    ease_out_quint \
-                insert_feedback_color      0xff9dd274     \
-                split_ratio                0.6           \
-                auto_balance               off             \
-                mouse_modifier             ctrl           \
-                mouse_action1              move           \
-                mouse_action2              resize         \
-                mouse_drop_action          swap           \
-                                                          \
-                top_padding                10              \
-                bottom_padding             10              \
-                left_padding               10              \
-                right_padding              10              \
-                window_gap                 10
+# Options commented out below require the yabai scripting addition (SIP off):
+#   window_topmost, window_opacity, active_window_opacity, normal_window_opacity,
+#   window_animation_duration, window_animation_easing.
+# `external_bar` is kept but the height lookup falls back gracefully if
+# sketchybar isn't yet running at launch.
+yabai -m config external_bar              all:$(sketchybar --query bar 2>/dev/null | jq -r '.height // 0'):0 \
+                layout                    bsp            \
+                mouse_follows_focus       on             \
+                focus_follows_mouse       off            \
+                window_zoom_persist       off            \
+                window_origin_display     default        \
+                window_placement          second_child   \
+                window_shadow             on             \
+                insert_feedback_color     0xff9dd274     \
+                split_ratio               0.6            \
+                auto_balance              off            \
+                mouse_modifier            ctrl           \
+                mouse_action1             move           \
+                mouse_action2             resize         \
+                mouse_drop_action         swap           \
+                top_padding               10             \
+                bottom_padding            10             \
+                left_padding              10             \
+                right_padding             10             \
+                window_gap                10
 
-## If I close the active window, focus on any other visible window.
-yabai -m signal --add event=window_destroyed action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
-yabai -m signal --add event=application_terminated action="yabai -m query --windows --window &> /dev/null || yabai -m window --focus mouse"
+## If I close or minimize the active window, focus on another visible one
+## in the current space (fall back to the window under the mouse). Same
+## handlers also kick sketchybar to refresh so stale icons clear.
+focus_next='id=$(yabai -m query --windows --space | jq -r "[.[] | select(.\"has-focus\" == false and .\"is-minimized\" == false and .\"is-hidden\" == false)][0].id // empty") && [ -n "$id" ] && yabai -m window --focus "$id" || yabai -m window --focus mouse; sketchybar --trigger wm_focus_change'
+yabai -m signal --add event=window_destroyed action="$focus_next"
+yabai -m signal --add event=application_terminated action="$focus_next"
+yabai -m signal --add event=window_minimized action="$focus_next"
+
+## Sketchybar should also refresh when windows appear / come back.
+yabai -m signal --add event=window_created action="sketchybar --trigger wm_focus_change"
+yabai -m signal --add event=window_deminimized action="sketchybar --trigger wm_focus_change"
 
 # yabai -m signal --add app='^Amazon Chime$' event=window_created action='yabai -m space --layout bsp'
 # yabai -m signal --add app='^Amazon Chime$' event=window_destroyed action='yabai -m space --layout bsp'
@@ -65,7 +70,7 @@ yabai -m rule --add title="^Picture-in-Picture$" manage=off
 yabai -m rule --add app="^Amazon Chime$" title="^Amazon Chime: Meeting Controls$" manage=off
 yabai -m rule --add app="^Amazon Chime$" title="^Amazon Chime: Screen Share Border$" manage=off
 yabai -m rule --add app="^Amazon Chime$" title="^Window$" manage=off
-yabai -m rule --add app="^Amazon Chime$" title="^*Border$" manage=off
+yabai -m rule --add app="^Amazon Chime$" title=".*Border$" manage=off
 yabai -m rule --add app="^BetterDisplay$" manage=off
 # yabai -m rule --add title="^$" manage=off
 

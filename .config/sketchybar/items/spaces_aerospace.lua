@@ -56,8 +56,7 @@ local function update_space_label(space_item, apps)
     for _, app in ipairs(apps) do
         no_app = false
         local app_name = app["app-name"]
-        local lookup = app_icons[app_name]
-        local icon = ((lookup == nil) and app_icons["default"] or lookup)
+        local icon = app_icons[app_name] or app_icons["default"] or ":default:"
         icon_line = icon_line .. " " .. icon
     end
     if no_app then icon_line = " —" end
