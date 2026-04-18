@@ -68,4 +68,32 @@ assert lib.assertMsg (isAerospace || isYabai)
     };
   };
 
+  # macOS "Switch to Desktop N" shortcuts (alt+1..0). IDs 118-127 in
+  # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in
+  # aerospace mode so aerospace's own alt+N bindings aren't shadowed.
+  #
+  # After darwin-rebuild switch, you may need to `killall cfprefsd` and
+  # logout/login for macOS to pick these up — the plist is cached.
+  system.defaults.CustomUserPreferences."com.apple.symbolichotkeys".AppleSymbolicHotKeys =
+    let
+      mkHotkey = char: keycode: {
+        enabled = if isYabai then 1 else 0;
+        value = {
+          parameters = [ char keycode 524288 ];  # 524288 = option/alt
+          type = "standard";
+        };
+      };
+    in {
+      # Switch to Desktop N: [ ascii-char, keycode, modifier-mask ]
+      "118" = mkHotkey 49 18;  # alt+1 → Desktop 1
+      "119" = mkHotkey 50 19;  # alt+2 → Desktop 2
+      "120" = mkHotkey 51 20;  # alt+3 → Desktop 3
+      "121" = mkHotkey 52 21;  # alt+4 → Desktop 4
+      "122" = mkHotkey 53 23;  # alt+5 → Desktop 5
+      "123" = mkHotkey 54 22;  # alt+6 → Desktop 6
+      "124" = mkHotkey 55 26;  # alt+7 → Desktop 7
+      "125" = mkHotkey 56 28;  # alt+8 → Desktop 8
+      "126" = mkHotkey 57 25;  # alt+9 → Desktop 9
+      "127" = mkHotkey 48 29;  # alt+0 → Desktop 10
+    };
 }
