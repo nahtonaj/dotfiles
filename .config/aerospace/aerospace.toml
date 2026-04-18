@@ -14,19 +14,21 @@ after-login-command = []
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
 # after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=10.0']
 exec-on-workspace-change = ['/bin/bash', '-c',
-  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | cut -d" " -f1)',
+  'sketchybar --trigger wm_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | cut -d" " -f1)',
 ]
 # Notify Sketchybar about focus change
 # See https://nikitabobko.github.io/AeroSpace/guide#on-focus-changed-callbacks
 on-focus-changed = [
   'move-mouse window-lazy-center',
-  'exec-and-forget sketchybar --trigger aerospace_focus_change FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)'
+  'exec-and-forget sketchybar --trigger wm_focus_change FOCUSED_WORKSPACE=$(aerospace list-workspaces --focused)'
 ]
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Start AeroSpace at login
-start-at-login = true
+# Managed by nix-darwin launchd agent (nix/hosts/window-manager.nix); set to
+# false so aerospace doesn't register its own LaunchAgent.
+start-at-login = false
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true

@@ -4,11 +4,12 @@ alt - j : yabai -m window --focus south || yabai -m display --focus south
 alt - k : yabai -m window --focus north || yabai -m display --focus north
 alt - l : yabai -m window --focus east || yabai -m window --focus stack.next || yabai -m display --focus east
 
-# swap managed window
-shift + alt - h : yabai -m window --swap west || $(yabai -m window --display west; yabai -m display --focus west)
-shift + alt - j : yabai -m window --swap south || $(yabai -m window --display south; yabai -m display --focus south)
-shift + alt - k : yabai -m window --swap north || $(yabai -m window --display north; yabai -m display --focus north)
-shift + alt - l : yabai -m window --swap east || $(yabai -m window --display east; yabai -m display --focus east)
+# swap managed window (fallback to focusing the adjacent display; the
+# `window --display` cross-display move needs the SA so we drop it).
+shift + alt - h : yabai -m window --swap west || yabai -m display --focus west
+shift + alt - j : yabai -m window --swap south || yabai -m display --focus south
+shift + alt - k : yabai -m window --swap north || yabai -m display --focus north
+shift + alt - l : yabai -m window --swap east || yabai -m display --focus east
 
 # move managed window
 shift + alt + ctrl - h : yabai -m window --warp west
@@ -33,9 +34,7 @@ alt - u : yabai -m window --focus recent
 # toggle window fullscreen zoom
 alt - f : yabai -m window --toggle zoom-fullscreen
 
-# alt - s : yabai -m window --toggle
-ctrl + alt - s : yabai -m window --toggle sticky;\
-          yabai -m window --toggle pip
+# Removed: sticky/pip toggles need the SA.
 
 # toggle padding and gap
 alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
@@ -44,39 +43,44 @@ alt - g : yabai -m space --toggle padding; yabai -m space --toggle gap
 alt - t : yabai -m window --toggle float;\
           yabai -m window --grid 20:20:1:1:18:18
 
-# float / unfloat window and bottom left on screen
+# float / unfloat window and bottom-left on screen (sticky dropped - needs SA)
 alt - p : yabai -m window --toggle float;\
-          yabai -m window --grid 20:20:12:12:18:18 \
-          yabai -m window --toggle sticky
+          yabai -m window --grid 20:20:12:12:18:18
 
 alt - m : yabai -m window --minimize
 
 # toggle window split type
 alt - e : yabai -m window --toggle split
 
-# move window to space
-ctrl + alt - 1 : yabai -m window --space 1; skhd -k "alt - 1"
-ctrl + alt - 2 : yabai -m window --space 2; skhd -k "alt - 2"
-ctrl + alt - 3 : yabai -m window --space 3; skhd -k "alt - 3"
-ctrl + alt - 4 : yabai -m window --space 4; skhd -k "alt - 4"
-ctrl + alt - 5 : yabai -m window --space 5; skhd -k "alt - 5"
-ctrl + alt - 6 : yabai -m window --space 6; skhd -k "alt - 6"
-ctrl + alt - 7 : yabai -m window --space 7; skhd -k "alt - 7"
-ctrl + alt - 8 : yabai -m window --space 8; skhd -k "alt - 8"
-ctrl + alt - 9 : yabai -m window --space 9; skhd -k "alt - 9"
+# Focus space N (via Hammerspoon; SIP-free SLS API).
+alt - 1 : open "hammerspoon://space_focus?n=1"
+alt - 2 : open "hammerspoon://space_focus?n=2"
+alt - 3 : open "hammerspoon://space_focus?n=3"
+alt - 4 : open "hammerspoon://space_focus?n=4"
+alt - 5 : open "hammerspoon://space_focus?n=5"
+alt - 6 : open "hammerspoon://space_focus?n=6"
+alt - 7 : open "hammerspoon://space_focus?n=7"
+alt - 8 : open "hammerspoon://space_focus?n=8"
+alt - 9 : open "hammerspoon://space_focus?n=9"
 
-ctrl + alt - l : yabai -m window --space next; skhd -k "alt - $(yabai -m query --spaces --space | jq '.index + 1')"
-ctrl + alt - h : yabai -m window --space prev; skhd -k "alt - $(yabai -m query --spaces --space | jq '.index - 1')"
+# Move focused window to space N and follow (via Hammerspoon).
+alt + shift - 1 : open "hammerspoon://window_to_space_and_follow?n=1"
+alt + shift - 2 : open "hammerspoon://window_to_space_and_follow?n=2"
+alt + shift - 3 : open "hammerspoon://window_to_space_and_follow?n=3"
+alt + shift - 4 : open "hammerspoon://window_to_space_and_follow?n=4"
+alt + shift - 5 : open "hammerspoon://window_to_space_and_follow?n=5"
+alt + shift - 6 : open "hammerspoon://window_to_space_and_follow?n=6"
+alt + shift - 7 : open "hammerspoon://window_to_space_and_follow?n=7"
+alt + shift - 8 : open "hammerspoon://window_to_space_and_follow?n=8"
+alt + shift - 9 : open "hammerspoon://window_to_space_and_follow?n=9"
 
 
 
-# create desktop, move window and follow focus - uses jq for parsing json (brew install jq)
-shift + alt - n : yabai -m space --create && \
-                   index="$(yabai -m query --spaces --display | jq 'map(select(."native-fullscreen" == 0))[-1].index')" && \
-                   yabai -m window --space "${index}" && \
-                   yabai -m space --focus "${index}"
+# Removed: space --create / window --space both need the SA.
+# Create new spaces via Mission Control (Ctrl+Up, then "+") instead.
 
-ctrl + alt - r: sketchybar --reload && yabai --restart-service && killall Dock
+# Reload sketchybar + restart yabai (Dock kill was for SA refresh; dropped).
+ctrl + alt - r: sketchybar --reload && yabai --restart-service
 
 # alt - b : yabai -m query --windows --window | jq -re '.["is-topmost"]' | xargs -I {} bash -c "if [[ '{}' = 'true' ]]; then yabai -m window --sub-layer normal; elif [[ '{}' = 'false' ]]; then yabai -m window --sub-layer above; fi" 
 alt - b : yabai -m space --layout $(yabai -m query --spaces --space | jq -r '.type' | grep -q bsp && echo stack || echo bsp)

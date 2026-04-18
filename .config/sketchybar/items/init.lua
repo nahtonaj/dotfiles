@@ -1,7 +1,6 @@
-require("items.aerospace")
 require("items.apple")
 require("items.menus")
-require("items.spaces")  -- Aerospace workspaces display
+require("items.spaces")  -- Workspace display (backend-agnostic via items.wm)
 require("items.front_app")
 require("items.calendar")
 require("items.widgets")

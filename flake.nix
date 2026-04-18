@@ -19,6 +19,10 @@
     let
       linuxSystem = "x86_64-linux";
       darwinSystem = "aarch64-darwin";
+
+      # Flip between "aerospace" and "yabai"; `darwin-rebuild switch` applies.
+      # Only one window manager service runs at a time.
+      windowManager = "yabai";
     in
     {
       # Standalone home-manager for Linux
@@ -37,15 +41,16 @@
       # nix-darwin + home-manager for macOS
       darwinConfigurations.jon-gao-mac = nix-darwin.lib.darwinSystem {
         system = darwinSystem;
-        specialArgs = { flakePath = self; };
+        specialArgs = { flakePath = self; inherit windowManager; };
         modules = [
           ./nix/hosts/darwin.nix
+          ./nix/hosts/window-manager.nix
           home-manager.darwinModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "before-nix";
-            home-manager.extraSpecialArgs = { flakePath = self; };
+            home-manager.extraSpecialArgs = { flakePath = self; inherit windowManager; };
             home-manager.users."jon.gao" = { ... }: {
               imports = [
                 ./nix/home/default.nix

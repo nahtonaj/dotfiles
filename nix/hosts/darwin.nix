@@ -13,6 +13,9 @@
     shell = pkgs.zsh;
   };
 
+  # Required for user-level launchd agents (window manager, etc).
+  system.primaryUser = "jon.gao";
+
   # System-level defaults
   system.stateVersion = 5;
 }

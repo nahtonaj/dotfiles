@@ -6,7 +6,9 @@
 # sudo yabai --load-sa
 
 # yabai -m signal --add event=dock_did_restart action="sudo yabai --load-sa"
-yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus"
+yabai -m signal --add event=window_focused action="sketchybar --trigger window_focus; sketchybar --trigger wm_focus_change"
+yabai -m signal --add event=space_changed action="sketchybar --trigger wm_workspace_change FOCUSED_WORKSPACE=\$YABAI_SPACE_ID"
+yabai -m signal --add event=display_changed action="sketchybar --trigger wm_focus_change"
 
 yabai -m config external_bar all:$(sketchybar --query bar | jq .height):0 \
                 layout                     bsp            \
