@@ -116,3 +116,17 @@ Execution is where the loop earns its keep. I run in Claude Code as the **coordi
 **Worktrees for concurrent edits.** When two or more agents will edit the same repo concurrently, pass `isolation: "worktree"` to `Agent`. This is the difference between a clean merge and three hours of reconciliation.
 
 **db-agents is the monitoring surface for long-running fleets.** When I am running a team of five-plus agents for more than a few minutes, the `db-agents` web dashboard (see `appendix-databricks-tools.md`) shows each agent's state (IDLE / BUSY / INPUT) and lets me intervene without opening ten Claude Code panes. Installation is bundled with the `claude-workflow-bootstrap` plugin.
+
+---
+
+## 6. Phase 4 -- Verify
+
+Verification is HARD RULE 4 in `configs/claude/CLAUDE.md` and it is the rule I break most often when tired. I invoke `superpowers:verification-before-completion` before any claim that work is complete, fixed, or passing.
+
+**Evidence is file:line citations plus command output.** Not reasoning. Not pattern-matching on how things "usually go". Not "the error message suggests". Reading the code that produces the behavior, pasting the output of the test, naming the exact line where the assertion lives.
+
+**Zero tolerance for unverified claims.** A single assertion made without evidence is a rule violation. This sounds extreme and is extreme, and the reason it has to be extreme is that one unverified claim buried in a PR comment trains the reader to trust the other ninety. If I cannot cite evidence, I retract -- "I suspect but have not confirmed" is better than "this fails because Z" with no receipt.
+
+**Where I use this explicitly.** Before saying "tests pass" in any status message, I run the tests and paste the last line. Before writing "root cause" in a PR description, I cite the file:line that produces the behavior. Before approving a shutdown_request from a teammate, I verify their RESULTS block against the actual diff they produced. Subagent-reported citations with file:line snippets count as evidence and I do not redundantly re-verify.
+
+Concrete examples of good vs. bad evidence in `appendix-verification.md`.
