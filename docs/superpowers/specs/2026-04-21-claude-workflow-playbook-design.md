@@ -31,7 +31,7 @@ Non-goals:
 
 Audience is Databricks engineers who already use Claude Code and want a more structured workflow. They are comfortable with CLI plugins and JSON configs. Distribution:
 - Playbook: committed under `docs/claude-workflow/` in this dotfiles repo, browsable on GitHub.
-- Plugin: published to the Databricks Plugin Marketplace (same target as `plugin-builder`, `bazel-universe`, etc.), installed via `/plugin install claude-workflow-bootstrap`.
+- Plugin: published to the Databricks Plugin Marketplace at `plugin-marketplace/eng-ingestion-team/claude-workflow-bootstrap/`, installed via `/plugin install claude-workflow-bootstrap`.
 
 ## 4. Playbook Doc Design
 
@@ -248,7 +248,6 @@ Success criteria:
 ## 7. Open Questions & Risks
 
 - Final plugin name: confirm `claude-workflow-bootstrap` with user before Phase B. If there is a Databricks naming convention I am unaware of, adjust.
-- Marketplace target: confirm the plugin belongs in the same marketplace as `plugin-builder` and `bazel-universe`, or whether it goes in a personal marketplace first.
 - Detection strategy for db-agents in the pre-install checklist: active probe (`command -v db-agents`) or passive prerequisite list. Active probe preferred; adds one detection routine.
 - Doc-only mode: should the skill offer "print recommendations, no filesystem writes"? Small addition, flagging for decision.
 - `jq` as hard dependency: acceptable, or should scripts fall back to a pure-bash JSON editor? `jq` is standard on Databricks dev machines.
