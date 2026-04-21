@@ -43,16 +43,22 @@ in
           sha256 = "sha256-o8IQszQ4/PLX1FlUvJpowR2Tev59N8lI20VymZ+Hp4w=";
         };
       }
-      {
-        name = "zsh-autocomplete";
-        src = pkgs.fetchFromGitHub {
-          owner = "marlonrichert";
-          repo = "zsh-autocomplete";
-          rev = "24.09.04";
-          sha256 = "sha256-o8IQszQ4/PLX1FlUvJpowR2Tev59N8lI20VymZ+Hp4w=";
-        };
-      }
+      # zsh-autocomplete removed: it duplicated compinit and added ~1s of
+      # startup. zsh-autosuggestions + fzf history search cover its
+      # day-to-day features.
     ];
+
+    # Cache compinit. Security audit (compaudit) is skipped when the dump is
+    # newer than 24h; otherwise rebuild and recompile for the next shell.
+    completionInit = ''
+      autoload -Uz compinit
+      if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+        compinit -C
+      else
+        compinit
+        { [[ -f ~/.zcompdump ]] && zcompile -M ~/.zcompdump ~/.zcompdump } &!
+      fi
+    '';
 
     shellAliases = {
       ll = "ls -al";
@@ -109,16 +115,6 @@ in
       '')
 
       ''
-        # Register zsh-autocomplete widget stubs so syntax-highlighting
-        # doesn't warn about unhandled ZLE widgets
-        function insert-unambiguous-or-complete() { zle .insert-unambiguous-or-complete 2>/dev/null || zle .expand-or-complete; }
-        function menu-search() { zle .menu-search 2>/dev/null || zle .expand-or-complete; }
-        function recent-paths() { zle .recent-paths 2>/dev/null || zle .expand-or-complete; }
-        zle -N insert-unambiguous-or-complete
-        zle -N menu-search
-        zle -N recent-paths
-
-        # Now safe to source syntax-highlighting (widgets are registered)
         source ${pkgs.zsh-syntax-highlighting}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
         # Load colors for prompt
@@ -144,20 +140,45 @@ in
           done
         } emacs viins vicmd
 
-        # Autocomplete settings
-        zstyle ':autocomplete:*' widget-style menu-select
-        bindkey -M menuselect '\r' accept-line
-        zstyle ':autocomplete:*' list-lines 7
-
         # Custom functions
         set-title() {
             echo -e "\e]0;$*\007"
         }
 
-        # Start Arca, then open resilient port-forwarding tunnels via autossh.
-        # Local forwards: 13100, 13101, 37777. Remote forward: 27124.
-        aa() {
-            arca start "$@" || return
+        # Resilient port-forwarding tunnel to arca.ssh. Detects prior
+        # autossh/ssh holding the same ports and asks before killing them,
+        # so re-running doesn't silently wipe state or fail with
+        # "Could not request local forwarding".
+        arcatunnel() {
+            local ports=(13100 13101 37777)
+            local to_kill=()
+            local stale_autossh
+            stale_autossh=$(pgrep -f "autossh.*arca\.ssh" 2>/dev/null)
+            if [ -n "$stale_autossh" ]; then
+                to_kill+=(''${=stale_autossh})
+            fi
+            for p in "''${ports[@]}"; do
+                local pids
+                pids=$(lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null)
+                if [ -n "$pids" ]; then
+                    to_kill+=(''${=pids})
+                fi
+            done
+            # Dedupe.
+            to_kill=(''${(u)to_kill})
+            if [ ''${#to_kill[@]} -gt 0 ]; then
+                echo "Conflicting processes on arca tunnel ports:" >&2
+                ps -o pid,comm,args -p ''${to_kill[@]} 2>/dev/null | sed 's/^/  /' >&2
+                if read -q "?Kill them and continue? [y/N] "; then
+                    echo
+                    kill ''${to_kill[@]} 2>/dev/null
+                    sleep 0.5
+                else
+                    echo
+                    echo "arcatunnel aborted." >&2
+                    return 1
+                fi
+            fi
             AUTOSSH_POLL=30 AUTOSSH_GATETIME=0 autossh -M 0 -N \
                 -o ServerAliveInterval=30 \
                 -o ServerAliveCountMax=3 \
@@ -167,6 +188,12 @@ in
                 -L 37777:localhost:37777 \
                 -R 27124:localhost:27124 \
                 arca.ssh
+        }
+
+        # Start Arca, then open the tunnels. Thin wrapper around arcatunnel.
+        aa() {
+            arca start "$@" || return
+            arcatunnel
         }
 
         ssh() {
@@ -205,12 +232,29 @@ in
           rm -f -- "$tmp"
         }
 
-        # SDKMAN (conditional)
-        [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+        # SDKMAN — lazy load on first `sdk` invocation.
+        if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+            sdk() {
+                unset -f sdk
+                source "$HOME/.sdkman/bin/sdkman-init.sh"
+                sdk "$@"
+            }
+        fi
 
-        # NVM (conditional)
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        # NVM — lazy load on first invocation of nvm / node / npm / npx /
+        # yarn / pnpm. Saves ~30ms on most shells plus whatever the first
+        # `nvm.sh` parse actually costs in the cold case.
+        if [ -s "$NVM_DIR/nvm.sh" ]; then
+            _nvm_lazy_load() {
+                unset -f nvm node npm npx yarn pnpm _nvm_lazy_load 2>/dev/null
+                source "$NVM_DIR/nvm.sh"
+                [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+            }
+            for _cmd in nvm node npm npx yarn pnpm; do
+                eval "$_cmd() { _nvm_lazy_load; $_cmd \"\$@\"; }"
+            done
+            unset _cmd
+        fi
 
       ''
     ];
