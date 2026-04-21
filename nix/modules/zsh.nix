@@ -48,15 +48,18 @@ in
       # day-to-day features.
     ];
 
-    # Cache compinit. Security audit (compaudit) is skipped when the dump is
-    # newer than 24h; otherwise rebuild and recompile for the next shell.
+    # Cache compinit. The glob `(#qN.mh+24)` matches if the dump is OLDER
+    # than 24h — in that case (or if it doesn't exist) rebuild from scratch.
+    # Otherwise use `compinit -C` which skips the compaudit security check
+    # and saves ~270ms. zcompile the dump in the background for faster
+    # reloads after a rebuild.
     completionInit = ''
       autoload -Uz compinit
-      if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
-        compinit -C
-      else
+      if [[ ! -f ~/.zcompdump || -n ~/.zcompdump(#qN.mh+24) ]]; then
         compinit
-        { [[ -f ~/.zcompdump ]] && zcompile -M ~/.zcompdump ~/.zcompdump } &!
+        [[ -f ~/.zcompdump ]] && { zcompile -M ~/.zcompdump ~/.zcompdump } &!
+      else
+        compinit -C
       fi
     '';
 
