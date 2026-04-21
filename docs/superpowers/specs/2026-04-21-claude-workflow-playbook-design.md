@@ -9,14 +9,14 @@ owner: jon.gao
 
 ## 1. Summary
 
-We are producing two artifacts from one design pass: a first-person playbook that documents how I run Claude Code day-to-day, and a standalone marketplace plugin that bootstraps a fresh install to match. The playbook teaches the Superpowers loop (brainstorm, plan, execute, verify) using coordinator-plus-agent-teams as the mechanics. Audience is Databricks engineers, so the plugin ships the workflow-essential, shareable pieces -- including the `db-agents` binary install -- while leaving personal ergonomics out. Required helpers that currently live in my personal dotfiles are categorized and documented in v0.1; automated install is queued for v0.2. The playbook also teaches a durable mindset -- practices persist, protocols do not -- so readers can absorb future Claude Code changes without re-reading.
+We are producing two artifacts from one design pass: a first-person playbook that documents how I run Claude Code day-to-day, and a standalone marketplace plugin that bootstraps a fresh install to match. The playbook teaches the Superpowers loop (brainstorm, plan, execute, verify) using coordinator-plus-agent-teams as the mechanics. Audience is Databricks engineers, so the plugin ships the workflow-essential, shareable pieces -- including the `db-agents` binary install with its bundled integration hooks -- while leaving personal ergonomics out. All Bucket 1 (workflow-required) helpers install in v0.1; Bucket 2 and Bucket 3 are documented for transparency without installer support. The playbook also teaches a durable mindset -- practices persist, protocols do not -- so readers can absorb future Claude Code changes without re-reading.
 
 ## 2. Goals & Non-goals
 
 Goals:
 - Shareable, in-repo playbook that a Databricks engineer can read end-to-end in under 30 minutes.
 - A Claude Code plugin, installable from the marketplace, that configures the workflow defaults (HARD RULES, env var, recommended plugin list, team-cleanup hook) AND installs the `db-agents` compiled binary for teammates who want the dashboard integration.
-- Databricks teammates can install the full required toolchain (plugin + db-agents binary) in one pass via the plugin skill; supporting helpers that are required but currently live in my personal dotfiles are documented now, with installation queued for v0.2.
+- Databricks teammates can install the full required toolchain (plugin + db-agents binary + bundled integration hooks) in one pass via the plugin skill. No required helper is deferred.
 - A three-bucket categorization of every helper script in my setup: required-for-the-documented-workflow, recommended-or-optional, personal-not-shareable. Each bucket has a clear policy on plugin support today and in the future.
 - Each artifact can ship independently: doc is useful without the plugin; plugin is useful without reading the full doc.
 
@@ -43,22 +43,22 @@ Narrative, first-person, ten sections. Target total ~2750 words (up from 2500 to
 2. The loop in one picture (~150w). ASCII diagram: brainstorm -> plan -> execute -> verify -> commit/remember. Names the Superpowers skills and the coordinator role.
 3. Phase 1 -- Brainstorm (~250w). Invoking `superpowers:brainstorming`, what good inputs look like, when to stop brainstorming and commit to a spec.
 4. Phase 2 -- Plan (~300w). `superpowers:writing-plans`, spec-to-plan boundary, when to split into multiple plans, where specs live (`docs/superpowers/specs/`), where plans live (`docs/superpowers/plans/`).
-5. Phase 3 -- Execute with coordinator + teams (~450w). The HARD RULES from `configs/claude/CLAUDE.md`: coordinator stays lightweight, every Agent call uses a team, spawn/coordinate/shutdown lifecycle, Pipeline Context as the only reliable prior-output channel. When to use worktrees. Mentions that running `db-agents` on the side (the web dashboard) is the monitoring surface for long-running agent fleets, with a pointer to `appendix-databricks-tools.md`.
+5. Phase 3 -- Execute with coordinator + teams (~450w). The HARD RULES from `configs/claude/CLAUDE.md`: coordinator stays lightweight, every Agent call uses a team, spawn/coordinate/shutdown lifecycle, Pipeline Context as the only reliable prior-output channel. When to use worktrees. SendMessage is the primary channel but not the source of truth; when in doubt, read the inbox file on disk. Details in `appendix-agent-teams.md`. Mentions that running `db-agents` on the side (the web dashboard) is the monitoring surface for long-running agent fleets, with a pointer to `appendix-databricks-tools.md`.
 6. Phase 4 -- Verify (~250w). `superpowers:verification-before-completion`, evidence = file:line + command output, zero tolerance for unverified claims, how I use this in PR comments.
 7. Commit, remember, move on (~200w). `commit-commands:commit-push-pr`, claude-mem auto-memory, `pr-review-toolkit:review-pr`.
 8. Common failure modes (~250w). Coordinator doing heavy work, agent spawns without team_name, skipping brainstorm, claiming "tests pass" without running them, over-sharing between agents.
 9. Minimum viable adoption (~500w). A graduated path: install the bootstrap plugin, try the loop on one small task, add Superpowers, then adopt claude-mem. Each step has a 1-line success check.
-10. Living with a moving target (~250w). Principle: **practices persist, protocols do not**. Claude Code ships features fast; pinning yourself to a specific tool name dates your workflow. Two concrete applications. (a) Agent teams -- `TeamCreate`/`SendMessage`/`TaskUpdate` is today's surface, with known bugs (Claude Code issues #43706, #38932, #42999 can silently drop `SendMessage` in either direction; HARD RULE 3 in `configs/claude/CLAUDE.md` specifies reading persisted inbox files at `~/.claude/teams/{team-name}/inboxes/*.json` as the disk-based verification channel). The protocol will change. The durable practice -- coordinator delegates heavy work, agents communicate via explicit channels, coordinator verifies from the source of truth -- persists. (b) Memory -- claude-mem is the right choice today, but Claude Code is shipping native memory features that will likely subsume some or all of it. Do not pin the tool; teach the evaluative question ("what do I need to remember across sessions? does native cover it? does claude-mem add value on top?"). Closes with doc-maintenance ground rules: owner (me, until succession), cadence (revisit on any Claude Code minor release that touches agents or memory), versioning (each appendix carries a "Last verified against" footer).
+10. Living with a moving target (~250w). Principle: **practices persist, protocols do not**. Claude Code ships features fast; pinning yourself to a specific tool name dates your workflow. Two concrete applications. (a) Agent teams -- `TeamCreate`/`SendMessage`/`TaskUpdate` is today's surface, with known bugs (Claude Code issues #43706, #38932, #42999 can silently drop `SendMessage` in either direction). Commit `1fb845a` on this repo's `main` is a live example: the protocol itself did not change, but the delivery layer turned out to be lossy, so HARD RULE 3 in `configs/claude/CLAUDE.md` now permits reading persisted inbox files at `~/.claude/teams/{team-name}/inboxes/*.json` as a disk-based verification channel. The durable practice -- coordinator delegates heavy work, agents communicate via explicit channels, coordinator verifies from the source of truth, never polls teammates in-band -- persists through that kind of fix. (b) Memory -- claude-mem is the right choice today, but Claude Code is shipping native memory features that will likely subsume some or all of it. Do not pin the tool; teach the evaluative question ("what do I need to remember across sessions? does native cover it? does claude-mem add value on top?"). Closes with doc-maintenance ground rules: owner (me, until succession), cadence (revisit on any Claude Code minor release that touches agents or memory), versioning (each appendix carries a "Last verified against" footer).
 
 ### 4.2 Appendix Files
 
 All under `docs/claude-workflow/`, each 200-500 words, each linked from the relevant README section.
 
 - `appendix-claude-md.md` (~450w) -- Annotated walkthrough of the HARD RULES block from `configs/claude/CLAUDE.md`, what each rule defends against, and how to customize for your team.
-- `appendix-helpers.md` (~500w) -- The three-bucket helper categorization (see section 5.5). For each Bucket 1 entry, cite the `configs/claude/settings.json` line range where it is wired, what event it handles, and the v0.2 install plan. Bucket 2 and Bucket 3 listed for transparency.
+- `appendix-helpers.md` (~500w) -- The three-bucket helper categorization (see section 5.5). For each Bucket 1 entry, cite the `configs/claude/settings.json` line range where it is wired, what event it handles, and how it arrives on disk (team-cleanup vendored by the plugin; status-reporter and auto-approve shipped with the db-agents release bundle). Bucket 2 and Bucket 3 listed for transparency.
 - `appendix-databricks-tools.md` (~400w) -- Databricks-specific tooling. (1) `db-agents` web dashboard: purpose (per its README at `/home/jon.gao/universe/experimental/richard-liu_data/db-agents/README.md`), canonical install via `gh release download` from `databricks-eng/universe-dev`, Arca-side `node db-agents-*.cjs` launch, SSH port-forward for `localhost:13100`. (2) Databricks MCP recommendations: which servers to enable (`devportal`, `databricks-v2`, `github`, `glean`, `claude-mem`) with pointers to internal docs. Plugin recommends but does not auto-configure MCP.
 - `appendix-skills.md` (~300w) -- The workflow-critical Superpowers skills with a one-line purpose each. Pointer to the superpowers plugin README for the full set.
-- `appendix-agent-teams.md` (~600w) -- Deep dive on `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, TeamCreate/SendMessage/TaskUpdate, shutdown protocol, the 3-section agent prompt template, Pipeline Context inlining rules. Also documents the **reliability caveat**: SendMessage is not guaranteed (Claude Code issues #43706, #38932, #42999 can silently drop messages in either direction), and the **disk-verification escape hatch** -- the persisted inbox files at `~/.claude/teams/{team-name}/inboxes/{teammate-name}.json` (plus the lead's own `team-lead.json`) are the source of truth, and reading them directly is allowed verification, not polling. Ties back to section 10 of the README: this is exactly the "protocols are lossy, practices carry you through" thesis in action.
+- `appendix-agent-teams.md` (~600w) -- Deep dive on `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, TeamCreate/SendMessage/TaskUpdate, shutdown protocol, the 3-section agent prompt template, Pipeline Context inlining rules. Canonical reference for the three additions that commit `1fb845a` made to HARD RULE 3 in `configs/claude/CLAUDE.md`: (i) the **reliability caveat** -- SendMessage is not guaranteed; Claude Code issues #43706, #38932, #42999 can silently drop messages in either direction; (ii) the **disk-verification escape hatch** -- the persisted inbox files at `~/.claude/teams/{team-name}/inboxes/{teammate-name}.json` (plus the lead's own `team-lead.json`) are the source of truth, and reading them directly is allowed verification, not polling; (iii) the **shutdown verification requirement** -- before concluding a teammate is unresponsive or retrying `shutdown_request`, the lead MUST read both the lead's own inbox file and the teammate's inbox file on disk to check for a persisted `shutdown_response` or findings that in-band delivery missed. Prescriptive-behavior update: wait for SendMessage, do not poll teammates in-band (no status-check DMs, no TaskList spam); disk reads for verification are permitted. Ties back to section 10 of the README: this is exactly the "protocols are lossy, practices carry you through" thesis in action.
 - `appendix-verification.md` (~300w) -- Concrete examples of verify-before-claim: good evidence vs. bad, how to cite subagent-reported findings, how to retract gracefully.
 
 ### 4.3 Tone & Formatting Rules
@@ -126,26 +126,27 @@ d. Install the team-cleanup SessionEnd hook. Writes `~/.claude/helpers/team-clea
 
 e. Offer claude-mem auto-memory integration. Detect whether the claude-mem plugin is present; if yes, this is a no-op (claude-mem wires its own hooks) and the skill says so. If no, the skill recommends installing claude-mem first.
 
-f. Install the `db-agents` compiled binary. Flow matches the canonical setup from its README (`/home/jon.gao/universe/experimental/richard-liu_data/db-agents/README.md`):
+f. Install the `db-agents` compiled binary and wire its Claude Code integration hooks. Flow matches the canonical setup from its README (`/home/jon.gao/universe/experimental/richard-liu_data/db-agents/README.md`):
    - Find the latest tag via `gh release list --repo databricks-eng/universe-dev --limit 20 | grep db-agents | head -1`.
    - `gh release download <tag> --repo databricks-eng/universe-dev --pattern "db-agents-*.cjs"` into `~/.local/share/db-agents/`.
    - Write a wrapper at `~/.local/bin/db-agents` that execs `node ~/.local/share/db-agents/db-agents-*.cjs "$@"`. Warn at launch if `node --version` is below 24 (README pins Node 24).
    - Print a reminder about the SSH `LocalForward 13100 localhost:13100` requirement; do not edit `~/.ssh/config`.
-   - Idempotent: skip if the installed artifact matches the latest release; ask before upgrading on version mismatch; fail gracefully with an install hint if `gh` is missing or the user is not authenticated to `databricks-eng/universe-dev`.
-   - **Scope note:** binary only. The `status-reporter.sh` and `auto-approve.sh` hooks that wire db-agents into Claude Code are Bucket 1 helpers -- documented, install deferred to v0.2 pending the open question on release bundling (section 7).
+   - **Hook integration.** The `.cjs` release bundle also ships the `status-reporter.sh` and `auto-approve.sh` hooks that wire db-agents into Claude Code (confirmed by user). After landing the artifact, patch `~/.claude/settings.json` with hook entries -- PreToolUse `*` (status-reporter `pre_tool` + auto-approve), PreToolUse `AskUserQuestion` (status-reporter `waiting_input`), PostToolUse `*` (status-reporter `post_tool`), UserPromptSubmit (status-reporter `running`), SessionStart / SessionEnd / Stop / PreCompact `*` / SubagentStart / SubagentStop / PermissionRequest / Notification `idle_prompt` (appropriate status-reporter state). Mirror the event-to-state mapping in `configs/claude/settings.json:273-500`, but point the `command` at the bundled path rather than the universe-repo absolute path.
+   - Process auto-start is intentionally out of scope: `tmux-resurrect`/`tmux-continuum` already restore Node processes (see `f6f1f9a chore(tmux): save/restore node/yarn/vite/tsx in tmux-resurrect`), so no systemd or launchd unit is needed.
+   - Idempotent: skip binary download if the installed artifact matches the latest release; ask before upgrading on version mismatch. Hook patching uses `jq` merge semantics keyed by command-path so re-running is a no-op when entries are already present. Fail gracefully with an install hint if `gh` is missing or the user is not authenticated to `databricks-eng/universe-dev`.
+   - **Scope note:** if the user declined the db-agents step, the skill does not patch `status-reporter.sh` / `auto-approve.sh` hook entries.
 
 ### 5.5 Helper Categorization
 
 My current install has ~40 helper scripts in `.claude/helpers/` plus db-agents integration hooks under the universe repo. For the playbook to be honest about what the documented workflow actually depends on, every helper lands in one of three buckets. The playbook's `appendix-helpers.md` carries the same table.
 
-**Bucket 1 -- Required for the documented workflow (document now, install v0.2):**
+**Bucket 1 -- Required for the documented workflow (installed by v0.1):**
 
-Wired into `configs/claude/settings.json` and load-bearing for the workflow. v0.1 documents them in `appendix-helpers.md`; v0.2 adds install support.
+Wired into `configs/claude/settings.json` and load-bearing for the workflow. All three items below are installed by v0.1; nothing is deferred.
 
-- `team-cleanup.sh` -- SessionEnd hook that tears down stale agent teams. **Exception:** v0.1 installs this one via item 5.4(d); it is short, dependency-free, already vendored.
-- `auto-memory-hook.mjs` -- wired to `Stop` per `configs/claude/settings.json:388-404`; bridges Claude Code stop events into claude-mem's memory pipeline. **Verification needed:** unclear whether still required once the claude-mem plugin wires its own Stop hook. Open question in section 7.
-- `status-reporter.sh` -- db-agents integration hook. Reports Claude Code state transitions (idle, running, waiting_input, compacting, permission_request, etc.) to the dashboard. Wired across 11 event types in `configs/claude/settings.json:273-500`. Currently sourced from the universe-repo path, not vendored. Required only if the user runs db-agents.
-- `auto-approve.sh` -- db-agents integration hook wired to the PreToolUse `*` matcher (`configs/claude/settings.json:283-295`). Auto-approves tool calls pre-authorized via the dashboard. Same universe-repo sourcing caveat. Required only if running db-agents.
+- `team-cleanup.sh` -- SessionEnd hook that tears down stale agent teams. Installed via item 5.4(d); short, dependency-free, already vendored.
+- `status-reporter.sh` -- db-agents integration hook. Reports Claude Code state transitions (idle, running, waiting_input, compacting, permission_request, etc.) to the dashboard. Wired across 11 event types in `configs/claude/settings.json:273-500`. Ships inside the `db-agents-*.cjs` release bundle (confirmed with user); v0.1 item 5.4(f) patches settings.json to reference the bundled path. Relevant only if the user opts into db-agents.
+- `auto-approve.sh` -- db-agents integration hook wired to the PreToolUse `*` matcher (`configs/claude/settings.json:283-295`). Auto-approves tool calls pre-authorized via the dashboard. Also ships in the `.cjs` bundle and is installed by v0.1 item 5.4(f). Relevant only if the user opts into db-agents.
 
 **Bucket 2 -- Recommended / optional (document, no install support planned):**
 
@@ -164,14 +165,14 @@ Functional but idiosyncratic. Teammates can adopt if curious; the plugin does no
 
 `appendix-helpers.md` lists these by filename so teammates can verify nothing sneaks into the plugin, but the plugin has zero opinion on them.
 
-The plugin's v0.1 skill checklist installs Bucket 1's `team-cleanup.sh` (item 5.4.d) and the `db-agents` binary (item 5.4.f). The other Bucket 1 items are documented in `appendix-helpers.md` with enough detail that a motivated user can copy them manually; v0.2 adds automated install for these, gated on resolving the "do the hooks ship in the `.cjs` release bundle" question (section 7).
+The plugin's v0.1 skill checklist installs all of Bucket 1: `team-cleanup.sh` via item 5.4(d), and the db-agents binary plus its bundled `status-reporter.sh`/`auto-approve.sh` hooks via item 5.4(f). Bucket 2 and Bucket 3 are documented in `appendix-helpers.md` for transparency but receive no installer support now or in v0.2.
 
 **What the plugin still does NOT do in v0.1:**
-- No auto-install of Bucket 1's db-agents-integration hooks (`status-reporter.sh`, `auto-approve.sh`) or `auto-memory-hook.mjs`. Documented only.
 - No installation or configuration of Bucket 2 or Bucket 3 helpers.
 - No MCP server auto-configuration (recommendations only, per `appendix-databricks-tools.md`).
 - No modifications to `~/.claude/settings.local.json`. Users keep personal overrides there.
 - No auto-install of third-party Claude Code plugins on the user's behalf.
+- No process manager for db-agents (no systemd/launchd unit); `tmux-continuum` handles Node-process restoration.
 
 ### 5.6 Idempotency & Safety
 
@@ -187,6 +188,7 @@ A `/claude-workflow-bootstrap reset` command (implemented as a SKILL.md sub-mode
 - Unset `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` if and only if this plugin set it (tracked via a sentinel in `~/.claude/.claude-workflow-bootstrap-state.json`).
 - Remove the team-cleanup hook entry and delete the vendored script.
 - Remove `~/.local/bin/db-agents` and `~/.local/share/db-agents/` if this plugin installed them (per state file). The user's running db-agents processes are not killed -- the skill prints a note recommending `pkill -f db-agents` or a browser reload.
+- Remove the `status-reporter.sh` / `auto-approve.sh` hook entries that item 5.4(f) added to `~/.claude/settings.json`, matched by exact command path.
 - Offer to restore the most recent `.bak` files for each affected file.
 
 The state file is the source of truth for what this plugin touched. Without it, reset is conservative: it removes marker-delimited blocks but does not touch anything else.
@@ -198,7 +200,7 @@ Three phases, each independently shippable and reviewable.
 ### Phase A -- Playbook Doc
 
 Artifacts:
-- `docs/claude-workflow/README.md` (all 9 sections, target ~2500 words total).
+- `docs/claude-workflow/README.md` (all 10 sections, target ~2750 words total).
 - All 6 appendix files with final word counts.
 - Cross-links verified.
 
@@ -217,6 +219,7 @@ Artifacts:
 - `templates/` populated with final content.
 - `scripts/` with stub install/uninstall that exit 0 and log intent.
 - `README.md` for the plugin repo.
+- **Verification pass on db-agents hook distribution.** Before writing the Phase C install script, confirm exactly how `status-reporter.sh` and `auto-approve.sh` arrive on disk alongside the `.cjs` artifact -- embedded in the bundle and extracted on first run, separate release assets, or something else -- and record the finding in `appendix-databricks-tools.md`. User confirmed the hooks ship with the release; the mechanism detail is still open.
 
 Success criteria:
 - `plugin-builder:plugin-self-review` passes.
@@ -240,15 +243,13 @@ Success criteria:
 - Install -> uninstall -> install leaves the fixture identical to the first install result.
 - db-agents install fails gracefully (clear error, exit non-zero, other items unaffected) when `gh` is missing or the user is not authenticated to `databricks-eng/universe-dev`.
 - After install, `which db-agents` resolves to the wrapper script, and the wrapper's `--help` passthrough (or the binary's equivalent) executes without a Node version error on a system with Node 24 on PATH.
+- After item 5.4(f) runs with db-agents selected, `~/.claude/settings.json` contains PreToolUse, PostToolUse, and UserPromptSubmit hook entries that reference the bundled `status-reporter.sh` / `auto-approve.sh` paths. Re-running the install is a no-op on those entries (detected by exact command-path match).
 
 ## 7. Open Questions & Risks
 
 - Final plugin name: confirm `claude-workflow-bootstrap` with user before Phase B. If there is a Databricks naming convention I am unaware of, adjust.
 - Marketplace target: confirm the plugin belongs in the same marketplace as `plugin-builder` and `bazel-universe`, or whether it goes in a personal marketplace first.
-- **db-agents hook distribution.** Does the `db-agents-*.cjs` release bundle also ship `status-reporter.sh` and `auto-approve.sh`, or do teammates still need a universe-repo checkout for those hooks? Jon to resolve. Until resolved, v0.2 cannot automate their install. If the universe repo is still required, the plugin writes paths relative to an `$UNIVERSE_REPO` env var rather than hard-coding.
-- **Is `auto-memory-hook.mjs` redundant with the claude-mem plugin's own hooks?** Needs verification by reading the claude-mem hooks manifest. If redundant, drop from Bucket 1 and from v0.2 install scope.
-- **db-agents auto-start.** v0.1 installs a wrapper only. Should v0.2 optionally ship a systemd/launchd unit? Convenient but opinionated.
-- Detection strategy for db-agents: active probe (`command -v db-agents`) or passive prerequisite list. Active probe preferred; adds one detection routine.
+- Detection strategy for db-agents in the pre-install checklist: active probe (`command -v db-agents`) or passive prerequisite list. Active probe preferred; adds one detection routine.
 - Doc-only mode: should the skill offer "print recommendations, no filesystem writes"? Small addition, flagging for decision.
 - `jq` as hard dependency: acceptable, or should scripts fall back to a pure-bash JSON editor? `jq` is standard on Databricks dev machines.
 - Risk: the HARD RULES block references `TeamCreate`/`SendMessage` which depend on the experimental env var. If Anthropic changes the flag name, the doc and the plugin both need a pinned-version warning.
@@ -259,7 +260,7 @@ Success criteria:
 
 Reiterating the non-goals so a plan writer does not expand scope:
 - No MCP auto-configuration -- recommend only.
-- No Bucket 2 or Bucket 3 helpers touched by the skill. Bucket 1 install support beyond `team-cleanup.sh` and the db-agents binary is v0.2 work, not v0.1.
+- No Bucket 2 or Bucket 3 helpers touched by the skill -- now or in future versions.
 - No changes to `~/.claude/settings.local.json`.
 - No auto-install of third-party Claude Code plugins on behalf of the user (the skill prints `/plugin install` commands only).
 - Not a replacement for existing Databricks onboarding docs -- this is additive.
