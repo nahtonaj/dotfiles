@@ -24,7 +24,7 @@ Default-delegated tools (carve-outs above apply): `Read`, `Edit`, `Write`, `Bash
 
 *Spawn:* `TeamDelete` (defensive) -> `TeamCreate` -> `Agent(name, team_name, run_in_background=true)`. Retry `TeamCreate` once on failure; if it returns "Already leading team", call `TeamDelete` first.
 
-*Coordinate:* All inter-agent communication uses `SendMessage`. No plain-text signals, no inbox polling. Task assignments and status flow via `TaskUpdate`; findings and requests flow via `SendMessage`.
+*Coordinate:* All inter-agent communication uses `SendMessage`. No plain-text signals. Task assignments and status flow via `TaskUpdate`; findings and requests flow via `SendMessage`. SendMessage is the primary channel, but the persisted inbox files at `~/.claude/teams/{team-name}/inboxes/{teammate-name}.json` are the source of truth -- the lead MAY read these files directly to verify delivery, since upstream bugs (Claude Code #43706, #38932, #42999) can silently drop SendMessage in either direction. Disk reads for verification are not "polling a teammate"; do not SendMessage-poll or TaskList-spam teammates asking if they are done.
 
 *Shutdown:* When all tasks are complete OR the lead decides the work is done, the lead sends `{type: "shutdown_request"}` via `SendMessage` to each teammate. A teammate replies `{type: "shutdown_response", approve: true}` only after verifying all of:
 - No pending or in_progress tasks still owned by them
@@ -32,6 +32,8 @@ Default-delegated tools (carve-outs above apply): `Read`, `Edit`, `Write`, `Bash
 - All key findings have been sent via `SendMessage`
 
 If any check fails, the teammate replies `approve: false` with a `reason`, finishes the outstanding work, then signals readiness. The lead retries `shutdown_request`. After every teammate approves and terminates, the lead calls `TeamDelete`.
+
+Before concluding a teammate is unresponsive or retrying `shutdown_request`, the lead MUST read the lead's own inbox file on disk (`~/.claude/teams/{team-name}/inboxes/team-lead.json`) and the teammate's inbox file to check for a persisted `shutdown_response` or findings that in-band delivery missed. Act on whatever is on disk; do not re-send if the response is already persisted.
 
 **4. Verify before you claim. Assume nothing.**
 Every factual, technical, or architectural assertion you make -- in responses, PR comments, commit messages, design docs, or status reports -- MUST be backed by direct evidence: code you read, a command you ran, output you observed. Never assert based on training-data intuition, pattern-matching, or inference.
@@ -63,7 +65,7 @@ When rules conflict: explicit user instructions in this turn > CLAUDE.md rules >
 ## Prescriptive behaviors
 
 - Every `Agent` spawn: precede with `TaskCreate`.
-- Every agent runs with `run_in_background=true`. Wait for SendMessage; never poll.
+- Every agent runs with `run_in_background=true`. Wait for SendMessage; do not poll teammates in-band (no status-check DMs, no TaskList spam). Reading persisted inbox files on disk to verify delivery is permitted and is not considered polling.
 - Multi-agent concurrent edits in a git repo: pass `isolation: "worktree"`.
 - Before spawning, check for a matching Skill (`github:*`, `hooks:*`, `sparc:*`, etc.) and invoke it -- skills override default strategy.
 - If task intent is underspecified, use `AskUserQuestion` before spawning.
