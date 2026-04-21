@@ -22,15 +22,29 @@ local function popen_text(cmd)
     return out
 end
 
-local num_spaces = tonumber(popen_text("yabai -m query --spaces | jq 'length'")) or 10
+local fs_query = popen_text([[yabai -m query --spaces | jq -r '.[]."is-native-fullscreen"']])
+local fullscreen_flags = {}
+for flag in string.gmatch(fs_query, "([^\n]+)") do
+    table.insert(fullscreen_flags, flag == "true")
+end
+local num_spaces = #fullscreen_flags
 if num_spaces < 1 then num_spaces = 10 end
 
+local workspace_counter = 0
 for i = 1, num_spaces do
+    local is_fullscreen = fullscreen_flags[i] or false
+    local icon_string
+    if is_fullscreen then
+        icon_string = "\xe2\x9b\xb6"
+    else
+        workspace_counter = workspace_counter + 1
+        icon_string = tostring(workspace_counter)
+    end
     local space = sbar.add("space", "space." .. i, {
         space = i,
         icon = {
             font = { family = settings.font.numbers },
-            string = i,
+            string = icon_string,
             padding_left = settings.items.padding.left * scale,
             padding_right = (settings.items.padding.left / 2) * scale,
             color = settings.items.default_color(i),
