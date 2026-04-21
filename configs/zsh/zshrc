@@ -23,35 +23,41 @@ done
 
 HELPDIR="/nix/store/vwz55s841vn43976ydjbayflpl8srfqz-zsh-5.9/share/zsh/$ZSH_VERSION/help"
 
-# Add plugin directories to PATH and fpath
-plugin_dirs=(
-  zsh-vi-mode zsh-fzf-history-search zsh-autocomplete
-)
-for plugin_dir in "${plugin_dirs[@]}"; do
-  path+="/home/jon.gao/.zsh/plugins/$plugin_dir"
-  fpath+="/home/jon.gao/.zsh/plugins/$plugin_dir"
-done
-unset plugin_dir plugin_dirs
-
-
-autoload -U compinit && compinit
-source /nix/store/ky48blb8hq8nhgvm3zhzmzpfbdm71f1l-zsh-autosuggestions-0.7.1/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# compinit: rebuild dump only when antidote's bundle changes (plugin add/remove).
+# Avoids the 330ms full-rebuild tax on every shell.
+autoload -Uz compinit
+if [[ ! -f ~/.zcompdump ]] || [[ $HOME/.cache/zsh/zsh_plugins.zsh -nt ~/.zcompdump ]]; then
+  compinit
+else
+  compinit -C
+fi
+# zsh-autosuggestions config (plugin itself loaded via antidote below)
 ZSH_AUTOSUGGEST_STRATEGY=(history)
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=28"
 
 
-eval "$(/nix/store/y2jp6fwbsbfvqd4clr4jcx7455ainfll-zoxide-0.9.9/bin/zoxide init zsh )"
+# zoxide init: cache the script so we skip the subprocess spawn per shell
+_zoxide_bin=/nix/store/y2jp6fwbsbfvqd4clr4jcx7455ainfll-zoxide-0.9.9/bin/zoxide
+_zoxide_cache="$HOME/.cache/zsh/zoxide-init.zsh"
+if [[ ! -s $_zoxide_cache ]] || [[ $_zoxide_bin -nt $_zoxide_cache ]]; then
+  mkdir -p "${_zoxide_cache:h}"
+  "$_zoxide_bin" init zsh > "$_zoxide_cache"
+fi
+source "$_zoxide_cache"
+unset _zoxide_bin _zoxide_cache
 
-# Source plugins
-plugins=(
-  zsh-vi-mode/zsh-vi-mode.plugin.zsh
-  zsh-fzf-history-search/zsh-fzf-history-search.plugin.zsh
-  zsh-autocomplete/zsh-autocomplete.plugin.zsh
-)
-for plugin in "${plugins[@]}"; do
-  [[ -f "/home/jon.gao/.zsh/plugins/$plugin" ]] && source "/home/jon.gao/.zsh/plugins/$plugin"
-done
-unset plugin plugins
+# Antidote plugin manager: static bundle is regenerated only when the plugin
+# list file is newer than the cached bundle. antidote itself comes from
+# home.packages, so $HOME/.nix-profile/share/antidote is stable across bumps.
+_antidote_src="$HOME/.nix-profile/share/antidote/antidote.zsh"
+_plugins_txt="$HOME/dotfiles/configs/zsh/zsh_plugins.txt"
+_plugins_zsh="$HOME/.cache/zsh/zsh_plugins.zsh"
+if [[ ! $_plugins_zsh -nt $_plugins_txt ]]; then
+  mkdir -p "${_plugins_zsh:h}"
+  (source "$_antidote_src" && antidote bundle <"$_plugins_txt" >|"$_plugins_zsh")
+fi
+source "$_plugins_zsh"
+unset _antidote_src _plugins_txt _plugins_zsh
 
 # History options should be set in .zshrc and after oh-my-zsh sourcing.
 # See https://github.com/nix-community/home-manager/issues/177.
@@ -62,7 +68,15 @@ HISTFILE="/home/jon.gao/.zsh_history"
 mkdir -p "$(dirname "$HISTFILE")"
 
 if [[ $options[zle] = on ]]; then
-  source <(/nix/store/bqz2sllks58anmkms91fynijx1xvvi8a-fzf-0.70.0/bin/fzf --zsh)
+  # fzf --zsh: cache the init script (same pattern as zoxide)
+  _fzf_bin=/nix/store/bqz2sllks58anmkms91fynijx1xvvi8a-fzf-0.70.0/bin/fzf
+  _fzf_cache="$HOME/.cache/zsh/fzf-init.zsh"
+  if [[ ! -s $_fzf_cache ]] || [[ $_fzf_bin -nt $_fzf_cache ]]; then
+    mkdir -p "${_fzf_cache:h}"
+    "$_fzf_bin" --zsh > "$_fzf_cache"
+  fi
+  source "$_fzf_cache"
+  unset _fzf_bin _fzf_cache
 fi
 
 # Set shell options
@@ -78,18 +92,6 @@ unset opt set_opts
 
 # Source work aliases (Databricks/Amazon)
 [ -f "/home/jon.gao/dotfiles/configs/aliasrc" ] && source "/home/jon.gao/dotfiles/configs/aliasrc"
-
-# Register zsh-autocomplete widget stubs so syntax-highlighting
-# doesn't warn about unhandled ZLE widgets
-function insert-unambiguous-or-complete() { zle .insert-unambiguous-or-complete 2>/dev/null || zle .expand-or-complete; }
-function menu-search() { zle .menu-search 2>/dev/null || zle .expand-or-complete; }
-function recent-paths() { zle .recent-paths 2>/dev/null || zle .expand-or-complete; }
-zle -N insert-unambiguous-or-complete
-zle -N menu-search
-zle -N recent-paths
-
-# Now safe to source syntax-highlighting (widgets are registered)
-source /nix/store/np7zh0z60bl9r01v1rzaqbj02q967bgg-zsh-syntax-highlighting-0.8.0/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # Load colors for prompt
 autoload -U colors && colors
@@ -133,10 +135,9 @@ COMPLETION_WAITING_DOTS="true"
   done
 } emacs viins vicmd
 
-# Autocomplete settings
-zstyle ':autocomplete:*' widget-style menu-select
-bindkey -M menuselect '\r' accept-line
-zstyle ':autocomplete:*' list-lines 7
+# Completion menu: hand rendering to fzf-tab (fzf popup on Tab)
+zstyle ':completion:*' menu no
+zstyle ':fzf-tab:*' switch-group ',' '.'
 
 # Custom functions
 set-title() {
@@ -185,13 +186,27 @@ function y() {
 # SDKMAN (conditional)
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-# NVM (conditional)
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
 # Auto-start tmux and restore session
 if [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
   /nix/store/hpbyvg0zwk8bi642cc3vksmabxmy8vw4-tmux-3.6a/bin/tmux
 fi
 
 alias claude-mem='bun "/home/jon.gao/.claude/plugins/cache/thedotmack/claude-mem/12.1.6/scripts/worker-service.cjs"'
+
+# NVM lazy-load: stub node/npm/npx/nvm until first call, then real-source and re-exec.
+# Saves ~700ms on every shell startup (nvm_auto walks fs on every init).
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  _nvm_lazy_load() {
+    unset -f nvm node npm npx pnpm yarn 2>/dev/null
+    \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  }
+  for _cmd in nvm node npm npx pnpm yarn; do
+    eval "${_cmd}() { _nvm_lazy_load; ${_cmd} \"\$@\"; }"
+  done
+  unset _cmd
+fi
+
+# Added by arca-companion: ensure ~/.local/bin is in PATH
+export PATH="$HOME/.local/bin:$PATH"
