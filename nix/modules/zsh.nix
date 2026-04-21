@@ -1,34 +1,20 @@
 { config, pkgs, lib, flakePath, ... }:
 
 # Minimal zsh glue: home-manager's programs.zsh is disabled so the entire
-# interactive shell is driven by the hand-rolled configs/zsh/zshrc. Nix
-# installs the `antidote` plugin manager, whose static bundle is built on
-# first run (and whenever configs/zsh/zsh_plugins.txt changes).
-#
-# See configs/zsh/zshrc for the full startup pipeline.
-
+# interactive shell is driven by the hand-rolled configs/zsh/zshrc
+# (symlinked below). Nix installs the `antidote` plugin manager; the static
+# bundle is built on first run and whenever zsh_plugins.txt changes.
 {
+  programs.zsh.enable = false;
+
   home.packages = [ pkgs.antidote ];
 
-  # antidote's share/ doesn't get collected into the user profile by
-  # home-manager, so expose it at a stable path that zshrc can source.
+  # On nix-darwin, `/share/antidote/` is not in pathsToLink so the package's
+  # files never reach ~/.nix-profile/share/. Expose them at a stable path
+  # that zshrc can source. Harmless on linux where the profile linker
+  # already surfaces share/antidote/.
   home.file.".config/antidote".source = "${pkgs.antidote}/share/antidote";
 
-  home.file.".zshrc" = {
-    source = config.lib.file.mkOutOfStoreSymlink
-      "${config.home.homeDirectory}/dotfiles/configs/zsh/zshrc";
-    force = true;
-  };
-
-  # Kept as-is for apps that may still reference these paths.
-  home.file.".aliasrc" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/aliasrc";
-    force = true;
-  };
-  home.file.".oh-my-zsh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.oh-my-zsh";
-    force = true;
-  };
-
-  programs.zsh.enable = false;
+  home.file.".zshrc".source = config.lib.file.mkOutOfStoreSymlink
+    "${config.home.homeDirectory}/dotfiles/configs/zsh/zshrc";
 }

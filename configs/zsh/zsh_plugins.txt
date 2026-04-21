@@ -1,4 +1,5 @@
+Aloxaf/fzf-tab
 jeffreytse/zsh-vi-mode
 joshskidmore/zsh-fzf-history-search
-Aloxaf/fzf-tab
+zsh-users/zsh-autosuggestions
 zdharma-continuum/fast-syntax-highlighting

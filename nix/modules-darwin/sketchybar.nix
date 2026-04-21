@@ -1,5 +1,7 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  xdg.configFile."sketchybar".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.config/sketchybar";
+  home.activation.createSketchybarSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    ln -sfn "${config.home.homeDirectory}/dotfiles/.config/sketchybar" "${config.xdg.configHome}/sketchybar"
+  '';
 }

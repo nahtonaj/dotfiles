@@ -1,5 +1,7 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  home.file.".tridactylrc".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/tridactylrc";
+  home.activation.createTridactylSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    ln -sfn "${config.home.homeDirectory}/dotfiles/configs/tridactylrc" "$HOME/.tridactylrc"
+  '';
 }

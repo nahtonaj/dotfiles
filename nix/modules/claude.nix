@@ -1,7 +1,8 @@
-{ config, pkgs, lib, flakePath, ... }:
+{ config, pkgs, flakePath, ... }:
 
 let
-  cfg = config.custom.claude;
+  # ── Dotfiles directory (writable source for all mutable symlinks) ──
+  dotfilesDir = "${config.home.homeDirectory}/dotfiles";
 
   # ── Single source of truth for the Claude agent model ──
   # Change this ONE variable to update the model in ALL agent definitions.
@@ -45,48 +46,52 @@ let
     ```
   '';
 
-  # Build a derivation that injects `model:` and the ruflo workflow block into
-  # every agent .md file at build time, handling three cases:
-  #   1. Frontmatter with existing `model:` line → replace it
-  #   2. Frontmatter without `model:` line       → inject before closing `---`
-  #   3. No frontmatter at all                   → prepend one
-  # The ruflo block is injected after the closing `---` but before the body,
+  # ── Activation script to process agents at switch time ──
+  # Injects model: and ruflo workflow block into every agent .md file,
+  # writing results to ~/.claude/agents/ (mutable, not in Nix store).
+  # Handles three cases:
+  #   1. Frontmatter with existing model: line -> replace it
+  #   2. Frontmatter without model: line       -> inject before closing ---
+  #   3. No frontmatter at all                 -> prepend one
+  # The ruflo block is injected after the closing --- but before the body,
   # skipped if the file already contains the marker (idempotent).
-  # Agent processing: injects model frontmatter, and optionally the ruflo
-  # workflow block (only when custom.claude.injectRufloWorkflow = true).
-  injectRuflo = cfg.injectRufloWorkflow;
+  processAgentsScript = pkgs.writeShellScript "process-claude-agents" ''
+    set -euo pipefail
 
-  processedAgents = pkgs.runCommand "claude-agents" {
-    nativeBuildInputs = with pkgs; [ findutils gawk coreutils ];
-  } ''
-    src="${flakePath}/.claude/agents"
+    src="${dotfilesDir}/.claude/agents"
+    dest="$HOME/.claude/agents"
     model="${claudeAgentModel}"
-    inject_ruflo="${if injectRuflo then "1" else "0"}"
     ruflo_block="${rufloWorkflowBlock}"
 
-    # Recreate full directory tree
+    if [ ! -d "$src" ]; then
+      echo "claude.nix: agent source $src not found, skipping" >&2
+      exit 0
+    fi
+
+    # Clean destination and recreate directory tree
+    rm -rf "$dest"
     find "$src" -type d -printf '%P\n' | while IFS= read -r d; do
-      mkdir -p "$out/$d"
+      mkdir -p "$dest/$d"
     done
 
     # Process each .md file
     find "$src" -type f -name '*.md' -printf '%P\n' | while IFS= read -r rel; do
       infile="$src/$rel"
-      outfile="$out/$rel"
+      outfile="$dest/$rel"
 
       # Check if ruflo block already exists in source (idempotent)
       has_ruflo=0
       grep -q "MANDATORY: Ruflo Workflow Protocol" "$infile" && has_ruflo=1
 
       if head -1 "$infile" | grep -q '^---$'; then
-        # Has YAML frontmatter — use awk to inject/replace model + ruflo block
-        ${pkgs.gawk}/bin/awk -v model="$model" -v inject_ruflo="$inject_ruflo" -v has_ruflo="$has_ruflo" -v ruflo_file="$ruflo_block" '
+        # Has YAML frontmatter -- use awk to inject/replace model + ruflo block
+        ${pkgs.gawk}/bin/awk -v model="$model" -v has_ruflo="$has_ruflo" -v ruflo_file="$ruflo_block" '
           NR==1 && /^---$/ { in_fm=1; print; next }
           in_fm && /^model:/ { print "model: \"" model "\""; replaced=1; next }
           in_fm && /^---$/ {
             if (!replaced) print "model: \"" model "\""
             in_fm=0; print
-            if (inject_ruflo == "1" && !has_ruflo) {
+            if (!has_ruflo) {
               while ((getline line < ruflo_file) > 0) print line
               close(ruflo_file)
             }
@@ -95,9 +100,9 @@ let
           { print }
         ' "$infile" > "$outfile"
       else
-        # No frontmatter — prepend one with model field
+        # No frontmatter -- prepend one with model field + ruflo block
         printf '%s\n' '---' "model: \"$model\"" '---' > "$outfile"
-        if [ "$inject_ruflo" = "1" ] && [ "$has_ruflo" = "0" ]; then
+        if [ "$has_ruflo" = "0" ]; then
           cat "$ruflo_block" >> "$outfile"
         fi
         cat "$infile" >> "$outfile"
@@ -106,54 +111,38 @@ let
 
     # Copy non-.md files verbatim (if any)
     find "$src" -type f ! -name '*.md' -printf '%P\n' | while IFS= read -r rel; do
-      cp "$src/$rel" "$out/$rel"
+      cp "$src/$rel" "$dest/$rel"
     done
+
+    echo "claude.nix: processed agents -> $dest"
   '';
 in
 {
-  options.custom.claude.injectRufloWorkflow = lib.mkOption {
-    type = lib.types.bool;
-    default = false;
-    description = "Whether to inject the Ruflo workflow protocol into agent definitions.";
-  };
+  # --- Direct symlinks (bypass nix store, point straight to dotfiles repo) ---
+  home.activation.createClaudeSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "$HOME/.claude/helpers"
+    # Mutable bidirectional symlink -- edits on either side reflect immediately.
+    rm -f "$HOME/CLAUDE.md"
+    ln -sfn "${dotfilesDir}/configs/claude/CLAUDE.md" "$HOME/CLAUDE.md"
+    ln -sfn "${dotfilesDir}/configs/claude/settings.json" "$HOME/.claude/settings.json"
+    ln -sfn "${dotfilesDir}/.claude/commands" "$HOME/.claude/commands"
+    ln -sfn "${dotfilesDir}/.claude/skills" "$HOME/.claude/skills"
+    ln -sfn "${dotfilesDir}/.claude/helpers/tmux-pane-title.sh" "$HOME/.claude/helpers/tmux-pane-title.sh"
+    ln -sfn "${dotfilesDir}/.claude/helpers/tmux-session-end.sh" "$HOME/.claude/helpers/tmux-session-end.sh"
+  '';
 
-  config = {
-  # --- Core config ---
-  home.file."CLAUDE.md" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/claude/${if cfg.injectRufloWorkflow then "CLAUDE" else "CLAUDE-mac"}.md";
-  };
-
-  home.file.".claude/settings.json" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/claude/${if cfg.injectRufloWorkflow then "settings" else "settings-mac"}.json";
-  };
-
-  # --- Commands & skills ---
-  home.file.".claude/commands" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/commands";
-  };
-
-  home.file.".claude/skills" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/skills";
-  };
-
-  # --- Agents (model injected at build time; ruflo block only if opted in) ---
-  home.file.".claude/agents" = {
-    source = processedAgents;
-    recursive = true;
-  };
-
-  # --- Helpers (tmux integration scripts) ---
-  home.file.".claude/helpers/tmux-pane-title.sh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/helpers/tmux-pane-title.sh";
-  };
-
-  home.file.".claude/helpers/tmux-session-end.sh" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.claude/helpers/tmux-session-end.sh";
-  };
+  # --- Agents (mutable, processed via activation script) ---
+  # Agent .md files need build-time injection (model + ruflo block), so they
+  # cannot be simple symlinks.  Instead of a Nix-store derivation (immutable),
+  # an activation script copies and processes them into ~/.claude/agents/ at
+  # home-manager switch time, keeping the result writable.
+  home.activation.processClaudeAgents = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    PATH="${pkgs.findutils}/bin:${pkgs.gawk}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:$PATH"
+    ${processAgentsScript}
+  '';
 
   # --- Packages (node needed for claude-flow) ---
   home.packages = with pkgs; [
     nodejs_22
   ];
-  }; # close config
 }

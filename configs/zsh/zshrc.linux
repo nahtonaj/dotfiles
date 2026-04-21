@@ -1,0 +1,11 @@
+# Linux-only zshrc additions, sourced by configs/zsh/zshrc on linux.
+
+# claude-mem wrapper (bun-based worker).
+if [ -f "$HOME/.claude/plugins/cache/thedotmack/claude-mem/12.1.6/scripts/worker-service.cjs" ]; then
+    alias claude-mem='bun "$HOME/.claude/plugins/cache/thedotmack/claude-mem/12.1.6/scripts/worker-service.cjs"'
+fi
+
+# Auto-start tmux and restore session on login (skipped inside tmux or screen).
+if [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+    command -v tmux >/dev/null && tmux
+fi

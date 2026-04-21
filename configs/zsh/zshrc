@@ -1,6 +1,6 @@
-#!/usr/bin/env zsh
-# ~/.zshrc — symlinked from dotfiles (nix only installs `antidote`).
-# Target: interactive shell ready in ~100ms. See nix/modules/zsh.nix.
+# ~/.zshrc — symlinked from dotfiles via nix/modules/zsh.nix.
+# Mutable: edit directly, changes take effect on next shell without rebuild.
+# Target: interactive shell ready in ~100ms.
 
 # ─── Env & PATH ────────────────────────────────────────────────────────
 if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
@@ -11,17 +11,22 @@ export EDITOR=nvim
 export NVM_DIR="$HOME/.nvm"
 export SDKMAN_DIR="$HOME/.sdkman"
 
-typeset -U path
+typeset -U path cdpath fpath manpath
 path=(
     "$HOME/bin"
     /usr/local/bin
-    /opt/homebrew/bin
-    /opt/homebrew/sbin
+    /home/linuxbrew/.linuxbrew/bin
     "$HOME/.local/bin"
     "$HOME/.local/share/coursier/bin"
-    "$HOME/Library/Application Support/waveterm/bin"
     $path
 )
+# Linux: JAVA_HOME for Metals (no-op if absent)
+[ -d /usr/lib/jvm/java-17-openjdk-amd64 ] && export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 && path+=("$JAVA_HOME/bin")
+
+# fpath: pull in completions from every nix profile
+for profile in ${(z)NIX_PROFILES}; do
+    fpath+=($profile/share/zsh/site-functions $profile/share/zsh/$ZSH_VERSION/functions $profile/share/zsh/vendor-completions)
+done
 
 # ─── History ───────────────────────────────────────────────────────────
 HISTFILE=$HOME/.zsh_history
@@ -57,8 +62,9 @@ alias grbi='git rebase --interactive'
 alias gst='git status'
 alias gsw='git switch'
 alias gswc='git switch --create'
-# Nix rebuild (NOPASSWD'd in nix/hosts/darwin.nix)
-alias nrs='sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#jon-gao-mac'
+
+# Optional work aliases (databricks.nix only drops this on linux).
+[ -f "$HOME/dotfiles/configs/aliasrc" ] && source "$HOME/dotfiles/configs/aliasrc"
 
 # ─── Plugin bundle (compute path; actual source is after compinit) ─────
 # antidote lives at ~/.config/antidote via nix/modules/zsh.nix.
@@ -74,8 +80,8 @@ fi
 
 # ─── Completions BEFORE plugins ────────────────────────────────────────
 # fzf-tab (and fast-syntax-highlighting's awareness of compdef widgets)
-# require compinit to have run before they load. compinit is cached
-# (`-C` skips the audit) unless the bundle changed or the dump is missing.
+# require compinit to have run before they load. compinit cache gated on
+# plugin bundle changes — not time — so dev hygiene doesn't cost startup.
 autoload -Uz compinit
 if [[ ! -f ~/.zcompdump ]] || [[ $_plugins_zsh -nt ~/.zcompdump ]]; then
     compinit
@@ -84,9 +90,10 @@ else
     compinit -C
 fi
 
-# Now source the plugin bundle (fzf-tab ⇒ fast-syntax-highlighting order is
+# Now source the plugin bundle (fzf-tab → fast-syntax-highlighting order is
 # handled by zsh_plugins.txt).
 [[ -r $_plugins_zsh ]] && source "$_plugins_zsh"
+unset _antidote_src _plugins_txt _plugins_zsh
 
 # ─── Cached zoxide + fzf init (regenerated when binary is newer) ────────
 _zoxide_bin=$(command -v zoxide 2>/dev/null)
@@ -98,6 +105,7 @@ if [[ -n $_zoxide_bin ]]; then
     fi
     source "$_zoxide_init"
 fi
+unset _zoxide_bin _zoxide_init
 
 _fzf_bin=$(command -v fzf 2>/dev/null)
 _fzf_init="$HOME/.cache/zsh/fzf-init.zsh"
@@ -108,6 +116,7 @@ if [[ -n $_fzf_bin && $options[zle] = on ]]; then
     fi
     source "$_fzf_init"
 fi
+unset _fzf_bin _fzf_init
 
 # ─── Lazy NVM (source only on first use) ───────────────────────────────
 if [ -s "$NVM_DIR/nvm.sh" ]; then
@@ -131,10 +140,13 @@ if [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
     }
 fi
 
+# ─── Autosuggestions / syntax-highlighting config ──────────────────────
+ZSH_AUTOSUGGEST_STRATEGY=(history)
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=28"
+
 # ─── Prompt ────────────────────────────────────────────────────────────
 autoload -U colors && colors
 setopt PROMPT_SUBST
-# Sourced from dotfiles so edits apply after reload.
 [ -r "$HOME/dotfiles/configs/zsh/databricks.zsh-theme" ] && \
     source "$HOME/dotfiles/configs/zsh/databricks.zsh-theme"
 COMPLETION_WAITING_DOTS=true
@@ -150,14 +162,14 @@ COMPLETION_WAITING_DOTS=true
     done
 } emacs viins vicmd
 
-# fzf-tab: use fzf for the completion menu; preview with bat/eza where
-# available. These zstyles must be set AFTER compinit but BEFORE the first
-# tab press — sourcing them here is fine since fzf-tab is loaded above.
+# ─── fzf-tab ───────────────────────────────────────────────────────────
+# Hand rendering to fzf-tab. switch-group lets ,/./ jump between groups.
 zstyle ':completion:*' menu no
 zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':fzf-tab:*' switch-group ',' '.'
 zstyle ':fzf-tab:complete:*' fzf-preview '
     if [[ -d $realpath ]]; then
-        ls --color=always -la "$realpath" 2>/dev/null || ls -la "$realpath"
+        ls -laG "$realpath" 2>/dev/null
     elif [[ -f $realpath ]]; then
         head -n 50 "$realpath" 2>/dev/null
     fi
@@ -202,47 +214,11 @@ separator() {
     printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf " ${1} "; printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf "\n"
 }
 
-# Resilient port-forwarding tunnel to arca.ssh. Detects prior autossh/ssh
-# holding the same ports and asks before killing them, so re-running
-# doesn't silently wipe state or fail with "Could not request local
-# forwarding".
-arcatunnel() {
-    local ports=(13100 13101 37777)
-    local to_kill=()
-    local stale_autossh
-    stale_autossh=$(pgrep -f "autossh.*arca\.ssh" 2>/dev/null)
-    [ -n "$stale_autossh" ] && to_kill+=(${=stale_autossh})
-    for p in "${ports[@]}"; do
-        local pids
-        pids=$(lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null)
-        [ -n "$pids" ] && to_kill+=(${=pids})
-    done
-    to_kill=(${(u)to_kill})
-    if [ ${#to_kill[@]} -gt 0 ]; then
-        echo "Conflicting processes on arca tunnel ports:" >&2
-        ps -o pid,comm,args -p ${to_kill[@]} 2>/dev/null | sed 's/^/  /' >&2
-        if read -q "?Kill them and continue? [y/N] "; then
-            echo
-            kill ${to_kill[@]} 2>/dev/null
-            sleep 0.5
-        else
-            echo
-            echo "arcatunnel aborted." >&2
-            return 1
-        fi
-    fi
-    AUTOSSH_POLL=30 AUTOSSH_GATETIME=0 autossh -M 0 -N \
-        -o ServerAliveInterval=30 \
-        -o ServerAliveCountMax=3 \
-        -o ExitOnForwardFailure=yes \
-        -L 13100:localhost:13100 \
-        -L 13101:localhost:13101 \
-        -L 37777:localhost:37777 \
-        -R 27124:localhost:27124 \
-        arca.ssh
-}
-
-aa() {
-    arca start "$@" || return
-    arcatunnel
-}
+# ─── Platform-specific additions ───────────────────────────────────────
+# Mac adds Homebrew paths, nrs alias, arca helpers (see zshrc.darwin).
+# Linux adds kiro, claude-mem, auto-tmux-launch (see zshrc.linux).
+if [[ "$OSTYPE" == darwin* ]] && [ -r "$HOME/dotfiles/configs/zsh/zshrc.darwin" ]; then
+    source "$HOME/dotfiles/configs/zsh/zshrc.darwin"
+elif [[ "$OSTYPE" == linux* ]] && [ -r "$HOME/dotfiles/configs/zsh/zshrc.linux" ]; then
+    source "$HOME/dotfiles/configs/zsh/zshrc.linux"
+fi

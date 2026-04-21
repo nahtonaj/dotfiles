@@ -3,5 +3,8 @@
 {
   home.packages = [ pkgs.zellij ];
 
-  xdg.configFile."zellij/config.kdl".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/.config/zellij/config.kdl";
+  home.activation.createZellijSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "${config.xdg.configHome}/zellij"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/.config/zellij/config.kdl" "${config.xdg.configHome}/zellij/config.kdl"
+  '';
 }

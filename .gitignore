@@ -60,6 +60,12 @@ result-*
 .config/yazi/yazi.toml
 .oh-my-zsh/
 
+# Claude Code project-local config files (auto-generated, not for committing)
+.claude/settings.json
+.claude/settings.local.json
+.claude/mcp.json
+.claude/mcp.local.json
+
 # Unused .config dirs
 .config/ada/
 .config/doom/
@@ -71,3 +77,14 @@ result-*
 .config/mechanic/
 .config/systemd/
 .config/configstore/
+
+# Runtime state / logs (not for committing)
+.config/claude-scheduler/
+.config/db-agents/
+.config/slack-forward/
+.config/slack-relay/
+.swarm/
+.claude/worktrees/
+.claude/tmp.json
+tmp.json
+tmux-client-*.log

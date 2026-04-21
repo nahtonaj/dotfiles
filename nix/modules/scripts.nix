@@ -1,19 +1,11 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  home.file."bin/tmux-osc52-copy" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-osc52-copy";
-  };
-
-  home.file."bin/tmux-fzf-url-copy" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-fzf-url-copy";
-  };
-
-  home.file."bin/tmux-fix-resurrect" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-fix-resurrect";
-  };
-
-  home.file."bin/tmux-validate-save" = {
-    source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/bin/tmux-validate-save";
-  };
+  home.activation.createScriptSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    mkdir -p "$HOME/bin"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/bin/tmux-osc52-copy" "$HOME/bin/tmux-osc52-copy"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/bin/tmux-fzf-url-copy" "$HOME/bin/tmux-fzf-url-copy"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/bin/tmux-fix-resurrect" "$HOME/bin/tmux-fix-resurrect"
+    ln -sfn "${config.home.homeDirectory}/dotfiles/bin/tmux-validate-save" "$HOME/bin/tmux-validate-save"
+  '';
 }

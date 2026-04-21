@@ -1,8 +1,6 @@
 {
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_FLOW_V3_ENABLED": "true",
-    "CLAUDE_FLOW_HOOKS_ENABLED": "true"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "attribution": {},
   "permissions": {
@@ -91,8 +89,6 @@
       "mcp__jira__jira_get_issue",
       "mcp__glean__search",
       "mcp__glean__get_document_content",
-      "Bash(npx @claude-flow*)",
-      "Bash(npx claude-flow*)",
       "Bash(node .claude/*)",
       "mcp__ruflo__*",
       "Bash(env:*)",
@@ -103,6 +99,8 @@
       "Bash(date:*)",
       "Bash(id:*)",
       "Bash(hostname:*)",
+      "Bash(mkdir:*)",
+      "Bash(curl:*)",
       "Bash(nix eval:*)",
       "Bash(nix flake show:*)",
       "Bash(nix flake metadata:*)",
@@ -110,14 +108,155 @@
       "Bash(npm list:*)",
       "Bash(npm ls:*)",
       "Bash(pip list:*)",
-      "Bash(pip show:*)"
+      "Bash(pip show:*)",
+      "Bash(llm:*)",
+      "Bash(claude:*)",
+      "Bash(nvim:*)",
+      "Bash(node:*)",
+      "Bash(npm view:*)",
+      "Bash(tmux:*)",
+      "Skill(update-config)",
+      "Bash(*ralph-loop*)",
+      "Bash(*setup-ralph-loop.sh*)",
+      "Bash(git add:*)",
+      "WebFetch(domain:*.anthropic.com)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:*.mozilla.org)",
+      "Bash(jq:*)",
+      "Read(//tmp/**)",
+      "Read(~/.runtests/**)",
+      "Read(~/.cache/bazel/**)",
+      "Read(~/.cache/debug-copilot/prometheus/**)",
+      "mcp__github__github_get_service_info",
+      "mcp__github__github_get_api_info",
+      "mcp__github__github_read_api_call",
+      "mcp__databricks__execute_parameterized_sql",
+      "mcp__databricks__check_statement_status",
+      "mcp__databricks__cancel_statement",
+      "mcp__databricks__list_dbfs_files",
+      "mcp__databricks__read_dbfs_file_contents",
+      "mcp__databricks__get_dbfs_destination",
+      "mcp__databricks__databricks_jobs",
+      "mcp__databricks-v2__list_available_workspaces",
+      "mcp__databricks-v2__connect_to_workspace",
+      "mcp__databricks-v2__list_warehouses",
+      "mcp__databricks-v2__execute_parameterized_sql",
+      "mcp__databricks-v2__check_statement_status",
+      "mcp__databricks-v2__cancel_statement",
+      "mcp__databricks-v2__list_dbfs_files",
+      "mcp__databricks-v2__read_dbfs_file_contents",
+      "mcp__databricks-v2__get_dbfs_destination",
+      "mcp__databricks-v2__databricks_jobs",
+      "mcp__databricks-v2__get_run",
+      "mcp__databricks-v2__read_notebook",
+      "mcp__databricks-v2__list_dashboard_datasets",
+      "mcp__databricks-v2__execute_dashboard",
+      "mcp__databricks-v2__ask_genie",
+      "mcp__databricks-v2__ask_genie_followup",
+      "mcp__glean__resolve_go_link",
+      "mcp__glean__summarize_document",
+      "mcp__glean__list_entities",
+      "mcp__glean__get_person",
+      "mcp__jira__jira_get_service_info",
+      "mcp__jira__jira_get_api_info",
+      "mcp__jira__jira_read_api_call",
+      "mcp__confluence__get_confluence_page_content",
+      "mcp__confluence__search_confluence_pages",
+      "mcp__confluence__get_confluence_spaces",
+      "mcp__confluence__get_page_children",
+      "mcp__devportal__devportal_get_service_info",
+      "mcp__devportal__devportal_get_api_info",
+      "mcp__devportal__devportal_read_api_call",
+      "mcp__pagerduty__pagerduty_query",
+      "mcp__debug-copilot__get_investigation_details",
+      "mcp__debug-copilot__query_prometheus_metrics",
+      "mcp__debug-copilot__get_grafana_dashboard",
+      "mcp__debug-copilot__get_dashboard_filter_values",
+      "mcp__slack__slack_get_service_info",
+      "mcp__slack__slack_get_api_info",
+      "mcp__slack__slack_read_api_call",
+      "mcp__slack__slack_batch_read_api_call",
+      "mcp__google__drive_file_list",
+      "mcp__google__drive_file_get",
+      "mcp__google__drive_file_export",
+      "mcp__google__drive_file_create",
+      "mcp__google__drive_file_update",
+      "mcp__google__drive_file_delete",
+      "mcp__google__drive_file_copy",
+      "mcp__google__drive_comment_list",
+      "mcp__google__drive_comment_get",
+      "mcp__google__drive_comment_create",
+      "mcp__google__drive_comment_update",
+      "mcp__google__drive_comment_delete",
+      "mcp__google__drive_comment_reply_list",
+      "mcp__google__drive_comment_reply_get",
+      "mcp__google__drive_comment_reply_create",
+      "mcp__google__drive_comment_reply_update",
+      "mcp__google__drive_comment_reply_delete",
+      "mcp__google__gmail_message_list",
+      "mcp__google__gmail_message_get",
+      "mcp__google__gmail_message_send",
+      "mcp__google__gmail_message_modify",
+      "mcp__google__gmail_profile_get",
+      "mcp__google__gmail_draft_create",
+      "mcp__google__gmail_draft_update",
+      "mcp__google__gmail_draft_delete",
+      "mcp__google__calendar_event_list",
+      "mcp__google__calendar_event_get",
+      "mcp__google__calendar_event_create",
+      "mcp__google__calendar_event_update",
+      "mcp__google__calendar_event_delete",
+      "mcp__google__calendar_calendar_list",
+      "mcp__google__calendar_calendar_create",
+      "mcp__google__calendar_freebusy_query",
+      "mcp__google__docs_document_get",
+      "mcp__google__docs_document_create",
+      "mcp__google__docs_document_create_from_markdown",
+      "mcp__google__docs_document_batch_update",
+      "mcp__google__docs_document_search",
+      "mcp__google__docs_document_list",
+      "mcp__google__docs_document_inspect_structure",
+      "mcp__google__docs_document_export_as_markdown",
+      "mcp__google__sheets_spreadsheet_get",
+      "mcp__google__sheets_spreadsheet_create",
+      "mcp__google__sheets_spreadsheet_batch_update",
+      "mcp__google__sheets_values_get",
+      "mcp__google__sheets_values_update",
+      "mcp__google__sheets_values_append",
+      "mcp__google__sheets_values_batch_get",
+      "mcp__google__sheets_grid_data_get",
+      "mcp__google__sheets_search",
+      "mcp__google__drive_search",
+      "mcp__google__gmail_search",
+      "mcp__google__calendar_search",
+      "mcp__testman__list_investigations",
+      "mcp__testman__get_investigation",
+      "mcp__testman__get_investigation_tags",
+      "mcp__testman__list_smartreverts",
+      "mcp__testman__get_smartrevert",
+      "mcp__testman__get_smartrevert_tags",
+      "mcp__testman__get_relevant_investigations",
+      "mcp__testman__list_issues",
+      "mcp__testman__get_issue",
+      "mcp__spinnaker__spinnaker_get_pipeline_status",
+      "mcp__spinnaker__spinnaker_get_stage_detail",
+      "mcp__spinnaker__spinnaker_list_executions",
+      "mcp__spinnaker__spinnaker_list_pipeline_configs",
+      "mcp__spinnaker__spinnaker_get_execution_raw",
+      "mcp__toolproxy__whoami",
+      "mcp__toolproxy__list_available_tools",
+      "mcp__toolproxy__run_command"
     ],
     "deny": [
       "Read(./.env)",
       "Read(./.env.*)"
-    ]
+    ],
+    "defaultMode": "default",
+    "disableBypassPermissionsMode": "disable"
   },
   "model": "opus[1m]",
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [],
   "hooks": {
     "PreToolUse": [
       {
@@ -127,6 +266,31 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs pre-bash",
             "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh waiting_input",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh pre_tool",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/auto-approve.sh",
+            "timeout": 2000
           }
         ]
       }
@@ -143,11 +307,11 @@
         ]
       },
       {
-        "matcher": "mcp__ruflo__",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "node $HOME/.claude/helpers/post-agent-hook.js track",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh post_tool",
             "timeout": 5000
           }
         ]
@@ -165,6 +329,11 @@
             "type": "command",
             "command": "bash $HOME/.claude/helpers/tmux-pane-title.sh",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh running",
+            "timeout": 5000
           }
         ]
       }
@@ -184,7 +353,7 @@
           },
           {
             "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs daemon-init",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
             "timeout": 5000
           }
         ]
@@ -202,17 +371,16 @@
             "type": "command",
             "command": "bash /home/jon.gao/dotfiles/.claude/helpers/team-cleanup.sh",
             "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
+          },
           {
             "type": "command",
-            "command": "printf '\\a' > /dev/tty",
+            "command": "bash $HOME/.claude/helpers/dashboard-state.sh session-end",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh disconnected",
+            "timeout": 5000
           }
         ]
       }
@@ -227,8 +395,18 @@
           },
           {
             "type": "command",
-            "command": "printf '\\a' > /dev/tty",
+            "command": "bash $HOME/.claude/helpers/dashboard-state.sh session-complete",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "printf '\\a' > /dev/tty 2>/dev/null || true",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
+            "timeout": 5000
           }
         ]
       }
@@ -261,6 +439,16 @@
             "timeout": 6000
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh compacting",
+            "timeout": 5000
+          }
+        ]
       }
     ],
     "SubagentStart": [
@@ -273,160 +461,82 @@
           },
           {
             "type": "command",
-            "command": "node $HOME/.claude/helpers/agent-enforcement.js subagent-start",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh running",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh running",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh permission_request",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/jon.gao/.config/llm-cli/hooks/claude_notification_hook.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/jon.gao/.config/llm-cli/hooks/claude_notification_hook.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
             "timeout": 5000
           }
         ]
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node /home/jon.gao/.claude/helpers/statusline.cjs 2>> /tmp/statusline-stderr.log"
+  },
   "enabledPlugins": {
     "bazel-universe@experimental-plugin-marketplace": true,
     "spec-driven-workflow@experimental-plugin-marketplace": false,
-    "pr-review-toolkit@claude-plugins-official": false,
-    "commit-commands@claude-plugins-official": false,
-    "feature-dev@claude-plugins-official": false,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "code-review@claude-plugins-official": false,
-    "github@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
     "atlassian@claude-plugins-official": false,
     "slack@claude-plugins-official": false,
     "claude-hud@experimental-plugin-marketplace": false,
     "ralph-wiggum@experimental-plugin-marketplace": false,
-    "memory-ctrl@experimental-plugin-marketplace": true,
     "ralph-loop@claude-plugins-official": true,
     "plugin-builder@experimental-plugin-marketplace": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "claude-mem@thedotmack": true
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
-  "claudeFlow": {
-    "version": "3.0.0",
-    "enabled": true,
-    "modelPreferences": {
-      "default": "claude-opus-4-6",
-      "routing": "claude-haiku-4-5-20251001"
-    },
-    "agentTeams": {
-      "enabled": true,
-      "teammateMode": "auto",
-      "taskListEnabled": true,
-      "mailboxEnabled": true,
-      "coordination": {
-        "autoAssignOnIdle": true,
-        "trainPatternsOnComplete": true,
-        "notifyLeadOnComplete": true,
-        "sharedMemoryNamespace": "agent-teams"
-      },
-      "hooks": {
-        "teammateIdle": {
-          "enabled": true,
-          "autoAssign": true,
-          "checkTaskList": true
-        },
-        "taskCompleted": {
-          "enabled": true,
-          "trainPatterns": true,
-          "notifyLead": true
-        }
-      }
-    },
-    "swarm": {
-      "topology": "hierarchical-mesh",
-      "maxAgents": 15
-    },
-    "memory": {
-      "backend": "hybrid",
-      "enableHNSW": true,
-      "learningBridge": {
-        "enabled": true
-      },
-      "memoryGraph": {
-        "enabled": true
-      },
-      "agentScopes": {
-        "enabled": true
-      }
-    },
-    "neural": {
-      "enabled": true
-    },
-    "daemon": {
-      "autoStart": true,
-      "workers": [
-        "map",
-        "audit",
-        "optimize",
-        "consolidate",
-        "testgaps",
-        "ultralearn",
-        "deepdive",
-        "document",
-        "refactor",
-        "benchmark"
-      ],
-      "schedules": {
-        "audit": {
-          "interval": "1h",
-          "priority": "critical"
-        },
-        "optimize": {
-          "interval": "30m",
-          "priority": "high"
-        },
-        "consolidate": {
-          "interval": "2h",
-          "priority": "low"
-        },
-        "document": {
-          "interval": "1h",
-          "priority": "normal",
-          "triggers": [
-            "adr-update",
-            "api-change"
-          ]
-        },
-        "deepdive": {
-          "interval": "4h",
-          "priority": "normal",
-          "triggers": [
-            "complex-change"
-          ]
-        },
-        "ultralearn": {
-          "interval": "1h",
-          "priority": "normal"
-        }
-      }
-    },
-    "learning": {
-      "enabled": true,
-      "autoTrain": true,
-      "patterns": [
-        "coordination",
-        "optimization",
-        "prediction"
-      ],
-      "retention": {
-        "shortTerm": "24h",
-        "longTerm": "30d"
-      }
-    },
-    "adr": {
-      "autoGenerate": true,
-      "directory": "/docs/adr",
-      "template": "madr"
-    },
-    "ddd": {
-      "trackDomains": true,
-      "validateBoundedContexts": true,
-      "directory": "/docs/ddd"
-    },
-    "security": {
-      "autoScan": true,
-      "scanOnEdit": true,
-      "cveCheck": true,
-      "threatModel": true
-    }
-  }
+  "effortLevel": "high"
 }

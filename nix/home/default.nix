@@ -32,6 +32,5 @@
     tree
     curl
     wget
-    autossh
   ];
 }

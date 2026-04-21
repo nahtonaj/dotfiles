@@ -1,5 +1,7 @@
 { config, pkgs, flakePath, ... }:
 
 {
-  home.file.".ideavimrc".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/ideavimrc";
+  home.activation.createIdeavimSymlinks = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    ln -sfn "${config.home.homeDirectory}/dotfiles/configs/ideavimrc" "$HOME/.ideavimrc"
+  '';
 }
