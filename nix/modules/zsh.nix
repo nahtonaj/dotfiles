@@ -10,6 +10,10 @@
 {
   home.packages = [ pkgs.antidote ];
 
+  # antidote's share/ doesn't get collected into the user profile by
+  # home-manager, so expose it at a stable path that zshrc can source.
+  home.file.".config/antidote".source = "${pkgs.antidote}/share/antidote";
+
   home.file.".zshrc" = {
     source = config.lib.file.mkOutOfStoreSymlink
       "${config.home.homeDirectory}/dotfiles/configs/zsh/zshrc";

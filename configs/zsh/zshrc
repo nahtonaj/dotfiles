@@ -60,8 +60,9 @@ alias gswc='git switch --create'
 # Nix rebuild (NOPASSWD'd in nix/hosts/darwin.nix)
 alias nrs='sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#jon-gao-mac'
 
-# ─── Plugins via antidote (static bundle, regenerated only when plugins.txt changes) ─
-_antidote_src="$HOME/.nix-profile/share/antidote/antidote.zsh"
+# ─── Plugin bundle (compute path; actual source is after compinit) ─────
+# antidote lives at ~/.config/antidote via nix/modules/zsh.nix.
+_antidote_src="$HOME/.config/antidote/antidote.zsh"
 _plugins_txt="$HOME/dotfiles/configs/zsh/zsh_plugins.txt"
 _plugins_zsh="$HOME/.cache/zsh/zsh_plugins.zsh"
 if [[ -r $_antidote_src && -r $_plugins_txt ]]; then
@@ -69,10 +70,12 @@ if [[ -r $_antidote_src && -r $_plugins_txt ]]; then
         mkdir -p "${_plugins_zsh:h}"
         (source "$_antidote_src" && antidote bundle <"$_plugins_txt" >|"$_plugins_zsh")
     fi
-    source "$_plugins_zsh"
 fi
 
-# ─── Completions (gated on bundle change, not time) ────────────────────
+# ─── Completions BEFORE plugins ────────────────────────────────────────
+# fzf-tab (and fast-syntax-highlighting's awareness of compdef widgets)
+# require compinit to have run before they load. compinit is cached
+# (`-C` skips the audit) unless the bundle changed or the dump is missing.
 autoload -Uz compinit
 if [[ ! -f ~/.zcompdump ]] || [[ $_plugins_zsh -nt ~/.zcompdump ]]; then
     compinit
@@ -80,6 +83,10 @@ if [[ ! -f ~/.zcompdump ]] || [[ $_plugins_zsh -nt ~/.zcompdump ]]; then
 else
     compinit -C
 fi
+
+# Now source the plugin bundle (fzf-tab ⇒ fast-syntax-highlighting order is
+# handled by zsh_plugins.txt).
+[[ -r $_plugins_zsh ]] && source "$_plugins_zsh"
 
 # ─── Cached zoxide + fzf init (regenerated when binary is newer) ────────
 _zoxide_bin=$(command -v zoxide 2>/dev/null)
