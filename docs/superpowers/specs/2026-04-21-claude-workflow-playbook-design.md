@@ -9,7 +9,7 @@ owner: jon.gao
 
 ## 1. Summary
 
-We are producing two artifacts from one design pass: a first-person playbook that documents how I run Claude Code day-to-day, and a standalone marketplace plugin that bootstraps a fresh install to match. The playbook teaches the Superpowers loop (brainstorm, plan, execute, verify) using coordinator-plus-agent-teams as the mechanics. Audience is Databricks engineers, so the plugin leans into Databricks-specific tooling: it installs the `db-agents` compiled binary, recommends the Databricks MCP stack, and separates workflow-required helpers from personal customizations. Required helpers are categorized and documented in v0.1; automated install support is queued for v0.2.
+We are producing two artifacts from one design pass: a first-person playbook that documents how I run Claude Code day-to-day, and a standalone marketplace plugin that bootstraps a fresh install to match. The playbook teaches the Superpowers loop (brainstorm, plan, execute, verify) using coordinator-plus-agent-teams as the mechanics. Audience is Databricks engineers, so the plugin ships the workflow-essential, shareable pieces -- including the `db-agents` binary install -- while leaving personal ergonomics out. Required helpers that currently live in my personal dotfiles are categorized and documented in v0.1; automated install is queued for v0.2. The playbook also teaches a durable mindset -- practices persist, protocols do not -- so readers can absorb future Claude Code changes without re-reading.
 
 ## 2. Goals & Non-goals
 
@@ -37,7 +37,7 @@ Audience is Databricks engineers who already use Claude Code and want a more str
 
 ### 4.1 `docs/claude-workflow/README.md` Outline
 
-Narrative, first-person, nine sections. Target total ~2500 words.
+Narrative, first-person, ten sections. Target total ~2750 words (up from 2500 to accommodate the future-proofing section).
 
 1. Why this doc (~150w). The problem I kept hitting (one-shot prompts that lose context, unverified claims, ad-hoc agent spawning), and what the loop buys you.
 2. The loop in one picture (~150w). ASCII diagram: brainstorm -> plan -> execute -> verify -> commit/remember. Names the Superpowers skills and the coordinator role.
@@ -48,6 +48,7 @@ Narrative, first-person, nine sections. Target total ~2500 words.
 7. Commit, remember, move on (~200w). `commit-commands:commit-push-pr`, claude-mem auto-memory, `pr-review-toolkit:review-pr`.
 8. Common failure modes (~250w). Coordinator doing heavy work, agent spawns without team_name, skipping brainstorm, claiming "tests pass" without running them, over-sharing between agents.
 9. Minimum viable adoption (~500w). A graduated path: install the bootstrap plugin, try the loop on one small task, add Superpowers, then adopt claude-mem. Each step has a 1-line success check.
+10. Living with a moving target (~250w). Principle: **practices persist, protocols do not**. Claude Code ships features fast; pinning yourself to a specific tool name dates your workflow. Two concrete applications. (a) Agent teams -- `TeamCreate`/`SendMessage`/`TaskUpdate` is today's surface, with known bugs (Claude Code issues #43706, #38932, #42999 can silently drop `SendMessage` in either direction; HARD RULE 3 in `configs/claude/CLAUDE.md` specifies reading persisted inbox files at `~/.claude/teams/{team-name}/inboxes/*.json` as the disk-based verification channel). The protocol will change. The durable practice -- coordinator delegates heavy work, agents communicate via explicit channels, coordinator verifies from the source of truth -- persists. (b) Memory -- claude-mem is the right choice today, but Claude Code is shipping native memory features that will likely subsume some or all of it. Do not pin the tool; teach the evaluative question ("what do I need to remember across sessions? does native cover it? does claude-mem add value on top?"). Closes with doc-maintenance ground rules: owner (me, until succession), cadence (revisit on any Claude Code minor release that touches agents or memory), versioning (each appendix carries a "Last verified against" footer).
 
 ### 4.2 Appendix Files
 
@@ -57,7 +58,7 @@ All under `docs/claude-workflow/`, each 200-500 words, each linked from the rele
 - `appendix-helpers.md` (~500w) -- The three-bucket helper categorization (see section 5.5). For each Bucket 1 entry, cite the `configs/claude/settings.json` line range where it is wired, what event it handles, and the v0.2 install plan. Bucket 2 and Bucket 3 listed for transparency.
 - `appendix-databricks-tools.md` (~400w) -- Databricks-specific tooling. (1) `db-agents` web dashboard: purpose (per its README at `/home/jon.gao/universe/experimental/richard-liu_data/db-agents/README.md`), canonical install via `gh release download` from `databricks-eng/universe-dev`, Arca-side `node db-agents-*.cjs` launch, SSH port-forward for `localhost:13100`. (2) Databricks MCP recommendations: which servers to enable (`devportal`, `databricks-v2`, `github`, `glean`, `claude-mem`) with pointers to internal docs. Plugin recommends but does not auto-configure MCP.
 - `appendix-skills.md` (~300w) -- The workflow-critical Superpowers skills with a one-line purpose each. Pointer to the superpowers plugin README for the full set.
-- `appendix-agent-teams.md` (~500w) -- Deep dive on `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, TeamCreate/SendMessage/TaskUpdate, shutdown protocol, the 3-section agent prompt template, Pipeline Context inlining rules.
+- `appendix-agent-teams.md` (~600w) -- Deep dive on `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, TeamCreate/SendMessage/TaskUpdate, shutdown protocol, the 3-section agent prompt template, Pipeline Context inlining rules. Also documents the **reliability caveat**: SendMessage is not guaranteed (Claude Code issues #43706, #38932, #42999 can silently drop messages in either direction), and the **disk-verification escape hatch** -- the persisted inbox files at `~/.claude/teams/{team-name}/inboxes/{teammate-name}.json` (plus the lead's own `team-lead.json`) are the source of truth, and reading them directly is allowed verification, not polling. Ties back to section 10 of the README: this is exactly the "protocols are lossy, practices carry you through" thesis in action.
 - `appendix-verification.md` (~300w) -- Concrete examples of verify-before-claim: good evidence vs. bad, how to cite subagent-reported findings, how to retract gracefully.
 
 ### 4.3 Tone & Formatting Rules
@@ -238,6 +239,7 @@ Success criteria:
 - Uninstall against configured fixture: state reverts, `.bak` files available, state file removed, `~/.local/bin/db-agents` removed.
 - Install -> uninstall -> install leaves the fixture identical to the first install result.
 - db-agents install fails gracefully (clear error, exit non-zero, other items unaffected) when `gh` is missing or the user is not authenticated to `databricks-eng/universe-dev`.
+- After install, `which db-agents` resolves to the wrapper script, and the wrapper's `--help` passthrough (or the binary's equivalent) executes without a Node version error on a system with Node 24 on PATH.
 
 ## 7. Open Questions & Risks
 
