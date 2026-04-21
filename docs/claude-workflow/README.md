@@ -35,3 +35,32 @@ Before I adopted this loop, every substantial Claude Code task I ran hit one of 
 The loop fixes all three. Brainstorming explicitly converts a fuzzy ask into a written spec. Writing plans explicitly converts the spec into bite-sized checkbox tasks. Executing with coordinator-plus-agent-teams means the coordinator stays lightweight and every spawn uses a named team with a shutdown protocol. Verifying before claiming is a HARD RULE, not a polite suggestion -- every factual assertion needs file:line citations or command output. And when the whole thing is over, I commit, let claude-mem remember the session, and move on.
 
 Section 2 shows the loop as a single picture. Sections 3-7 walk each phase. Section 8 is the catalog of mistakes I still make when I get lazy. Section 9 is the minimum-viable path for someone who wants to try one piece at a time. Section 10 is the mindset for keeping this doc useful as Claude Code evolves -- practices persist, protocols do not.
+
+---
+
+## 2. The loop in one picture
+
+```
+  +-------------+        +------------+        +---------+        +--------+
+  |  Brainstorm | -----> |    Plan    | -----> | Execute | -----> | Verify |
+  +-------------+        +------------+        +---------+        +--------+
+     spec.md                plan.md             coordinator         evidence
+     (sec 3)                (sec 4)             + agent teams       (sec 6)
+                                                  (sec 5)
+                                                       |
+                                                       v
+                                               +------------------+
+                                               | Commit, remember |
+                                               |   (sec 7)        |
+                                               +------------------+
+```
+
+Four phases plus a cleanup step. Each arrow is a handoff where the output of the previous phase becomes a read-only input to the next.
+
+- **Brainstorm** uses `superpowers:brainstorming` to convert a fuzzy ask into a written spec under `docs/superpowers/specs/`.
+- **Plan** uses `superpowers:writing-plans` to break the spec into bite-sized checkbox tasks under `docs/superpowers/plans/`.
+- **Execute** uses a **coordinator** (me, in the Claude Code session) that delegates to **agent teams** (spawned via `TeamCreate` / `Agent` / `SendMessage`). The coordinator stays lightweight per HARD RULE 1 in `configs/claude/CLAUDE.md`; agents do the heavy work per `superpowers:subagent-driven-development`.
+- **Verify** uses `superpowers:verification-before-completion`. Every claim needs file:line citations or command output.
+- **Commit and remember** uses `commit-commands:commit-push-pr` and lets the `claude-mem` plugin capture the session into cross-session memory.
+
+The rest of this doc is one section per phase plus the meta-sections.
