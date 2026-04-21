@@ -89,3 +89,4 @@ result-*
 tmp.json
 tmux-client-*.log
 docs/claude-workflow/.verified-against.txt
+docs/superpowers/plans/.claude-workflow-bootstrap-scratch.md
