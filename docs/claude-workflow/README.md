@@ -220,3 +220,25 @@ Success check: the dashboard shows at least one IDLE agent card for your current
 You will repeat at least three of those mistakes in your first week. Having already seen them listed makes the debugging shorter.
 
 Success check: you catch yourself about to violate a HARD RULE, pause, and course-correct without being told.
+
+---
+
+## 10. Living with a moving target
+
+Claude Code ships features fast, which means every specific tool name in this doc will eventually be wrong. The principle that keeps the doc useful across those changes: **practices persist, protocols do not**.
+
+A practice is "the coordinator delegates heavy work and verifies from a source of truth." A protocol is "call `TeamCreate` then `Agent` then `SendMessage`." The practice is load-bearing; the protocol is implementation. When Anthropic renames `TeamCreate` next quarter, the practice keeps working, and the most I have to change in this doc is a set of find-and-replace edits.
+
+**Agent teams -- live example.** `TeamCreate` / `SendMessage` / `TaskUpdate` is today's surface. Known bugs: Claude Code issues #43706, #38932, #42999 can silently drop `SendMessage` in either direction. Commit `1fb845a` on `main` is the protocol-evolves-but-practice-persists pattern: the protocol did not change, but the delivery layer turned out to be lossy, so HARD RULE 3 in `configs/claude/CLAUDE.md` now permits reading persisted inbox files at `~/.claude/teams/{team-name}/inboxes/*.json` as a disk-based verification channel. The durable practice (coordinator delegates, agents communicate via explicit channels, coordinator verifies from source of truth, never polls in-band) survived the fix intact.
+
+**Memory -- live example.** `claude-mem` is the right choice today. Claude Code is shipping native memory features that will likely subsume some or all of it. Do not pin the tool; teach yourself the evaluative question:
+
+> "What do I need to remember across sessions? Does the native feature cover it? Does claude-mem still add value on top?"
+
+When native memory matures, you re-answer the question and adjust; you do not re-read the whole playbook.
+
+**Doc-maintenance ground rules.**
+
+- Owner: I maintain this until I name a successor. If you want to take it over, open a PR updating this line.
+- Cadence: revisit on any Claude Code minor release that touches agents or memory. "Revisit" means re-read, not necessarily rewrite.
+- Versioning: every appendix carries a "Last verified against: Claude Code X.Y.Z, claude-mem A.B.C, db-agents vP.Q.R (YYYY-MM-DD)" footer. When the versions on disk diverge from the footer by more than one minor bump, re-verify the appendix and update the footer.
