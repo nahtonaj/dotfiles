@@ -130,3 +130,17 @@ Verification is HARD RULE 4 in `configs/claude/CLAUDE.md` and it is the rule I b
 **Where I use this explicitly.** Before saying "tests pass" in any status message, I run the tests and paste the last line. Before writing "root cause" in a PR description, I cite the file:line that produces the behavior. Before approving a shutdown_request from a teammate, I verify their RESULTS block against the actual diff they produced. Subagent-reported citations with file:line snippets count as evidence and I do not redundantly re-verify.
 
 Concrete examples of good vs. bad evidence in `appendix-verification.md`.
+
+---
+
+## 7. Commit, remember, move on
+
+The tail of the loop is three actions I do every time, not just when I feel like it.
+
+**Commit via `commit-commands:commit-push-pr`.** The skill handles the body format, co-author trailer, and (optionally) pushing and opening a PR. I use the `commit-commands:commit` variant when I want to commit without pushing. The point of using the skill instead of running `git commit` directly is consistency -- commit messages are the part of the repo history I read most and the one most likely to rot when I hand-roll them.
+
+**Remember via `claude-mem`.** The `claude-mem` plugin has a Stop hook that captures the session into cross-session memory. I do nothing; the plugin runs on session end. Later sessions query that memory via `claude-mem:mem-search` ("did we already solve this?") and `claude-mem:knowledge-agent` ("what do I know about X?"). The critical property is that memory is cross-session, not cross-repository -- the plugin scopes observations to the current working directory by default.
+
+**PR review via `pr-review-toolkit:review-pr`.** When I open a PR, I run the review skill as a sanity check before asking a human. It is a cheap second pair of eyes.
+
+Then I close the Claude Code session and move on. The next time I open a session in this repo, claude-mem primes context automatically -- I do not re-explain what I was working on.
