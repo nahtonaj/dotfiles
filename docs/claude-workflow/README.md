@@ -96,3 +96,23 @@ Planning uses `superpowers:writing-plans`. The input is the spec you just commit
 Commit the plan before executing. Same reason as the spec: the executor reads the plan verbatim, and a moving target in a plan is worse than a moving target in a spec because the tasks are intentionally terse.
 
 `superpowers:writing-plans` includes a self-review checklist (spec coverage, placeholder scan, type consistency). I run it before handing off, not after.
+
+---
+
+## 5. Phase 3 -- Execute with coordinator + teams
+
+Execution is where the loop earns its keep. I run in Claude Code as the **coordinator**; every non-trivial read, edit, or bash call goes to a subagent via `TeamCreate` + `Agent`. The rules that make this work are in `configs/claude/CLAUDE.md` -- see `appendix-claude-md.md` for the annotated walkthrough. The short version follows.
+
+**Coordinator stays lightweight.** HARD RULE 1. I may run one `Read`/`Grep`/`Glob` for a factual question or one read-only bash call for a status check; anything more goes to an agent. The reason is context economy: every token I spend reading a file is a token I cannot spend coordinating. When I violate this rule, it is always because "just this once" -- and the next thing I know I am fifteen tool calls deep into a diff and have forgotten what the teammate just asked.
+
+**Every Agent call uses a team.** HARD RULE 2. `team_name` is required on every spawn. Sole exception: a single `Explore`/`Glob`/`Grep` agent for a quick read-only lookup. Teams exist because `SendMessage` is team-scoped and without them you cannot route messages or verify delivery.
+
+**Spawn, coordinate, shutdown.** HARD RULE 3. Spawn: `TeamDelete` defensively, then `TeamCreate`, then `Agent(name, team_name, run_in_background=true)`. Coordinate: all inter-agent communication uses `SendMessage`; task assignments and status flow via `TaskUpdate`. Shutdown: the lead sends `{type: "shutdown_request"}` to each teammate, waits for `shutdown_response` with `approve: true`, then calls `TeamDelete`. Details in `appendix-agent-teams.md`.
+
+**SendMessage is the primary channel but not the source of truth.** Upstream bugs (Claude Code issues #43706, #38932, #42999) can silently drop messages in either direction. HARD RULE 3 permits reading persisted inbox files at `~/.claude/teams/{team-name}/inboxes/*.json` as a disk-based verification channel. When in doubt, read the inbox file on disk. Details in `appendix-agent-teams.md`.
+
+**Pipeline Context is the coordinator's only reliable prior-output channel.** When agent N+1 needs output from agent N, I inline that output under a `Pipeline Context` heading in the N+1 prompt. References do not survive the context handoff; content does.
+
+**Worktrees for concurrent edits.** When two or more agents will edit the same repo concurrently, pass `isolation: "worktree"` to `Agent`. This is the difference between a clean merge and three hours of reconciliation.
+
+**db-agents is the monitoring surface for long-running fleets.** When I am running a team of five-plus agents for more than a few minutes, the `db-agents` web dashboard (see `appendix-databricks-tools.md`) shows each agent's state (IDLE / BUSY / INPUT) and lets me intervene without opening ten Claude Code panes. Installation is bundled with the `claude-workflow-bootstrap` plugin.
