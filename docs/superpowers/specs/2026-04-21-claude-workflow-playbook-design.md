@@ -31,7 +31,7 @@ Non-goals:
 
 Audience is Databricks engineers who already use Claude Code and want a more structured workflow. They are comfortable with CLI plugins and JSON configs. Distribution:
 - Playbook: committed under `docs/claude-workflow/` in this dotfiles repo, browsable on GitHub.
-- Plugin: published to the Databricks Plugin Marketplace at `plugin-marketplace/eng-ingestion-team/claude-workflow-bootstrap/`, installed via `/plugin install claude-workflow-bootstrap`.
+- Plugin: published at `plugin-marketplace/eng-ingestion-team/claude-workflow-bootstrap/` -- team-scoped directory within the shared Databricks `plugin-marketplace` repo. Installed via `/plugin install claude-workflow-bootstrap` once the directory is registered in the marketplace index.
 
 ## 4. Playbook Doc Design
 
@@ -87,7 +87,7 @@ All under `docs/claude-workflow/`, each 200-500 words, each linked from the rele
 ### 5.2 File Layout
 
 ```
-claude-workflow-bootstrap/
+plugin-marketplace/eng-ingestion-team/claude-workflow-bootstrap/
   plugin.json
   marketplace.json
   SKILL.md
