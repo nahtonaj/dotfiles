@@ -1,6 +1,7 @@
 {
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "UV_OFFLINE": "1"
   },
   "attribution": {},
   "permissions": {
@@ -90,7 +91,6 @@
       "mcp__glean__search",
       "mcp__glean__get_document_content",
       "Bash(node .claude/*)",
-      "mcp__ruflo__*",
       "Bash(env:*)",
       "Bash(printenv:*)",
       "Bash(uname:*)",
@@ -251,7 +251,6 @@
       "Read(./.env)",
       "Read(./.env.*)"
     ],
-    "defaultMode": "default",
     "disableBypassPermissionsMode": "disable"
   },
   "model": "opus[1m]",
@@ -491,21 +490,8 @@
     ],
     "Notification": [
       {
-        "matcher": "permission_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/jon.gao/.config/llm-cli/hooks/claude_notification_hook.sh"
-          }
-        ]
-      },
-      {
         "matcher": "idle_prompt",
         "hooks": [
-          {
-            "type": "command",
-            "command": "/home/jon.gao/.config/llm-cli/hooks/claude_notification_hook.sh"
-          },
           {
             "type": "command",
             "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
@@ -538,5 +524,7 @@
     "claude-mem@thedotmack": true
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high"
+  "effortLevel": "high",
+  "tui": "fullscreen",
+  "skipAutoPermissionPrompt": true
 }
