@@ -31,7 +31,7 @@ Non-goals:
 
 Audience is Databricks engineers who already use Claude Code and want a more structured workflow. They are comfortable with CLI plugins and JSON configs. Distribution:
 - Playbook: committed under `docs/claude-workflow/` in this dotfiles repo, browsable on GitHub.
-- Plugin: published at `plugin-marketplace/eng-ingestion-team/claude-workflow-bootstrap/` -- team-scoped directory within the shared Databricks `plugin-marketplace` repo. Installed via `/plugin install claude-workflow-bootstrap` once the directory is registered in the marketplace index.
+- Plugin: published at `plugin-marketplace/experimental/teams/eng-ingestion/claude-workflow-bootstrap/` -- team-scoped directory within the shared Databricks `plugin-marketplace` repo. Installed via `/plugin install claude-workflow-bootstrap` once the plugin is registered in the single top-level marketplace index at `plugin-marketplace/.claude-plugin/marketplace.json` (new entry added to the `plugins[]` array).
 
 ## 4. Playbook Doc Design
 
@@ -87,23 +87,30 @@ All under `docs/claude-workflow/`, each 200-500 words, each linked from the rele
 ### 5.2 File Layout
 
 ```
-plugin-marketplace/eng-ingestion-team/claude-workflow-bootstrap/
-  plugin.json
-  marketplace.json
-  SKILL.md
-  README.md
-  scripts/
-    install.sh              # idempotent apply
-    uninstall.sh            # restore from .bak
-    install-db-agents.sh    # gh release download + wrapper
-    lib/merge-claude-md.sh
-    lib/patch-settings.sh
-  templates/
-    CLAUDE-HARD-RULES.md    # the block to merge into ~/.claude/CLAUDE.md
-    settings-fragment.json
-    team-cleanup.sh         # vendored from dotfiles .claude/helpers/
-    db-agents-wrapper.sh    # thin launcher for ~/.local/bin/db-agents
+plugin-marketplace/
+  .claude-plugin/
+    marketplace.json        # single top-level registry; plugins[] gets a new entry
+  experimental/teams/eng-ingestion/
+    REVIEWERS               # team-level review routing (already exists)
+    claude-workflow-bootstrap/
+      .claude-plugin/
+        plugin.json         # plugin manifest (name, version, description, author, skills)
+      skills/
+        claude-workflow-bootstrap/
+          SKILL.md          # THE interactive skill -- all install logic inline as bash heredocs
+      tests/
+        fixtures/            # fresh-claude/ and configured-claude/ settings.json fixtures
+        test-idempotent.sh   # idempotency + uninstall test
+      README.md             # human-facing plugin description
+      CHANGELOG.md          # version history (Keep-a-Changelog format)
+      REVIEWERS             # per-plugin review routing (AUTO_REQUEST: @jon-gao_data)
 ```
+
+**Layout notes:**
+- The plugin manifest lives at `<plugin-root>/.claude-plugin/plugin.json`, not at the plugin root. Verified against sibling plugins `ingestion-llm-tools` and `tmux-configurator` in the same team folder.
+- There is no `marketplace.json` inside the plugin. The shared marketplace keeps a single registry at `plugin-marketplace/.claude-plugin/marketplace.json`, where new plugins add an entry to `plugins[]` pointing at their `source: "./experimental/teams/eng-ingestion/<plugin-name>"`.
+- All install/uninstall/detect logic lives inline in `SKILL.md` as bash heredocs. This matches the team convention: neither `ingestion-llm-tools` nor `tmux-configurator` uses separate `scripts/` or `templates/` directories. The `agent-teams-ruflo-bootstrap` skill (619 lines, covers MCP config + CLAUDE.md merge + patches) is a nearby precedent -- all logic inline.
+- Content that would have lived in `templates/` (HARD RULES block, `team-cleanup.sh`) is vendored into the SKILL.md via single-quoted heredocs so bash does not expand `$` in the embedded content.
 
 ### 5.3 SKILL.md Behavior
 
@@ -214,12 +221,13 @@ Success criteria:
 ### Phase B -- Plugin Scaffold
 
 Artifacts:
-- `plugin.json`, `marketplace.json` with correct schema (validated by `plugin-builder:plugin-self-review`).
-- Empty but valid `SKILL.md` with frontmatter and section scaffolding.
-- `templates/` populated with final content.
-- `scripts/` with stub install/uninstall that exit 0 and log intent.
-- `README.md` for the plugin repo.
-- **Verification pass on db-agents hook distribution.** Before writing the Phase C install script, confirm exactly how `status-reporter.sh` and `auto-approve.sh` arrive on disk alongside the `.cjs` artifact -- embedded in the bundle and extracted on first run, separate release assets, or something else -- and record the finding in `appendix-databricks-tools.md`. User confirmed the hooks ship with the release; the mechanism detail is still open.
+- `.claude-plugin/plugin.json` with correct schema (name, version, description, author, `skills` array pointing at `./skills/claude-workflow-bootstrap`), validated by `plugin-builder:plugin-self-review`.
+- New `plugins[]` entry in the shared `plugin-marketplace/.claude-plugin/marketplace.json` (alphabetical order within `plugins[]`, `source` field: `"./experimental/teams/eng-ingestion/claude-workflow-bootstrap"`).
+- Empty but valid `skills/claude-workflow-bootstrap/SKILL.md` with frontmatter (name, description, license) and phase scaffolding -- install logic filled in during Phase C, not Phase B.
+- `README.md` for the plugin (what it does, prerequisites, install command, three subcommands default / `print-only` / `reset`, non-goals).
+- `CHANGELOG.md` with a v0.1.0 initial-release entry (Keep-a-Changelog format).
+- `REVIEWERS` file at the plugin root, routing to `@jon-gao_data` (matches sibling plugins).
+- **Verification pass on db-agents hook distribution.** Before writing the Phase C install logic, confirm exactly how `status-reporter.sh` and `auto-approve.sh` arrive on disk alongside the `.cjs` artifact -- embedded in the bundle and extracted on first run, separate release assets, or something else -- and record the finding in `appendix-databricks-tools.md`. User confirmed the hooks ship with the release; the mechanism detail is still open.
 
 Success criteria:
 - `plugin-builder:plugin-self-review` passes.
@@ -229,12 +237,12 @@ Success criteria:
 ### Phase C -- Interactive Flow + Install Scripts
 
 Artifacts:
-- Full SKILL.md interactive flow (detect -> checklist -> apply -> summary).
-- `scripts/install.sh` and helpers implement all 6 items from 5.4 with idempotency and `.bak`.
-- `scripts/install-db-agents.sh` implements item 5.4(f): locate latest release tag, download artifact, install wrapper on PATH, idempotent re-runs.
-- `scripts/uninstall.sh` implements the 5.7 reset flow.
-- State file format documented inline.
-- Test fixture: a fresh `~/.claude/` directory structure for dry-run.
+- Full SKILL.md interactive flow (preflight -> detect -> checklist -> apply -> summary), with every apply fragment inlined as a bash heredoc. No separate script files.
+- Apply logic for all 6 items from 5.4 lives inline as per-item Phase 4 subsections with idempotency checks (`.bak.<timestamp>` before any write, sentinel update in `~/.claude/.claude-workflow-bootstrap-state.json`, exact-command-path match for hook entries).
+- Item 5.4(f) apply subsection handles the full db-agents flow inline: latest-tag lookup via `gh release list`, `gh release download`, wrapper at `~/.local/bin/db-agents`, settings.json patch mirroring the 11-event mapping from `configs/claude/settings.json:273-500`.
+- Reset mode (5.7) lives inline as a Reset-mode subsection reading the sentinel state file and reversing each applied change.
+- State file format documented inline in the SKILL.md apply/reset subsections (schema: `.applied.<item-key>.{at, previous_value | script_path | tag | wrapper | artifact_dir | note}`).
+- Test fixtures under `tests/fixtures/` (fresh-claude/, configured-claude/) and `tests/test-idempotent.sh` covering items 5.4(a)/(b)/(d) against the fixtures. Items 5.4(c) (print-only), 5.4(e) (plugin-registry dependent), and 5.4(f) (network dependent) are not fixture-tested in v0.1; flagged for future coverage.
 
 Success criteria:
 - Install against empty fixture: all 6 items apply cleanly, state file created, `db-agents` resolves on PATH (`command -v db-agents` returns `~/.local/bin/db-agents`).
