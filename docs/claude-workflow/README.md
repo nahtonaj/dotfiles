@@ -144,3 +144,21 @@ The tail of the loop is three actions I do every time, not just when I feel like
 **PR review via `pr-review-toolkit:review-pr`.** When I open a PR, I run the review skill as a sanity check before asking a human. It is a cheap second pair of eyes.
 
 Then I close the Claude Code session and move on. The next time I open a session in this repo, claude-mem primes context automatically -- I do not re-explain what I was working on.
+
+---
+
+## 8. Common failure modes
+
+These are the mistakes I still make, organized by symptom. When a session is going wrong, I check this list before anything else.
+
+**Coordinator doing heavy work.** I open a file "just to check one thing" and half an hour later I am eight tool calls deep into a diff. Symptom: I cannot remember what the teammate is waiting for. Fix: stop, send the teammate a status update from whatever partial state I have, and delegate the open thread.
+
+**Agent spawn without `team_name`.** The spawn succeeds but `SendMessage` fails silently because there is no team to route through. Symptom: my teammate is "running" but never responds. Fix: `TeamDelete`, respawn with `team_name` set.
+
+**Skipping brainstorm.** I jump straight to writing a plan because the problem "seems obvious." Symptom: halfway through execution I realize two of the constraints contradict. Fix: pause, invoke `superpowers:brainstorming`, produce a spec, resume.
+
+**Claiming "tests pass" without running them.** HARD RULE 4 violation. Symptom: the PR lands and CI fails. Fix: always run the verification command and paste the last line of output.
+
+**Over-sharing between agents.** I include ten thousand lines of prior context in every agent prompt "just to be safe." Symptom: agents run out of context mid-task and their edits become erratic. Fix: trust the Pipeline Context heading -- if agent N+1 does not need agent N's output verbatim, summarize.
+
+**Polling teammates in-band.** I send `SendMessage` status-check DMs because I am impatient. Symptom: teammate inboxes fill with meta-messages that drown the real findings. Fix: read the persisted inbox file on disk (`~/.claude/teams/{team-name}/inboxes/*.json`) -- HARD RULE 3 explicitly permits this as verification, not polling.
