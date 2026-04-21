@@ -1,0 +1,241 @@
+#!/usr/bin/env zsh
+# ~/.zshrc — symlinked from dotfiles (nix only installs `antidote`).
+# Target: interactive shell ready in ~100ms. See nix/modules/zsh.nix.
+
+# ─── Env & PATH ────────────────────────────────────────────────────────
+if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+    . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+fi
+
+export EDITOR=nvim
+export NVM_DIR="$HOME/.nvm"
+export SDKMAN_DIR="$HOME/.sdkman"
+
+typeset -U path
+path=(
+    "$HOME/bin"
+    /usr/local/bin
+    /opt/homebrew/bin
+    /opt/homebrew/sbin
+    "$HOME/.local/bin"
+    "$HOME/.local/share/coursier/bin"
+    "$HOME/Library/Application Support/waveterm/bin"
+    $path
+)
+
+# ─── History ───────────────────────────────────────────────────────────
+HISTFILE=$HOME/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+mkdir -p "${HISTFILE:h}"
+setopt HIST_FCNTL_LOCK HIST_IGNORE_DUPS HIST_IGNORE_SPACE SHARE_HISTORY
+setopt NO_APPEND_HISTORY NO_EXTENDED_HISTORY NO_HIST_EXPIRE_DUPS_FIRST
+setopt NO_HIST_FIND_NO_DUPS NO_HIST_IGNORE_ALL_DUPS NO_HIST_SAVE_NO_DUPS
+
+# ─── Aliases ───────────────────────────────────────────────────────────
+alias ll='ls -al'
+alias jp='jupyter-lab --no-browser'
+alias lg='lazygit'
+alias vim='nvim'
+# Cherry-picked git aliases
+alias ga='git add'
+alias gaa='git add --all'
+alias gb='git branch'
+alias gc='git commit'
+alias gcam='git commit --all --message'
+alias gcmsg='git commit --message'
+alias gco='git checkout'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gf='git fetch'
+alias gl='git pull'
+alias glog='git log --oneline --decorate --graph'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias grb='git rebase'
+alias grbi='git rebase --interactive'
+alias gst='git status'
+alias gsw='git switch'
+alias gswc='git switch --create'
+# Nix rebuild (NOPASSWD'd in nix/hosts/darwin.nix)
+alias nrs='sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#jon-gao-mac'
+
+# ─── Plugins via antidote (static bundle, regenerated only when plugins.txt changes) ─
+_antidote_src="$HOME/.nix-profile/share/antidote/antidote.zsh"
+_plugins_txt="$HOME/dotfiles/configs/zsh/zsh_plugins.txt"
+_plugins_zsh="$HOME/.cache/zsh/zsh_plugins.zsh"
+if [[ -r $_antidote_src && -r $_plugins_txt ]]; then
+    if [[ ! $_plugins_zsh -nt $_plugins_txt ]]; then
+        mkdir -p "${_plugins_zsh:h}"
+        (source "$_antidote_src" && antidote bundle <"$_plugins_txt" >|"$_plugins_zsh")
+    fi
+    source "$_plugins_zsh"
+fi
+
+# ─── Completions (gated on bundle change, not time) ────────────────────
+autoload -Uz compinit
+if [[ ! -f ~/.zcompdump ]] || [[ $_plugins_zsh -nt ~/.zcompdump ]]; then
+    compinit
+    [[ -f ~/.zcompdump ]] && { zcompile -M ~/.zcompdump ~/.zcompdump } &!
+else
+    compinit -C
+fi
+
+# ─── Cached zoxide + fzf init (regenerated when binary is newer) ────────
+_zoxide_bin=$(command -v zoxide 2>/dev/null)
+_zoxide_init="$HOME/.cache/zsh/zoxide-init.zsh"
+if [[ -n $_zoxide_bin ]]; then
+    if [[ ! -f $_zoxide_init || $_zoxide_bin -nt $_zoxide_init ]]; then
+        mkdir -p "${_zoxide_init:h}"
+        zoxide init zsh >|"$_zoxide_init"
+    fi
+    source "$_zoxide_init"
+fi
+
+_fzf_bin=$(command -v fzf 2>/dev/null)
+_fzf_init="$HOME/.cache/zsh/fzf-init.zsh"
+if [[ -n $_fzf_bin && $options[zle] = on ]]; then
+    if [[ ! -f $_fzf_init || $_fzf_bin -nt $_fzf_init ]]; then
+        mkdir -p "${_fzf_init:h}"
+        fzf --zsh >|"$_fzf_init"
+    fi
+    source "$_fzf_init"
+fi
+
+# ─── Lazy NVM (source only on first use) ───────────────────────────────
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+    _nvm_lazy_load() {
+        unset -f nvm node npm npx yarn pnpm _nvm_lazy_load 2>/dev/null
+        source "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+    }
+    for _cmd in nvm node npm npx yarn pnpm; do
+        eval "$_cmd() { _nvm_lazy_load; $_cmd \"\$@\"; }"
+    done
+    unset _cmd
+fi
+
+# ─── Lazy SDKMAN ───────────────────────────────────────────────────────
+if [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]]; then
+    sdk() {
+        unset -f sdk
+        source "$SDKMAN_DIR/bin/sdkman-init.sh"
+        sdk "$@"
+    }
+fi
+
+# ─── Prompt ────────────────────────────────────────────────────────────
+autoload -U colors && colors
+setopt PROMPT_SUBST
+# Sourced from dotfiles so edits apply after reload.
+[ -r "$HOME/dotfiles/configs/zsh/databricks.zsh-theme" ] && \
+    source "$HOME/dotfiles/configs/zsh/databricks.zsh-theme"
+COMPLETION_WAITING_DOTS=true
+
+# ─── Vi-mode arrow key fix (history nav in all keymaps) ────────────────
+() {
+    while (( ARGC )); do
+        bindkey -M $1 '^[OA' up-line-or-history
+        bindkey -M $1 '^[[A' up-line-or-history
+        bindkey -M $1 '^[OB' down-line-or-history
+        bindkey -M $1 '^[[B' down-line-or-history
+        shift
+    done
+} emacs viins vicmd
+
+# fzf-tab: use fzf for the completion menu; preview with bat/eza where
+# available. These zstyles must be set AFTER compinit but BEFORE the first
+# tab press — sourcing them here is fine since fzf-tab is loaded above.
+zstyle ':completion:*' menu no
+zstyle ':completion:*:descriptions' format '[%d]'
+zstyle ':fzf-tab:complete:*' fzf-preview '
+    if [[ -d $realpath ]]; then
+        ls --color=always -la "$realpath" 2>/dev/null || ls -la "$realpath"
+    elif [[ -f $realpath ]]; then
+        head -n 50 "$realpath" 2>/dev/null
+    fi
+'
+
+# ─── Custom functions ──────────────────────────────────────────────────
+set-title() { echo -e "\e]0;$*\007"; }
+
+ssh() {
+    set-title $*
+    /usr/bin/ssh -2 $*
+    set-title $HOST
+}
+
+mkcd () {
+    case "$1" in
+        */..|*/../) cd -- "$1";;
+        /*/../*) (cd "${1%/../*}/.." && mkdir -p "./${1##*/../}") && cd -- "$1";;
+        /*) mkdir -p "$1" && cd "$1";;
+        */../*) (cd "./${1%/../*}/.." && mkdir -p "./${1##*/../}") && cd "./$1";;
+        ../*) (cd .. && mkdir -p "${1#.}") && cd "$1";;
+        *) mkdir -p "./$1" && cd "./$1";;
+    esac
+}
+
+# Yazi helper to cd to Yazi's exit directory.
+function y() {
+    local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+        builtin cd -- "$cwd"
+    fi
+    rm -f -- "$tmp"
+}
+
+separator() {
+    if [[ -z $COLUMNS ]]; then
+        COLUMNS=$(tput cols)
+    fi
+    local lengthOfTitle=$((${#1}+2))
+    local numberOfCharacters=$(( ($COLUMNS - $lengthOfTitle)/2 ))
+    printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf " ${1} "; printf "=%.0s"  $(seq 1 ${numberOfCharacters}); printf "\n"
+}
+
+# Resilient port-forwarding tunnel to arca.ssh. Detects prior autossh/ssh
+# holding the same ports and asks before killing them, so re-running
+# doesn't silently wipe state or fail with "Could not request local
+# forwarding".
+arcatunnel() {
+    local ports=(13100 13101 37777)
+    local to_kill=()
+    local stale_autossh
+    stale_autossh=$(pgrep -f "autossh.*arca\.ssh" 2>/dev/null)
+    [ -n "$stale_autossh" ] && to_kill+=(${=stale_autossh})
+    for p in "${ports[@]}"; do
+        local pids
+        pids=$(lsof -tiTCP:"$p" -sTCP:LISTEN 2>/dev/null)
+        [ -n "$pids" ] && to_kill+=(${=pids})
+    done
+    to_kill=(${(u)to_kill})
+    if [ ${#to_kill[@]} -gt 0 ]; then
+        echo "Conflicting processes on arca tunnel ports:" >&2
+        ps -o pid,comm,args -p ${to_kill[@]} 2>/dev/null | sed 's/^/  /' >&2
+        if read -q "?Kill them and continue? [y/N] "; then
+            echo
+            kill ${to_kill[@]} 2>/dev/null
+            sleep 0.5
+        else
+            echo
+            echo "arcatunnel aborted." >&2
+            return 1
+        fi
+    fi
+    AUTOSSH_POLL=30 AUTOSSH_GATETIME=0 autossh -M 0 -N \
+        -o ServerAliveInterval=30 \
+        -o ServerAliveCountMax=3 \
+        -o ExitOnForwardFailure=yes \
+        -L 13100:localhost:13100 \
+        -L 13101:localhost:13101 \
+        -L 37777:localhost:37777 \
+        -R 27124:localhost:27124 \
+        arca.ssh
+}
+
+aa() {
+    arca start "$@" || return
+    arcatunnel
+}

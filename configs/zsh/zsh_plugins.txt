@@ -1,0 +1,4 @@
+jeffreytse/zsh-vi-mode
+joshskidmore/zsh-fzf-history-search
+Aloxaf/fzf-tab
+zdharma-continuum/fast-syntax-highlighting
