@@ -162,3 +162,61 @@ These are the mistakes I still make, organized by symptom. When a session is goi
 **Over-sharing between agents.** I include ten thousand lines of prior context in every agent prompt "just to be safe." Symptom: agents run out of context mid-task and their edits become erratic. Fix: trust the Pipeline Context heading -- if agent N+1 does not need agent N's output verbatim, summarize.
 
 **Polling teammates in-band.** I send `SendMessage` status-check DMs because I am impatient. Symptom: teammate inboxes fill with meta-messages that drown the real findings. Fix: read the persisted inbox file on disk (`~/.claude/teams/{team-name}/inboxes/*.json`) -- HARD RULE 3 explicitly permits this as verification, not polling.
+
+---
+
+## 9. Minimum viable adoption
+
+The full loop is a lot to adopt at once. Here is the graduated path I recommend for a Databricks teammate going from zero to steady state. Each step has a one-line success check -- if the check passes, move on; if it does not, fix before proceeding.
+
+**Step 1 -- Install the bootstrap plugin.**
+
+```bash
+/plugin install claude-workflow-bootstrap
+```
+
+Success check: `claude-workflow-bootstrap` appears in `/plugin list`.
+
+The plugin lives at `plugin-marketplace/experimental/teams/eng-ingestion/claude-workflow-bootstrap/`. It configures your `~/.claude/CLAUDE.md` with HARD RULES, sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, installs the team-cleanup hook, and installs the db-agents binary + its integration hooks. See `appendix-databricks-tools.md` for what db-agents does and `appendix-claude-md.md` for the HARD RULES walkthrough.
+
+**Step 2 -- Try the loop on one small task.**
+
+Pick something throwaway: a README typo, a one-line refactor. Brainstorm it (overkill on purpose), write a two-task plan, execute with one agent, verify. Commit.
+
+Success check: you can recite, without looking, which skill runs in each phase.
+
+**Step 3 -- Add Superpowers.**
+
+```bash
+/plugin install superpowers
+```
+
+Success check: `superpowers:brainstorming`, `superpowers:writing-plans`, `superpowers:subagent-driven-development`, `superpowers:verification-before-completion` all appear in the skill list.
+
+Re-run Step 2's exercise using `superpowers:subagent-driven-development` instead of inline execution. Notice how much less context the coordinator holds.
+
+**Step 4 -- Adopt claude-mem.**
+
+```bash
+/plugin install claude-mem
+```
+
+Success check: open a new session tomorrow and run `claude-mem:mem-search "<something from today>"` -- it finds your session.
+
+**Step 5 -- Run db-agents on the side.**
+
+The bootstrap plugin already installed the binary. Start it on Arca:
+
+```bash
+nvm use 24 && db-agents
+```
+
+Port-forward 13100 from your Mac (SSH config: `LocalForward 13100 localhost:13100`). Open http://localhost:13100. See `appendix-databricks-tools.md` for full setup details.
+
+Success check: the dashboard shows at least one IDLE agent card for your current session.
+
+**Step 6 -- Read the failure-modes list (section 8) one more time.**
+
+You will repeat at least three of those mistakes in your first week. Having already seen them listed makes the debugging shorter.
+
+Success check: you catch yourself about to violate a HARD RULE, pause, and course-correct without being told.
