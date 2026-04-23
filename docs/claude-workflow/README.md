@@ -1,6 +1,6 @@
 # Claude Workflow Playbook
 
-A first-person walkthrough of how I run Claude Code day-to-day at Databricks. The loop is brainstorm, plan, execute, verify, and the mechanics are coordinator-plus-agent-teams. Fourteen sections, roughly 5200 words, skimmable in under 45 minutes.
+A first-person walkthrough of how I run Claude Code day-to-day at Databricks. The loop is brainstorm, plan, execute, verify, and the mechanics are coordinator-plus-agent-teams. Fourteen sections, roughly 5100 words, skimmable in under 45 minutes.
 
 Target reader: a Databricks engineer who already has Claude Code installed and wants a more structured workflow than ad-hoc prompting.
 
@@ -153,17 +153,42 @@ Then I close the Claude Code session and move on. The next time I open a session
 
 ## 8. CLAUDE.md strategy
 
-CLAUDE.md is the policy layer that makes the rest of this loop enforceable. There are two layers I actually maintain: `~/CLAUDE.md` (global, applies to every Claude Code session on this machine) and `<repo>/CLAUDE.md` (project-local, committed with the repo). Both get auto-injected into every session, which is why they need to stay lean and load-bearing.
+CLAUDE.md is the policy layer that makes the rest of this loop enforceable. There are two layers I maintain: `~/CLAUDE.md` (global, applies to every Claude Code session on this machine) and `<repo>/CLAUDE.md` (project-local, committed with the repo). Both auto-inject into every session, which is why they need to stay lean and load-bearing.
 
-**Why the HARD RULES are rules, not suggestions.** The top of `~/CLAUDE.md` has four numbered HARD RULES in caps-lock with "zero tolerance" language. That tone is deliberate. Each rule exists because I kept making the same specific mistake until I codified it. "Delegate implementation to agents" is there because I kept bloating my coordinator context with file reads. "Verify before you claim" is there because I kept forwarding unchecked assertions into PR bodies. The rules stop reading like rules the moment I soften them, so I do not soften them. The full walkthrough is in `appendix-claude-md.md`.
+**Why the HARD RULES are rules, not suggestions.** The top of `~/CLAUDE.md` has four numbered HARD RULES in caps-lock with "zero tolerance" language. Each rule exists because I kept making the same specific mistake until I codified it. The rules stop reading like rules the moment I soften them, so I do not soften them. Rule 1 excerpted verbatim:
 
-**Two-layer pattern: global vs. project.** Global rules are about how I drive Claude Code -- agent protocols, verification discipline, preference for ASCII. They travel with me to any repo. Project rules are about this particular codebase -- build commands, repo layout, conventions, what gets deployed where. Rule of thumb: if the guidance would survive cloning the repo to a new machine, put it project-local; if it would survive switching to a different repo, put it global. Concrete project-local content from `dotfiles/CLAUDE.md`: the `home-manager build --flake .#jon.gao@linux` invocation, the `nix/modules/` pointing at `configs/` as source of truth, the reminder that `.config/nvim` is a submodule. None of that is portable; all of it is essential inside this repo.
+```markdown
+## HARD RULES
 
-**Precedence.** When the rules collide, the order is: explicit user instruction in this turn > CLAUDE.md rules > skill instructions > default system behavior. The "Precedence" block at the top of `~/CLAUDE.md` makes this explicit so I can point to it when someone asks why Claude Code ignored a skill default. If a CLAUDE.md rule would block what I just asked for in-turn, Claude surfaces the conflict and asks rather than silently overriding either side.
+**1. Delegate implementation work to agents.**
+For any file editing, writing, multi-step research, or implementation,
+spawn an agent. Direct tool use is for trivial one-call read-only ops only.
 
-**Evolution policy.** A rule earns its place by causing a painful failure mode at least twice. Preferences ("ASCII only", "batch independent tool calls", terse conversational register) accrete more loosely; I move them out when they stop pulling weight. Rules get retired when Claude Code changes the underlying tool surface enough that the rule is protecting a thing that no longer exists. The "Living with a moving target" mindset from section 14 applies inward: I do not pin rules to a specific protocol version.
+Coordinator may use blocked tools directly ONLY for:
+- Reading one file to answer a factual question
+- Running one grep/glob/bash status check (git status, port check, ls)
+- Any single read-only call completing in seconds
+```
 
-**Memory is separate.** CLAUDE.md is policy; `claude-mem` auto-memory at `~/.claude/projects/*/memory/MEMORY.md` is history. Do not mix them. Rules are stable and I can recite them; memory is append-only and Claude reads it on my behalf. When I catch myself wanting to write a "remember this for next time" note into CLAUDE.md, that is a signal it belongs in memory instead.
+The full walkthrough of all four rules is in `appendix-claude-md.md`.
+
+**Two-layer pattern: global vs. project.** Global rules are about how I drive Claude Code -- agent protocols, verification discipline, ASCII preference. They travel with me to any repo. Project rules are about this particular codebase. Rule of thumb: guidance that survives cloning the repo to a new machine goes project-local; guidance that survives switching to a different repo goes global. From `dotfiles/CLAUDE.md` Conventions, verbatim:
+
+```markdown
+## Conventions
+
+- Config source files live in `configs/`, NOT directly in the repo root
+- macOS-only modules go in `nix/modules-darwin/`
+- `flakePath` refers to the repo root in Nix expressions
+```
+
+None of those lines is portable; all are essential inside this repo. The global rules say nothing about Nix because nothing about Nix travels to other repos.
+
+**Precedence.** When the rules collide, the order is: explicit user instruction in this turn > CLAUDE.md rules > skill instructions > default system behavior. The "Precedence" block in `~/CLAUDE.md` makes this explicit so I can point to it when someone asks why Claude Code ignored a skill default.
+
+**Evolution policy.** A rule earns its place by causing a painful failure mode at least twice. Preferences ("ASCII only", "batch independent tool calls", terse conversational register) accrete more loosely. Rules get retired when Claude Code changes the underlying tool surface enough that the rule is protecting a thing that no longer exists. The "Living with a moving target" mindset from section 14 applies inward: I do not pin rules to a specific protocol version.
+
+**Memory is separate.** CLAUDE.md is policy; `claude-mem` auto-memory at `~/.claude/projects/*/memory/MEMORY.md` is history. Do not mix them. When I catch myself wanting to write a "remember this for next time" note into CLAUDE.md, that is a signal it belongs in memory instead.
 
 See `appendix-claude-md.md` for the rules walkthrough and the rationale for the specific four HARD RULES.
 
@@ -173,7 +198,7 @@ See `appendix-claude-md.md` for the rules walkthrough and the rationale for the 
 
 Claude Code runs on a remote dev host (Arca) over SSH. SSH drops are routine; browser tabs crash; the laptop suspends. Persistence is what lets me tolerate all three without losing session state.
 
-**The threat model.** An uninterrupted 4-hour coordinator session is fictional. In reality the network flakes three times, the laptop lid closes once, and the Arca host restarts for a security update sometime during the week. I need a persistence story for each of those layers or the loop stops partway through.
+**The threat model.** An uninterrupted 4-hour coordinator session is fictional. In reality the network flakes three times, the laptop lid closes once, and the Arca host restarts for a security update sometime during the week.
 
 **Layer one: tmux for the interactive session.** My Linux zshrc auto-starts tmux on login. From `configs/zsh/zshrc.linux:8-11`:
 
@@ -183,13 +208,40 @@ if [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z
 fi
 ```
 
-`tmux -A` means "attach to the default session, creating it if it does not exist." The first SSH login creates session `default`; every subsequent login reattaches. The Claude Code CLI runs inside that session. When SSH drops, the CLI keeps running; when I reconnect, I am back where I left off with scrollback intact.
+`tmux -A` attaches to the default session or creates it. First SSH login creates session `default`; every subsequent login reattaches. The Claude Code CLI runs inside that session. When SSH drops, the CLI keeps running; when I reconnect, scrollback is intact.
 
-**Layer two: per-agent tmux-backed PTYs via db-agents.** `db-agents` spawns every teammate inside its own tmux session named `db-agent-*`. Each agent's turn-by-turn state lives in tmux buffer. When the `db-agents` daemon restarts (for example after the Arca host reboots), it rediscovers those sessions and re-binds its bookkeeping to maintain PTY proxy consistency. The agent does not restart; the proxy does.
+**Layer two: per-agent tmux-backed PTYs via db-agents.** `db-agents` spawns every teammate inside its own tmux session named `db-agent-*`. Each agent's turn-by-turn state lives in that tmux buffer. When the `db-agents` daemon restarts (for example after the Arca host reboots), it rediscovers those sessions and re-binds bookkeeping to maintain PTY proxy consistency. The agent does not restart; the proxy does.
 
-**Port-forward reminder.** The dashboard serves `:13100` on Arca. On my laptop I either add `LocalForward 13100 localhost:13100` to `~/.ssh/config` for the Arca host, or run `arca et -t 13100` ad-hoc. The dashboard at `http://localhost:13100` shows each agent's state (IDLE / BUSY / INPUT) and lets me intervene without opening ten Claude Code panes.
+**Port-forward.** The dashboard serves `:13100` on Arca. From my laptop:
 
-**Recovery drill.** SSH drops mid-task: I reconnect, the shell runs `tmux -A`, I land back in the coordinator session. Dashboard tab crashes: refresh; the daemon re-serves from in-memory state. Arca reboots: db-agents restarts on boot, rediscovers the `db-agent-*` tmux sessions, re-binds. None of these recoveries require me to re-explain context to Claude Code.
+```bash
+# ad-hoc, once per laptop session
+arca et -t 13100
+
+# or persistent, in ~/.ssh/config for the arca host
+# LocalForward 13100 localhost:13100
+```
+
+Dashboard at `http://localhost:13100` shows each agent's state (IDLE / BUSY / INPUT) and lets me intervene without opening ten Claude Code panes.
+
+**Recovery drill: SSH drops, you come back.**
+
+```bash
+# laptop reconnects after dropped link / lid close / hotel wifi flake
+ssh arca
+
+# zshrc auto-runs `tmux -A` for you, reattaching session "default"
+# the Claude Code CLI is still running in its pane, mid-turn if needed
+# scrollback survived; no context re-explanation needed
+
+# (in another laptop pane, re-forward if it dropped)
+arca et -t 13100
+
+# dashboard at http://localhost:13100 still shows the in-flight team
+# with live per-agent state -- db-agents daemon never died
+```
+
+No team respawn. No re-priming of context.
 
 **Where persistence stops helping.** The agent process itself dying. When an agent crashes mid-edit on a permission prompt, its tmux pane is gone; tmux has nothing to restore. Recovery then falls to the coordinator: finish the work directly, surgically remove the dead member from the team's `config.json` so `TeamDelete` can proceed, note the detour in the commit. Persistence saves you from a dead transport, not a dead process.
 
@@ -199,78 +251,158 @@ See `appendix-databricks-tools.md` for the db-agents install walkthrough and the
 
 ## 10. Coordinator + agent teams strategy
 
-Section 5 and `appendix-agent-teams.md` cover the mechanics -- spawn, SendMessage, shutdown, inbox verification. This section is the question that comes earlier: given a task, do I spawn a full team, a single agent, or just do it myself?
+Section 5 and `appendix-agent-teams.md` cover the mechanics. This section is the question that comes earlier: given a task, do I spawn a full team, a single agent, or just do it myself?
 
 **The three-way decision.**
 
-*Coordinator direct.* One read or one bounded edit, no multi-step research, no permissions surface. The carve-outs are narrow: a single `Read` to answer a factual question, a single `grep` or `git status`, or the specific case where a delegated agent is blocked on a permission prompt mid-edit and the work is small enough that routing around the prompt costs more than doing the edit. That last case is earned by a concrete failure mode, not free license. When a recent `dotfiles-ascii-patcher` agent crashed awaiting a permission dialog, I applied the six em-dash replacements directly and recorded why in the commit (`ae5978c`). The next three tasks went back to full delegation.
+*Coordinator direct.* One read or one bounded edit, no multi-step research, no permissions surface. Example -- a factual status check the coordinator runs inline rather than spawning:
 
-*Single agent, no team.* Explore/Glob/Grep for a read-only lookup. HARD RULE 2 explicitly allows this one exception: a quick agent for a research question when no writes are coming. Anything that might produce an edit stays in a team even if only one agent runs, because I want the shutdown protocol and the inbox-file verification path.
+```bash
+grep -n 'parse_metric_key' src/handlers.py
+```
 
-*Full team with a lead.* The default. Any file edit, any multi-step research, any spawn that might beget a second spawn. Named team, named agents, explicit `shutdown_request` / `shutdown_response` handshake, `TeamDelete` at the end. Anything below this threshold is a judgment call I lean conservative on -- teams are cheap, uncoordinated spawns are expensive.
+One read, one line of output, no follow-up. Spawning an agent for that is waste. The other direct-execution case is the permission-prompt escape hatch: when a delegated agent crashes mid-edit on a dialog and the remaining work is a small substitution, the coordinator applies it directly. Earned by failure, not free license. When `dotfiles-ascii-patcher` crashed on a permission dialog mid-task, I applied the six em-dash replacements directly and recorded why in commit `ae5978c`. The next three tasks went back to full delegation.
 
-**Why the coordinator stays lightweight even for a one-agent team.** Context economy. Every token I spend reading a file is a token I cannot spend deciding what the next agent does. When I violate "coordinator stays lightweight" it is always gradual -- one harmless read leads to a second, and fifteen tool calls later I have forgotten which teammate is waiting on which handoff. That failure mode is exactly what HARD RULE 1 exists to defend against.
+*Single agent, no team.* Explore/Glob/Grep for a read-only lookup. HARD RULE 2 explicitly allows this one exception:
+
+```
+Agent({
+  subagent_type: "Explore",
+  description: "callsite survey",
+  prompt: "Find every callsite of `parse_metric_key` in `src/` and report file:line plus 3 lines of surrounding context."
+})
+```
+
+No `team_name`, no shutdown protocol. Anything that might produce an edit stays in a team even if only one agent runs, because I want the shutdown handshake and inbox-file verification.
+
+*Full team with a lead.* The default. Any file edit, any multi-step research, any spawn that might beget a second spawn. The three-call spawn shape:
+
+```
+TeamDelete({team_name: "fix-migration"})         # defensive cleanup
+TeamCreate({team_name: "fix-migration"})
+TaskCreate({title: "Patch migration 0042 backfill"})
+Agent({
+  name: "coder",
+  team_name: "fix-migration",
+  subagent_type: "backend-dev",
+  run_in_background: true,
+  prompt: "Edit migrations/0042_user_schema.sql so the backfill runs in batches of 10k rows..."
+})
+```
+
+Named team, named agent, explicit `shutdown_request` / `shutdown_response` handshake, `TeamDelete` at the end.
+
+**Why the coordinator stays lightweight even for a one-agent team.** Context economy. Every token I spend reading a file is a token I cannot spend deciding what the next agent does. When I violate "coordinator stays lightweight" it is always gradual -- one harmless read leads to a second, and fifteen tool calls later I have forgotten which teammate is waiting on which handoff.
 
 **Team shapes I have actually run.**
 
 - *Sole-coder team.* One coder, several follow-up agents. Useful when the spec fits in one head but the follow-ups (build, test, commit, review) fan out.
-- *Dual-worktree team.* Two coder agents, each in its own worktree, each in its own repo. A recent session had `plugin-coder` shipping a 21-commit branch in the plugin marketplace while `dotfiles-ascii-patcher` fixed six em-dashes in dotfiles so the plugin could vendor a source file verbatim. The coordinator used `SendMessage` to hand off when the upstream patch landed.
-- *Investigator plus antagonist.* A debugging team where one agent proposes root causes and the other's only job is to try to falsify them. Covered in detail in section 11.1.
+- *Dual-worktree team.* Two coder agents, each in its own worktree, each in its own repo. A recent session had `plugin-coder` shipping a 21-commit branch in the plugin marketplace while `dotfiles-ascii-patcher` fixed em-dashes in dotfiles.
+- *Investigator plus antagonist.* Detailed in section 11.1.
 
-See `appendix-agent-teams.md` for the protocol details (spawn, SendMessage, shutdown, inbox verification).
+See `appendix-agent-teams.md` for the protocol details.
 
 ---
 
 ## 11. Parallelization playbook
 
-Four named patterns. Each one I have run at least once; each one names when to use it, the shape of the team, and a concrete example. I reach for these in this order when a task looks parallelizable.
+Four named patterns. Each one I have run at least once; each names when to use it, the shape of the team, and a concrete example.
 
 ### 11.1 Antagonist investigation
 
-*When.* Root-cause debugging with two or more plausible hypotheses. The failure mode of a single investigator agent is confirmation bias: it latches onto the first hypothesis that fits the symptom and stops looking for counter-evidence.
+*When.* Root-cause debugging with two or more plausible hypotheses. Single-investigator failure mode: confirmation bias on the first hypothesis that fits.
 
-*Shape.* Two agents, both read-only. The **investigator** emits candidate hypotheses with proposed verification commands and expected observations. The **antagonist** gets a single-line mandate: "for each hypothesis, either produce evidence that rules it out, or flag insufficient data." Both run in parallel under `isolation: "worktree"` when code-reading is involved. The coordinator only accepts the hypothesis that survives the antagonist pass.
+*Shape.* Two read-only agents. Investigator emits ranked hypotheses; antagonist tries to falsify each one.
 
-*Example.* SC-227980 presented three candidate causes for a spike in the probe dashboard: probe over-emission, pod restart artifacts, and Prometheus counter resets. Each was refuted by specific evidence -- probe rates were flat across the window, the pod uptime graph was continuous, Prometheus counters showed monotonic growth -- before the real cause, an M3 query-layer phantom read, was accepted. Running antagonist-first meant I committed no code to the wrong fix.
+```
+# investigator -- produce ranked candidates
+Agent({
+  name: "investigator",
+  team_name: "rca-sc227980",
+  prompt: "Read the alert config at configs/prometheus/probes.yaml and the probe code at src/probes/ingestion_kafka.go. Produce a ranked list of candidate root causes for the observed alert spike, each paired with the specific evidence you would collect to confirm it."
+})
 
-*Why it works.* Bias is suppressed by making the skeptic role an explicit agent with a refutation-only brief. Three minutes of "refute this" routinely saves three hours of chasing the wrong trace.
+# antagonist -- refute or flag under-evidenced (spawned with investigator findings in Pipeline Context)
+Agent({
+  name: "antagonist",
+  team_name: "rca-sc227980",
+  prompt: "For each candidate hypothesis in <investigator findings inlined>, produce evidence that rules it out, or flag the candidate as under-evidenced. Assume the investigator is wrong until proven otherwise."
+})
+```
+
+*Example.* SC-227980 presented three candidates -- probe over-emission, pod restart artifacts, Prometheus counter resets -- each refuted by evidence before the real cause (an M3 query-layer phantom read) was accepted. Running antagonist-first meant I committed no code to the wrong fix.
+
+*Why it works.* An explicit skeptic role with a refutation-only brief suppresses the confirmation-bias default.
 
 ### 11.2 Build / test / commit-push / review fan-out
 
-*When.* A coder agent has just finished an implementation. The follow-up activities -- build verification, test run, commit-and-push, PR self-review -- have no mutual dependencies.
+*When.* A coder agent has just finished an implementation. The follow-ups have no mutual dependencies.
 
-*Shape.* Four parallel agents spawned in a single coordinator message:
+*Shape.* Four parallel agents, spawned in a single coordinator message:
 
-- `build-validator` runs the build command and captures output.
-- `test-runner` runs tests and captures output.
-- `commit-and-push-er` uses `commit-commands:commit-push-pr`.
-- `reviewer` uses `pr-review-toolkit:review-pr`.
+```
+# one coordinator message, four Agent calls in parallel
+Agent(subagent_type="general-purpose", name="build-validator",
+      team_name="ship-v2", isolation="worktree",
+      prompt="Run `make build` and report the last 20 lines of output plus exit code.")
 
-Each uses `isolation: "worktree"` if doing writes; read-only ones share the checkout. The coordinator waits for SendMessage notifications rather than polling teammates in-band.
+Agent(subagent_type="general-purpose", name="test-runner",
+      team_name="ship-v2", isolation="worktree",
+      prompt="Run `make test` and report pass/fail counts and any stderr.")
 
-*Example.* The recent `claude-workflow-bootstrap` plugin PR -- 21 commits, sibling dotfiles patch, full test matrix, marketplace registration, plugin self-review -- ran that tail sequentially inside one agent. The next plugin I ship will fan this out. Wall-clock savings are real because build and test are each several minutes and they share no state with commit ordering or review.
+Agent(subagent_type="general-purpose", name="committer",
+      team_name="ship-v2", isolation="worktree",
+      prompt="Use commit-commands:commit-push-pr to commit and push the current branch; report the PR URL.")
 
-*Why it works.* Build is orthogonal to commit ordering. Tests are orthogonal to review. Running them serially is pure wall-clock waste.
+Agent(subagent_type="general-purpose", name="reviewer",
+      team_name="ship-v2", isolation="worktree",
+      prompt="Invoke pr-review-toolkit:review-pr on the newly-opened PR; report the summary.")
+```
+
+*Example.* The recent `claude-workflow-bootstrap` PR ran that tail sequentially inside one agent. The next plugin I ship will fan it out -- build and test are each several minutes and share no state with commit ordering or review.
+
+*Why it works.* Build, test, commit, and review are mutually orthogonal; serial execution is pure wall-clock waste.
 
 ### 11.3 Specialization via narrow scope
 
 *When.* Any task big enough that a generalist agent would swing across unrelated domains. Cross-repo work is the cleanest case.
 
-*Shape.* One agent per concern, each with a scoped skill set. An agent's permission surface should be exactly the tools and paths it needs and nothing else.
+*Shape.* One agent per concern, each scoped to a single repo and a narrow skill set.
 
-*Example.* The bootstrap-plugin session ran `plugin-coder` (`superpowers:subagent-driven-development` + `commit-commands` + `plugin-builder:plugin-self-review`) inside the plugin-marketplace worktree, while `dotfiles-ascii-patcher` (`dotfiles-editor` + `commit-commands`) ran inside dotfiles fixing upstream em-dashes. Neither agent could touch the other's repo; neither needed to. When one got stuck on a permission prompt, replacement was cheap because the scope was already small.
+```
+# two agents, two repos, one team -- pattern from a real cross-repo ship
+Agent(name="plugin-coder",
+      team_name="plugin-ship", isolation="worktree",
+      prompt="Work in /home/jon.gao/plugin-marketplace. Ship the bootstrap plugin branch. Skills: superpowers:subagent-driven-development, plugin-builder:plugin-self-review, commit-commands:commit.")
 
-*Why it works.* Narrow scope shrinks the permission surface (fewer prompts to block on), keeps each agent's context window small, and makes replacement cheap when one crashes. The upstream-first fix pattern -- fix the source rather than paper over the downstream -- composes naturally with this: one specialized agent patches upstream while another proceeds on disjoint downstream work.
+Agent(name="dotfiles-ascii-patcher", subagent_type="dotfiles-editor",
+      team_name="plugin-ship", isolation="worktree",
+      prompt="Work in /home/jon.gao/dotfiles. Replace em-dashes in configs/claude/team-cleanup.sh with `--`. Commit via commit-commands:commit.")
+```
 
-### 11.4 Skills and plugins as the composition API
+Neither agent can touch the other's repo; neither needs to. When one got stuck on a permission prompt, replacement was cheap because the scope was already small.
 
-*When.* Whenever the right skill exists for a subtask, the coordinator's job is to pick the skill for the role, not to hand-roll the work.
+*Why it works.* Narrow scope shrinks the permission surface, keeps context small, and makes replacement cheap. The upstream-first fix pattern composes naturally: one agent patches the source while another proceeds on disjoint downstream work.
 
-*Shape.* Each spawned agent receives a named skill or plugin as its primary tool. The coordinator composes; the skill executes. Picking the right skill per role is the highest-leverage thing the coordinator does.
+### 11.4 Skills and plugins as composition API
 
-*Example.* The bootstrap-plugin session composed `superpowers:subagent-driven-development` (execution discipline), `plugin-builder:plugin-self-review` (marketplace compliance validation), and `commit-commands:commit` (commit-message format). I did not re-derive any of the three. Somebody else maintains each; the composition was almost free.
+*When.* Whenever the right skill exists for a subtask, the coordinator picks the skill for the role instead of hand-rolling the work.
 
-*Why it works.* Skills encode other people's lessons. Every token I spend picking a skill for a role is higher-leverage than a token spent reinventing commit-message formatting or plugin-review heuristics. The coordinator's taste -- which skills match which roles -- is the part I keep sharpening; the skill internals are not my problem.
+*Shape.* Each agent receives a named skill or plugin chain as its primary tool.
+
+```
+Agent(name="feature-doer", team_name="feature-x",
+      prompt="""
+  1. Invoke superpowers:brainstorming to produce the spec.
+  2. Hand off to superpowers:writing-plans for the plan.
+  3. Execute via superpowers:subagent-driven-development.
+  4. Commit with commit-commands:commit-push-pr.
+""")
+```
+
+*Example.* The bootstrap-plugin session composed `superpowers:subagent-driven-development` (execution discipline), `plugin-builder:plugin-self-review` (marketplace compliance validation), and `commit-commands:commit` (commit-message format). I did not re-derive any of the three; composition was nearly free.
+
+*Why it works.* Skills encode other people's lessons. Coordinator taste -- which skills match which roles -- is the leveraged part; skill internals are not my problem.
 
 See `appendix-skills.md` for the specific Superpowers skills this playbook depends on and `appendix-agent-teams.md` for the spawn/coordinate/shutdown protocol.
 
