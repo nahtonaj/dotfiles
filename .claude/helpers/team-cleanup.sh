@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# team-cleanup.sh — Clean up stale Claude Code team/task directories
+# team-cleanup.sh -- Clean up stale Claude Code team/task directories
 # Runs on SessionEnd. Removes teams whose tmux panes (lead + members) are ALL dead.
 # Safety: skips recently modified configs and requires ALL panes dead before removal.
 
@@ -12,7 +12,7 @@ fi
 
 TEAMS_DIR="$HOME/.claude/teams"
 TASKS_DIR="$HOME/.claude/tasks"
-STALE_THRESHOLD=60  # seconds — skip configs modified within this window
+STALE_THRESHOLD=60  # seconds -- skip configs modified within this window
 
 # Exit early if no teams directory
 if [ ! -d "$TEAMS_DIR" ]; then
@@ -25,9 +25,9 @@ if command -v tmux &>/dev/null && tmux info &>/dev/null 2>&1; then
   live_panes=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null || true)
 fi
 
-# If we can't check tmux at all, bail out — never remove what we can't verify
+# If we can't check tmux at all, bail out -- never remove what we can't verify
 if [ -z "$live_panes" ]; then
-  echo >&2 "[team-cleanup] Cannot reach tmux — skipping all teams"
+  echo >&2 "[team-cleanup] Cannot reach tmux -- skipping all teams"
   exit 0
 fi
 
@@ -56,7 +56,7 @@ for team_dir in "$TEAMS_DIR"/*/; do
   # Condition 2 & 3: extract ALL pane IDs (lead + members) from config
   all_panes=$(grep -oE '%[0-9]+' "$config" 2>/dev/null || true)
 
-  # No pane references at all — can't verify, skip
+  # No pane references at all -- can't verify, skip
   if [ -z "$all_panes" ]; then
     echo >&2 "[team-cleanup] Skipping $team_name (no pane references in config)"
     continue
@@ -76,7 +76,7 @@ for team_dir in "$TEAMS_DIR"/*/; do
     continue
   fi
 
-  # All panes confirmed dead — safe to remove
+  # All panes confirmed dead -- safe to remove
   if [ "$DRY_RUN" = true ]; then
     echo >&2 "[team-cleanup] DRY-RUN: would remove $team_name (all panes dead)"
   else
