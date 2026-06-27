@@ -123,14 +123,6 @@ To extract and document domain language:
    - **Aliases**: Other names for the same concept (candidates for refactoring)
 4. Flag where the same term has different meanings across contexts (polysemy = context boundary)
 
-## Ruflo Integration for Persistence
-
-Store your DDD analysis results DIRECTLY in agentDB after completing work:
-- Call `ToolSearch` with query `select:mcp__ruflo__agentdb_hierarchical-store,mcp__ruflo__agentdb_hierarchical-recall,mcp__ruflo__agentdb_pattern-store` to load agentDB tools
-- `mcp__ruflo__agentdb_hierarchical-store` with `key: "context-map-{project}-{date}"`, `value: <your DDD analysis>`
-- `mcp__ruflo__agentdb_pattern-store` for discovered DDD patterns
-- `mcp__ruflo__memory_store` with namespace `"patterns"` for cross-session reusable insights
-- Send coordinator a coordination signal with the agentDB key reference after storing
 
 ## Output Format
 

@@ -4,5 +4,8 @@
   home.username = "jon";
   home.homeDirectory = "/home/jon";
 
-  custom.databricks.enable = true;
+  imports = [
+    ../modules/fish.nix
+    ../modules/hyprland.nix
+  ];
 }
