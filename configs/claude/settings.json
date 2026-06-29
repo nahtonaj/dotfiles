@@ -90,7 +90,6 @@
       "mcp__glean__search",
       "mcp__glean__get_document_content",
       "Bash(node .claude/*)",
-      "mcp__ruflo__*",
       "Bash(env:*)",
       "Bash(printenv:*)",
       "Bash(uname:*)",

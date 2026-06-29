@@ -38,6 +38,18 @@
         ];
       };
 
+      homeConfigurations."jon@arch" = home-manager.lib.homeManagerConfiguration {
+        pkgs = import nixpkgs {
+          system = linuxSystem;
+          config.allowUnfree = true;
+        };
+        extraSpecialArgs = { flakePath = self; };
+        modules = [
+          ./nix/home/default.nix
+          ./nix/home/arch.nix
+        ];
+      };
+
       # nix-darwin + home-manager for macOS
       darwinConfigurations.jon-gao-mac = nix-darwin.lib.darwinSystem {
         system = darwinSystem;
