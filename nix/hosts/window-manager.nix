@@ -1,7 +1,7 @@
 { config, pkgs, lib, windowManager, ... }:
 
 # System-level window manager toggle.
-# The flake sets `windowManager` to "aerospace" or "yabai". Only the selected
+# The flake sets `windowManager` to "aerospace", "yabai", or "omniwm". Only the selected
 # backend's packages and launchd agents are provisioned, so only one runs.
 #
 # The chosen backend is also written to /etc/window-manager-backend so
@@ -11,10 +11,11 @@
 let
   isAerospace = windowManager == "aerospace";
   isYabai = windowManager == "yabai";
+  isOmniwm = windowManager == "omniwm";
 in
 
-assert lib.assertMsg (isAerospace || isYabai)
-  "windowManager must be \"aerospace\" or \"yabai\", got \"${windowManager}\"";
+assert lib.assertMsg (isAerospace || isYabai || isOmniwm)
+  "windowManager must be \"aerospace\", \"yabai\", or \"omniwm\", got \"${windowManager}\"";
 
 {
   environment.systemPackages =
@@ -35,6 +36,21 @@ assert lib.assertMsg (isAerospace || isYabai)
       ProcessType = "Interactive";
       StandardOutPath = "/tmp/aerospace.out.log";
       StandardErrorPath = "/tmp/aerospace.err.log";
+    };
+  };
+
+  # OmniWM is brew-installed (not nixpkgs), so we point the agent at the
+  # /Applications app bundle. OmniWM's own login-item is disabled (see plan
+  # Task 2) so this agent is the single launch path, matching the aerospace
+  # pattern: switching backends via darwin-rebuild stops/starts the process.
+  launchd.user.agents.omniwm = lib.mkIf isOmniwm {
+    serviceConfig = {
+      ProgramArguments = [ "/Applications/OmniWM.app/Contents/MacOS/OmniWM" ];
+      KeepAlive = true;
+      RunAtLoad = true;
+      ProcessType = "Interactive";
+      StandardOutPath = "/tmp/omniwm.out.log";
+      StandardErrorPath = "/tmp/omniwm.err.log";
     };
   };
 
@@ -69,8 +85,8 @@ assert lib.assertMsg (isAerospace || isYabai)
   };
 
   # macOS "Switch to Desktop N" shortcuts (alt+1..0). IDs 118-127 in
-  # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in
-  # aerospace mode so aerospace's own alt+N bindings aren't shadowed.
+  # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in any
+  # non-yabai mode (aerospace/omniwm) so their own alt+N bindings aren't shadowed.
   #
   # Caveat: on macOS 26 (Tahoe), the plist write alone doesn't always
   # register the hotkeys with WindowServer — verified in practice. One-time

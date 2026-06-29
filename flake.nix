@@ -20,9 +20,9 @@
       linuxSystem = "x86_64-linux";
       darwinSystem = "aarch64-darwin";
 
-      # Flip between "aerospace" and "yabai"; `darwin-rebuild switch` applies.
+      # Flip between "aerospace", "yabai", and "omniwm"; `darwin-rebuild switch` applies.
       # Only one window manager service runs at a time.
-      windowManager = "aerospace";
+      windowManager = "omniwm";
     in
     {
       # Standalone home-manager for Linux
