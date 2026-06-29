@@ -29,7 +29,7 @@ assert lib.assertMsg (isAerospace || isYabai)
   # via darwin-rebuild actually stops/starts the process.
   launchd.user.agents.aerospace = lib.mkIf isAerospace {
     serviceConfig = {
-      ProgramArguments = [ "${pkgs.aerospace}/bin/aerospace" ];
+      ProgramArguments = [ "${pkgs.aerospace}/Applications/AeroSpace.app/Contents/MacOS/AeroSpace" ];
       KeepAlive = true;
       RunAtLoad = true;
       ProcessType = "Interactive";
