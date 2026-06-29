@@ -12,7 +12,10 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-# after-startup-command = ['exec-and-forget borders active_color=0xb121bef7 inactive_color=0x00000000 width=10.0']
+after-startup-command = [
+    'exec-and-forget /Users/jon.gao/dotfiles/.config/aerospace/balance-spaces.sh',
+    'exec-and-forget sleep 2 && sketchybar --reload',
+]
 exec-on-workspace-change = ['/bin/bash', '-c',
   'sketchybar --trigger wm_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | cut -d" " -f1)',
 ]
@@ -37,7 +40,7 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # See: https://nikitabobko.github.io/AeroSpace/guide#layouts
 # The 'accordion-padding' specifies the size of accordion padding
 # You can set 0 to disable the padding feature
-accordion-padding = 60
+accordion-padding = 67
 
 # Possible values: tiles|accordion
 default-root-container-layout = 'tiles'
@@ -234,7 +237,7 @@ ctrl-shift-l = [
 # 'service' binding mode declaration.
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
 [mode.service.binding]
-esc = ['reload-config', 'mode main', 'exec-and-forget sketchybar --reload']
+esc = ['reload-config', 'mode main', 'exec-and-forget pkill sketchybar', 'exec-and-forget /Users/jon.gao/dotfiles/.config/aerospace/balance-spaces.sh']
 r = ['flatten-workspace-tree', 'mode main'] # reset layout
 #s = ['layout sticky tiling', 'mode main'] # sticky is not yet supported https://github.com/nikitabobko/AeroSpace/issues/2
 f = ['layout floating tiling', 'mode main'] # Toggle between floating and tiling layout
@@ -289,8 +292,6 @@ alt-shift-l = ['join-with right', 'mode main']
 # run = 'layout floating'
 # check-further-callbacks = true
 
-# Workspace to monitor assignment
-# Workspace 10 will be assigned to monitor 2 when available
-# When monitor 2 is not present, aerospace will automatically assign it to available monitors
-[workspace-to-monitor-force-assignment]
-10 = 'secondary'  # Assign to secondary monitor, falls back to primary if unavailable
+# Workspace-to-monitor distribution is handled dynamically by balance-spaces.sh
+# (invoked from the service-mode esc reload binding and after-startup-command).
+# Static [workspace-to-monitor-force-assignment] is intentionally omitted.
