@@ -22,7 +22,7 @@
 
       # Flip between "aerospace" and "yabai"; `darwin-rebuild switch` applies.
       # Only one window manager service runs at a time.
-      windowManager = "yabai";
+      windowManager = "aerospace";
     in
     {
       # Standalone home-manager for Linux
