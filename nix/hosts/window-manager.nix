@@ -1,7 +1,7 @@
 { config, pkgs, lib, windowManager, ... }:
 
 # System-level window manager toggle.
-# The flake sets `windowManager` to "aerospace" or "yabai". Only the selected
+# The flake sets `windowManager` to "aerospace", "yabai", or "omniwm". Only the selected
 # backend's packages and launchd agents are provisioned, so only one runs.
 #
 # The chosen backend is also written to /etc/window-manager-backend so
@@ -85,8 +85,8 @@ assert lib.assertMsg (isAerospace || isYabai || isOmniwm)
   };
 
   # macOS "Switch to Desktop N" shortcuts (alt+1..0). IDs 118-127 in
-  # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in
-  # aerospace mode so aerospace's own alt+N bindings aren't shadowed.
+  # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in any
+  # non-yabai mode (aerospace/omniwm) so their own alt+N bindings aren't shadowed.
   #
   # Caveat: on macOS 26 (Tahoe), the plist write alone doesn't always
   # register the hotkeys with WindowServer — verified in practice. One-time
