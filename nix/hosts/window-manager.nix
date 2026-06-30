@@ -84,6 +84,20 @@ assert lib.assertMsg (isAerospace || isYabai || isOmniwm)
     };
   };
 
+  # Sketchybar display-change reload trigger.  Fires when macOS rewrites
+  # the windowserver displays plist (e.g. lid open/close, external monitor
+  # plug/unplug) and runs the reload script that restarts sketchybar and
+  # rebalances aerospace spaces.  Only useful under aerospace.
+  launchd.user.agents."com.sketchybar.display-reload" = lib.mkIf isAerospace {
+    serviceConfig = {
+      ProgramArguments = [ "/Users/jon.gao/.config/sketchybar/helpers/reload_on_display_change.sh" ];
+      WatchPaths = [ "/Library/Preferences/com.apple.windowserver.displays.plist" ];
+      RunAtLoad = false;
+      StandardOutPath = "/tmp/sketchybar-display-reload.log";
+      StandardErrorPath = "/tmp/sketchybar-display-reload.error.log";
+    };
+  };
+
   # macOS "Switch to Desktop N" shortcuts (alt+1..0). IDs 118-127 in
   # com.apple.symbolichotkeys. Enabled only in yabai mode; disabled in any
   # non-yabai mode (aerospace/omniwm) so their own alt+N bindings aren't shadowed.
