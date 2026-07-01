@@ -18,6 +18,7 @@
     ../modules/ssh.nix
     ../modules/claude.nix
     ../modules/maestro.nix
+    ../modules/omnigent.nix
   ];
 
   home.username = "jon.gao";
