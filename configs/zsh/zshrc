@@ -215,7 +215,7 @@ separator() {
 }
 
 # ─── Platform-specific additions ───────────────────────────────────────
-# Mac adds Homebrew paths, nrs alias, arca helpers (see zshrc.darwin).
+# Mac adds Homebrew paths and nrs alias (see zshrc.darwin).
 # Linux adds kiro, claude-mem, auto-tmux-launch (see zshrc.linux).
 if [[ "$OSTYPE" == darwin* ]] && [ -r "$HOME/dotfiles/configs/zsh/zshrc.darwin" ]; then
     source "$HOME/dotfiles/configs/zsh/zshrc.darwin"

@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 
 {
+  home.username = "jon.gao";
   home.homeDirectory = "/Users/jon.gao";
 
   imports = [
@@ -8,6 +9,7 @@
     ../modules-darwin/yabai.nix
     ../modules-darwin/sketchybar.nix
     ../modules-darwin/karabiner.nix
+    ../modules-darwin/arca-tunnel.nix
   ];
 
   # macOS-only bidirectional symlinks

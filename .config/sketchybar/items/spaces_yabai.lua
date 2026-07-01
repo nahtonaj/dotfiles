@@ -14,6 +14,14 @@ local icon_font_size = 16.0 * scale
 local scaled_icon_font = "sketchybar-app-font:Regular:" .. icon_font_size
 local spaces = {}
 
+-- Pre-create a generous pool of space items. sketchybar items are static after
+-- add; we toggle visibility via reconcile_spaces() as native spaces come and go.
+local MAX_SPACES = 16
+
+-- Tracks the number of real (non-pool) spaces so refresh_all_spaces can skip
+-- slots that don't correspond to an active native space.
+local active_count = 0
+
 local function popen_text(cmd)
     local f = io.popen(cmd)
     if not f then return "" end
@@ -22,15 +30,14 @@ local function popen_text(cmd)
     return out
 end
 
-local num_spaces = tonumber(popen_text("yabai -m query --spaces | jq 'length'")) or 10
-if num_spaces < 1 then num_spaces = 10 end
-
-for i = 1, num_spaces do
+-- Build a single space item + its padding companion. Starts hidden; reconcile
+-- will flip visibility for slots that map to real native spaces.
+local function build_space_item(i)
     local space = sbar.add("space", "space." .. i, {
         space = i,
         icon = {
             font = { family = settings.font.numbers },
-            string = i,
+            string = tostring(i),
             padding_left = settings.items.padding.left * scale,
             padding_right = (settings.items.padding.left / 2) * scale,
             color = settings.items.default_color(i),
@@ -51,14 +58,14 @@ for i = 1, num_spaces do
             height = settings.items.height * scale,
             border_color = settings.items.default_color(i),
         },
+        drawing = false,
     })
-
-    spaces[i] = space
 
     sbar.add("space", "space.padding." .. i, {
         space = i,
         script = "",
         width = settings.items.gap * scale,
+        drawing = false,
     })
 
     space:subscribe("space_change", function(env)
@@ -77,6 +84,12 @@ for i = 1, num_spaces do
     space:subscribe("mouse.clicked", function(env)
         sbar.exec("open 'hammerspoon://space_focus?n=" .. env.SID .. "'")
     end)
+
+    return space
+end
+
+for i = 1, MAX_SPACES do
+    spaces[i] = build_space_item(i)
 end
 
 local space_window_observer = sbar.add("item", {
@@ -106,11 +119,45 @@ local spaces_indicator = sbar.add("item", {
     }
 })
 
+-- Query yabai for the current space list, recompute workspace-counter labels
+-- (skipping fullscreen slots), and toggle drawing for each pool item.
+local function reconcile_spaces()
+    local fs_query = popen_text([[yabai -m query --spaces | jq -r '.[]."is-native-fullscreen"']])
+    local flags = {}
+    for flag in string.gmatch(fs_query, "([^\n]+)") do
+        table.insert(flags, flag == "true")
+    end
+    local count = #flags
+    -- If yabai query failed, leave prior state in place. Don't blank the bar.
+    if count < 1 then return end
+
+    active_count = count
+    local workspace_counter = 0
+    for i = 1, MAX_SPACES do
+        if i <= count then
+            local is_fs = flags[i] or false
+            local icon_string
+            if is_fs then
+                icon_string = "\xe2\x9b\xb6"
+            else
+                workspace_counter = workspace_counter + 1
+                icon_string = tostring(workspace_counter)
+            end
+            spaces[i]:set({ drawing = "on", icon = { string = icon_string } })
+            sbar.set("space.padding." .. i, { drawing = "on" })
+        else
+            spaces[i]:set({ drawing = "off" })
+            sbar.set("space.padding." .. i, { drawing = "off" })
+        end
+    end
+end
+
 -- env.INFO.apps from sketchybar's native integration turned out to be
 -- incomplete (only covers a subset of yabai's window list), so query yabai
 -- directly for each space and rebuild labels.
 local function refresh_space(idx)
     if not spaces[idx] then return end
+    if idx > active_count then return end
     -- Filter to standard, visible windows so ghost entries (apps with an
     -- empty AXRole, invisible helper windows, etc.) don't inflate the label.
     local cmd = "yabai -m query --windows --space " .. idx ..
@@ -131,13 +178,15 @@ local function refresh_space(idx)
 end
 
 local function refresh_all_spaces()
-    for i = 1, num_spaces do refresh_space(i) end
+    for i = 1, active_count do refresh_space(i) end
 end
 
--- Populate labels at startup.
+-- Populate visibility and labels at startup.
+reconcile_spaces()
 refresh_all_spaces()
 
 space_window_observer:subscribe("space_windows_change", function(env)
+    reconcile_spaces()
     local idx = env.INFO and tonumber(env.INFO.space)
     if idx then
         refresh_space(idx)
@@ -149,6 +198,7 @@ end)
 -- Window focus change — covers app launches / closes that don't produce a
 -- space_windows_change event (e.g. newly unmanaged windows).
 space_window_observer:subscribe("wm_focus_change", function(_)
+    reconcile_spaces()
     refresh_all_spaces()
 end)
 

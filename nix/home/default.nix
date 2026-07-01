@@ -21,7 +21,6 @@
     ../modules/omnigent.nix
   ];
 
-  home.username = "jon.gao";
   home.stateVersion = "24.11";
 
   programs.home-manager.enable = true;
