@@ -48,37 +48,6 @@
       "Bash(bazel build:*)",
       "Bash(bazel test:*)",
       "Skill(bazel-universe:bazel-universe)",
-      "mcp__proxy__github__get_pull_request",
-      "mcp__proxy__github__get_pull_request_diff",
-      "mcp__proxy__github__get_pull_requests_by_user",
-      "mcp__proxy__databricks__execute_parameterized_sql",
-      "mcp__proxy__databricks__check_statement_status",
-      "mcp__proxy__databricks__cancel_statement",
-      "mcp__proxy__databricks__list_dbfs_files",
-      "mcp__proxy__databricks__read_dbfs_file_contents",
-      "mcp__proxy__databricks__get_dbfs_destination",
-      "mcp__proxy__databricks__databricks_jobs",
-      "mcp__proxy__glean__summarize_document",
-      "mcp__proxy__glean__search",
-      "mcp__proxy__glean__get_document_content",
-      "mcp__proxy__glean__resolve_go_link",
-      "mcp__proxy__jira__jira_search_issues",
-      "mcp__proxy__jira__jira_get_issue",
-      "mcp__proxy__confluence__get_confluence_page_content",
-      "mcp__proxy__confluence__search_confluence_pages",
-      "mcp__proxy__confluence__get_confluence_spaces",
-      "mcp__proxy__confluence__get_page_children",
-      "mcp__proxy__devportal__get_prs",
-      "mcp__proxy__devportal__get_pr_details",
-      "mcp__proxy__devportal__get_run_group_details",
-      "mcp__proxy__devportal__get_run_details",
-      "mcp__proxy__devportal__get_run_logs",
-      "mcp__proxy__devportal__get_test_results",
-      "mcp__proxy__devportal__get_test_run_details",
-      "mcp__proxy__devportal__list_artifacts",
-      "mcp__proxy__devportal__download_artifact",
-      "mcp__proxy__github__github_read_api_call",
-      "mcp__atlassian__getJiraIssue",
       "Bash(zsh --version:*)",
       "WebSearch",
       "Bash(compaudit:*)",
@@ -130,13 +99,6 @@
       "mcp__github__github_get_service_info",
       "mcp__github__github_get_api_info",
       "mcp__github__github_read_api_call",
-      "mcp__databricks__execute_parameterized_sql",
-      "mcp__databricks__check_statement_status",
-      "mcp__databricks__cancel_statement",
-      "mcp__databricks__list_dbfs_files",
-      "mcp__databricks__read_dbfs_file_contents",
-      "mcp__databricks__get_dbfs_destination",
-      "mcp__databricks__databricks_jobs",
       "mcp__databricks-v2__list_available_workspaces",
       "mcp__databricks-v2__connect_to_workspace",
       "mcp__databricks-v2__list_warehouses",
@@ -175,6 +137,16 @@
       "mcp__slack__slack_get_service_info",
       "mcp__slack__slack_get_api_info",
       "mcp__slack__slack_read_api_call",
+      "mcp__obsidian__obsidian_read_note",
+      "mcp__obsidian__obsidian_update_note",
+      "mcp__obsidian__obsidian_list_notes",
+      "mcp__obsidian__obsidian_global_search",
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "mcp__plugin_claude-mem_mcp-search__timeline",
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "Bash(gh pr list:*)",
+      "Bash(touch:*)",
+      "Bash(ss:*)",
       "mcp__slack__slack_batch_read_api_call",
       "mcp__google__drive_file_list",
       "mcp__google__drive_file_get",
@@ -238,6 +210,34 @@
       "mcp__testman__get_relevant_investigations",
       "mcp__testman__list_issues",
       "mcp__testman__get_issue",
+      "Bash(rm .claude/agents/custom/ruflo-specialist.md)",
+      "Bash(rm configs/claude/RUFLO_CONTEXT.md)",
+      "mcp__google__google_get_service_info",
+      "mcp__google__google_get_api_info",
+      "mcp__google__google_read_api_call",
+      "mcp__google__google_write_api_call",
+      "Bash(isaac review:*)",
+      "Read(~/isaac/**)",
+      "Write(~/isaac/**)",
+      "Edit(~/isaac/**)",
+      "mcp__databricks__execute_parameterized_sql",
+      "mcp__databricks__check_statement_status",
+      "mcp__databricks__cancel_statement",
+      "mcp__databricks__list_dbfs_files",
+      "mcp__databricks__read_dbfs_file_contents",
+      "mcp__databricks__get_dbfs_destination",
+      "mcp__databricks__databricks_jobs",
+      "mcp__databricks-v2__poll_genie_response",
+      "mcp__databricks-v2__cancel_genie_response",
+      "mcp__safe__safe_get_service_info",
+      "mcp__safe__safe_get_api_info",
+      "mcp__safe__safe_read_api_call",
+      "mcp__safe-native__safe_get_service_info",
+      "mcp__safe-native__safe_get_api_info",
+      "mcp__safe-native__safe_read_api_call",
+      "mcp__safe-legacy__safe_get_service_info",
+      "mcp__safe-legacy__safe_get_api_info",
+      "mcp__safe-legacy__safe_read_api_call",
       "mcp__spinnaker__spinnaker_get_pipeline_status",
       "mcp__spinnaker__spinnaker_get_stage_detail",
       "mcp__spinnaker__spinnaker_list_executions",
@@ -245,15 +245,21 @@
       "mcp__spinnaker__spinnaker_get_execution_raw",
       "mcp__toolproxy__whoami",
       "mcp__toolproxy__list_available_tools",
-      "mcp__toolproxy__run_command"
+      "mcp__toolproxy__run_command",
+      "Bash(multica:*)"
     ],
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)"
+      "Read(./.env)"
     ],
-    "disableBypassPermissionsMode": "disable"
+    "defaultMode": "default",
+    "disableBypassPermissionsMode": "disable",
+    "sandbox": {
+      "enabled": true,
+      "allowUnsandboxedCommands": true
+    },
+    "allowManagedPermissionRulesOnly": true
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [],
   "hooks": {
@@ -267,31 +273,6 @@
             "timeout": 5000
           }
         ]
-      },
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh waiting_input",
-            "timeout": 5000
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh pre_tool",
-            "timeout": 5000
-          },
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/auto-approve.sh",
-            "timeout": 2000
-          }
-        ]
       }
     ],
     "PostToolUse": [
@@ -302,37 +283,6 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs post-edit",
             "timeout": 10000
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh post_tool",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs route",
-            "timeout": 10000
-          },
-          {
-            "type": "command",
-            "command": "bash $HOME/.claude/helpers/tmux-pane-title.sh",
-            "timeout": 3000
-          },
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh running",
-            "timeout": 5000
           }
         ]
       }
@@ -349,11 +299,6 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs import",
             "timeout": 8000
-          },
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
-            "timeout": 5000
           }
         ]
       }
@@ -375,11 +320,6 @@
             "type": "command",
             "command": "bash $HOME/.claude/helpers/dashboard-state.sh session-end",
             "timeout": 3000
-          },
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh disconnected",
-            "timeout": 5000
           }
         ]
       }
@@ -401,11 +341,6 @@
             "type": "command",
             "command": "printf '\\a' > /dev/tty 2>/dev/null || true",
             "timeout": 3000
-          },
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
-            "timeout": 5000
           }
         ]
       }
@@ -438,16 +373,6 @@
             "timeout": 6000
           }
         ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh compacting",
-            "timeout": 5000
-          }
-        ]
       }
     ],
     "SubagentStart": [
@@ -457,53 +382,17 @@
             "type": "command",
             "command": "node $HOME/.claude/helpers/hook-handler.cjs status",
             "timeout": 3000
-          },
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh running",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh running",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh permission_request",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "idle_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
-            "timeout": 5000
           }
         ]
       }
     ]
   },
+  "worktree": {
+    "baseRef": "fresh"
+  },
   "statusLine": {
     "type": "command",
-    "command": "node /home/jon.gao/.claude/helpers/statusline.cjs 2>> /tmp/statusline-stderr.log"
+    "command": "bash /home/jon.gao/.cache/spec-driven-development/statusline/wrapper.sh"
   },
   "enabledPlugins": {
     "bazel-universe@experimental-plugin-marketplace": true,
@@ -513,7 +402,6 @@
     "feature-dev@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
-    "atlassian@claude-plugins-official": false,
     "slack@claude-plugins-official": false,
     "claude-hud@experimental-plugin-marketplace": false,
     "ralph-wiggum@experimental-plugin-marketplace": false,
@@ -521,10 +409,21 @@
     "plugin-builder@experimental-plugin-marketplace": true,
     "superpowers@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
-    "claude-mem@thedotmack": true
+    "claude-mem@thedotmack": true,
+    "dev-productivity@experimental-plugin-marketplace": true,
+    "debug-copilot@experimental-plugin-marketplace": true,
+    "spec-driven-development@experimental-plugin-marketplace": true
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark-daltonized",
+  "editorMode": "vim",
+  "preferredNotifChannel": "auto",
+  "teammateMode": "auto",
+  "remoteControlAtStartup": false,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true
 }
