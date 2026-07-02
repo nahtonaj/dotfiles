@@ -1,23 +1,14 @@
 { config, pkgs, lib, flakePath, ... }:
 
 {
-  programs.tmux.enable = true;
+  home.packages = [ pkgs.tmux ];
 
-  # Symlink tmux.conf for bidirectional editing (no rebuild needed to reload)
-  home.file.".tmux.conf" = {
+  # Symlink tmux.conf at the XDG path for bidirectional editing (no rebuild needed to reload).
+  # This is the single canonical tmux config; we deliberately do NOT set programs.tmux.enable,
+  # which would generate a competing ~/.config/tmux/tmux.conf that overrides these settings.
+  home.file.".config/tmux/tmux.conf" = {
     source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/configs/tmux/tmux.conf";
     force = true;
-  };
-
-  # Platform-specific tmux settings (sourced from tmux.conf)
-  home.file.".tmux-platform.conf" = {
-    text = if pkgs.stdenv.isDarwin then ''
-      # macOS: do not auto-start tmux on boot
-      set -g @continuum-boot 'off'
-    '' else ''
-      # Linux: auto-start tmux on boot
-      set -g @continuum-boot 'on'
-    '';
   };
 
   # Auto-clone TPM on first activation
