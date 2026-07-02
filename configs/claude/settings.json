@@ -210,8 +210,6 @@
       "mcp__testman__get_relevant_investigations",
       "mcp__testman__list_issues",
       "mcp__testman__get_issue",
-      "Bash(rm .claude/agents/custom/ruflo-specialist.md)",
-      "Bash(rm configs/claude/RUFLO_CONTEXT.md)",
       "mcp__google__google_get_service_info",
       "mcp__google__google_get_api_info",
       "mcp__google__google_read_api_call",
@@ -263,38 +261,9 @@
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [],
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs pre-bash",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs post-edit",
-            "timeout": 10000
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-restore",
-            "timeout": 15000
-          },
           {
             "type": "command",
             "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs import",
@@ -306,11 +275,6 @@
     "SessionEnd": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
-            "timeout": 10000
-          },
           {
             "type": "command",
             "command": "bash /home/jon.gao/dotfiles/.claude/helpers/team-cleanup.sh",
@@ -340,47 +304,6 @@
           {
             "type": "command",
             "command": "printf '\\a' > /dev/tty 2>/dev/null || true",
-            "timeout": 3000
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": "manual",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs compact-manual"
-          },
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
-            "timeout": 5000
-          }
-        ]
-      },
-      {
-        "matcher": "auto",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs compact-auto"
-          },
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs session-end",
-            "timeout": 6000
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/hook-handler.cjs status",
             "timeout": 3000
           }
         ]
