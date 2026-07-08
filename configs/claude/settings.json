@@ -354,6 +354,11 @@
             "type": "command",
             "command": "bash $HOME/.claude/helpers/claude-mem-stop-hook.sh install",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/helpers/claude-mem-summary-session-patch.sh install",
+            "timeout": 5
           }
         ]
       }

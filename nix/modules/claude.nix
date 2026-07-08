@@ -64,6 +64,25 @@ let
 
     echo "claude.nix: processed agents -> $dest"
   '';
+
+  # ── Activation script to manage claude-mem settings without clobbering ──
+  configureClaudeMemScript = pkgs.writeShellScript "configure-claude-mem" ''
+    set -euo pipefail
+
+    settings="$HOME/.claude-mem/settings.json"
+    mkdir -p "$(dirname "$settings")"
+
+    if [ ! -f "$settings" ]; then
+      printf '%s\n' '{}' > "$settings"
+    fi
+
+    tmp_file="$(mktemp "''${settings}.XXXXXX")"
+    ${pkgs.jq}/bin/jq '.CLAUDE_MEM_TIER_SUMMARY_MODEL = "databricks-claude-sonnet-4-6"' \
+      "$settings" > "$tmp_file"
+    mv "$tmp_file" "$settings"
+
+    echo "claude.nix: managed CLAUDE_MEM_TIER_SUMMARY_MODEL in $settings"
+  '';
 in
 {
   # --- Direct symlinks (bypass nix store, point straight to dotfiles repo) ---
@@ -78,6 +97,7 @@ in
     ln -sfn "${dotfilesDir}/.claude/helpers/tmux-pane-title.sh" "$HOME/.claude/helpers/tmux-pane-title.sh"
     ln -sfn "${dotfilesDir}/.claude/helpers/tmux-session-end.sh" "$HOME/.claude/helpers/tmux-session-end.sh"
     ln -sfn "${dotfilesDir}/.claude/helpers/claude-mem-stop-hook.sh" "$HOME/.claude/helpers/claude-mem-stop-hook.sh"
+    ln -sfn "${dotfilesDir}/.claude/helpers/claude-mem-summary-session-patch.sh" "$HOME/.claude/helpers/claude-mem-summary-session-patch.sh"
   '';
 
   # --- Agents (mutable, processed via activation script) ---
@@ -88,6 +108,13 @@ in
   home.activation.processClaudeAgents = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     PATH="${pkgs.findutils}/bin:${pkgs.gawk}/bin:${pkgs.coreutils}/bin:${pkgs.gnugrep}/bin:$PATH"
     ${processAgentsScript}
+  '';
+
+  # Preserve the rest of ~/.claude-mem/settings.json, including the base
+  # CLAUDE_MEM_MODEL used by the nonblocking stop-wrapper parent branch.
+  home.activation.configureClaudeMem = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    PATH="${pkgs.coreutils}/bin:${pkgs.jq}/bin:$PATH"
+    ${configureClaudeMemScript}
   '';
 
   # --- Packages (node needed for claude-flow) ---
