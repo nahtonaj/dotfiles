@@ -347,12 +347,12 @@
           },
           {
             "type": "command",
-            "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs import",
-            "timeout": 8000
+            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
+            "timeout": 5000
           },
           {
             "type": "command",
-            "command": "bash /home/jon.gao/universe/experimental/richard-liu_data/db-agents/plugin/hooks/status-reporter.sh idle",
+            "command": "bash $HOME/.claude/helpers/claude-mem-stop-hook.sh install",
             "timeout": 5000
           }
         ]
@@ -387,11 +387,6 @@
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs sync",
-            "timeout": 10000
-          },
           {
             "type": "command",
             "command": "bash $HOME/.claude/helpers/dashboard-state.sh session-complete",
