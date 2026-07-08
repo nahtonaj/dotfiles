@@ -266,8 +266,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs import",
-            "timeout": 8000
+            "command": "bash $HOME/.claude/helpers/claude-mem-stop-hook.sh install",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/helpers/claude-mem-summary-session-patch.sh install",
+            "timeout": 5
           }
         ]
       }
@@ -291,11 +296,6 @@
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "node $HOME/.claude/helpers/auto-memory-hook.mjs sync",
-            "timeout": 10000
-          },
           {
             "type": "command",
             "command": "bash $HOME/.claude/helpers/dashboard-state.sh session-complete",

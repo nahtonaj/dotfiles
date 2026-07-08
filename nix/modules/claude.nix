@@ -77,6 +77,7 @@ in
     ln -sfn "${dotfilesDir}/.claude/skills" "$HOME/.claude/skills"
     ln -sfn "${dotfilesDir}/.claude/helpers/tmux-pane-title.sh" "$HOME/.claude/helpers/tmux-pane-title.sh"
     ln -sfn "${dotfilesDir}/.claude/helpers/tmux-session-end.sh" "$HOME/.claude/helpers/tmux-session-end.sh"
+    ln -sfn "${dotfilesDir}/.claude/helpers/claude-mem-stop-hook.sh" "$HOME/.claude/helpers/claude-mem-stop-hook.sh"
   '';
 
   # --- Agents (mutable, processed via activation script) ---
