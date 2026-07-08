@@ -353,7 +353,7 @@
           {
             "type": "command",
             "command": "bash $HOME/.claude/helpers/claude-mem-stop-hook.sh install",
-            "timeout": 5000
+            "timeout": 5
           }
         ]
       }

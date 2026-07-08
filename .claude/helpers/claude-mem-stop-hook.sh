@@ -5,6 +5,7 @@ helper_path="${BASH_SOURCE[0]}"
 helper_command="bash \"\$HOME/.claude/helpers/claude-mem-stop-hook.sh\" summarize"
 cache_root="${CLAUDE_MEM_CACHE_ROOT:-$HOME/.claude/plugins/cache/thedotmack/claude-mem}"
 marketplace_root="${CLAUDE_MEM_MARKETPLACE_ROOT:-$HOME/.claude/plugins/marketplaces/thedotmack/plugin}"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/claude-mem-stop-hook"
 
 newest_cache_dir() {
   local newest=""
@@ -49,7 +50,7 @@ patch_once() {
   [[ -f "$hooks_file" ]] || return 0
 
   tmp_file="$(mktemp "${hooks_file}.XXXXXX")"
-  jq --arg command "$helper_command" '
+  if jq --arg command "$helper_command" '
     .hooks.Stop |= (
       map(
         .hooks |= map(
@@ -62,12 +63,21 @@ patch_once() {
         )
       )
     )
-  ' "$hooks_file" > "$tmp_file"
-  mv "$tmp_file" "$hooks_file"
+  ' "$hooks_file" > "$tmp_file"; then
+    mv "$tmp_file" "$hooks_file"
+  else
+    rm -f "$tmp_file"
+    return 1
+  fi
 }
 
 monitor_patch() {
   local attempt
+  mkdir -p "$state_dir"
+
+  exec 9>"$state_dir/monitor.lock"
+  flock -n 9 || exit 0
+
   for ((attempt = 0; attempt < 600; attempt++)); do
     patch_once >/dev/null 2>&1 || true
     sleep 0.5
@@ -81,32 +91,44 @@ install_patch() {
 }
 
 run_summarize_background() {
-  local root input_file log_dir log_file shell_path
-  root="$(plugin_root || true)"
+  local input_file log_dir log_file root
+
+  printf '%s\n' '{"continue":true,"suppressOutput":true}'
+
   log_dir="$HOME/.claude-mem/logs"
   log_file="$log_dir/claude-mem-stop-background.log"
-  input_file="$(mktemp "${TMPDIR:-/tmp}/claude-mem-stop.XXXXXX")"
+
+  input_file="$(mktemp "${TMPDIR:-/tmp}/claude-mem-stop.XXXXXX")" || return 0
 
   cat > "$input_file"
 
+  root="$(plugin_root || true)"
+
   if [[ -z "$root" ]]; then
     rm -f "$input_file"
-    printf '%s\n' '{"continue":true,"suppressOutput":true}'
     return 0
   fi
 
-  mkdir -p "$log_dir"
-  shell_path="${SHELL:-/bin/sh}"
-
-  (
-    trap '' HUP
-    login_path="$($shell_path -lc "printf %s \"\$PATH\"" 2>/dev/null)"
-    export PATH="$login_path:$PATH"
-    node "$root/scripts/bun-runner.js" "$root/scripts/worker-service.cjs" hook claude-code summarize < "$input_file" >> "$log_file" 2>&1
+  mkdir -p "$log_dir" || {
     rm -f "$input_file"
-  ) >/dev/null 2>&1 &
+    return 0
+  }
 
-  printf '%s\n' '{"continue":true,"suppressOutput":true}'
+  if command -v setsid >/dev/null 2>&1; then
+    # shellcheck disable=SC2016
+    setsid bash -c '
+      trap "rm -f \"$1\"" EXIT
+      trap "" TERM HUP INT
+      node "$2/scripts/bun-runner.js" "$2/scripts/worker-service.cjs" hook claude-code summarize < "$1" >> "$3" 2>&1
+    ' bash "$input_file" "$root" "$log_file" >/dev/null 2>&1 &
+  else
+    # shellcheck disable=SC2016
+    nohup bash -c '
+      trap "rm -f \"$1\"" EXIT
+      trap "" TERM HUP INT
+      node "$2/scripts/bun-runner.js" "$2/scripts/worker-service.cjs" hook claude-code summarize < "$1" >> "$3" 2>&1
+    ' bash "$input_file" "$root" "$log_file" >/dev/null 2>&1 &
+  fi
 }
 
 case "${1:-install}" in
