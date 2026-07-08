@@ -70,7 +70,11 @@ let
     set -euo pipefail
 
     settings="$HOME/.claude-mem/settings.json"
+    lock_file="$HOME/.claude-mem/settings.json.lock"
     mkdir -p "$(dirname "$settings")"
+
+    exec 9>"$lock_file"
+    ${pkgs.util-linux}/bin/flock 9
 
     if [ ! -f "$settings" ]; then
       printf '%s\n' '{}' > "$settings"

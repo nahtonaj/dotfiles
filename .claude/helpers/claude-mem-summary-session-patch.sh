@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Watch summarize TIMEOUT rate alongside store-rate post-merge; sustained
+# agent-pool timeouts would cap effective summary storage even with this patch.
+
 helper_path="${BASH_SOURCE[0]}"
 cache_root="${CLAUDE_MEM_CACHE_ROOT:-$HOME/.claude/plugins/cache/thedotmack/claude-mem}"
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/claude-mem-summary-session-patch"
@@ -74,7 +77,15 @@ patch_once() {
     return 1
   fi
 
+  if [[ "$clear_patched_count" == "1" \
+    && "$routing_patched_count" == "1" \
+    && "$resume_patched_count" == "1" \
+    && "$capture_patched_count" == "1" ]]; then
+    return 10
+  fi
+
   tmp_file="$(mktemp --suffix=.cjs "${worker}.XXXXXX")"
+  trap 'rm -f "$tmp_file"' RETURN
   python3 - "$worker" \
     "$anchor_clear" "$replacement_clear" \
     "$anchor_routing" "$replacement_routing" \
@@ -107,19 +118,32 @@ for _anchor, replacement in replacements:
 sys.stdout.write(patched)
 PY
 
+  # Deliberate: this minified bundle uses import.meta.url, so CommonJS
+  # `node --check *.cjs` false-fails; the ESM parse goal is required here.
   node --input-type=module --check < "$tmp_file" >/dev/null
   mv "$tmp_file" "$worker"
+  trap - RETURN
 }
 
 monitor_patch() {
-  local attempt
+  local attempt already_patched_count rc
   mkdir -p "$state_dir"
 
   exec 9>"$state_dir/monitor.lock"
   flock -n 9 || exit 0
 
+  already_patched_count=0
   for ((attempt = 0; attempt < 600; attempt++)); do
-    patch_once >/dev/null 2>&1 || true
+    set +e
+    patch_once >/dev/null 2>&1
+    rc=$?
+    set -e
+    if [[ "$rc" == "10" ]]; then
+      already_patched_count=$((already_patched_count + 1))
+      [[ "$already_patched_count" -ge 2 ]] && break
+    else
+      already_patched_count=0
+    fi
     sleep 0.5
   done
 }
@@ -135,7 +159,10 @@ case "${1:-install}" in
     install_patch
     ;;
   patch-once)
-    patch_once "${2:-}"
+    patch_once "${2:-}" || {
+      rc=$?
+      [[ "$rc" == "10" ]] || exit "$rc"
+    }
     ;;
   monitor)
     monitor_patch
