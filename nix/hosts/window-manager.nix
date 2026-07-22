@@ -19,25 +19,10 @@ assert lib.assertMsg (isAerospace || isYabai || isOmniwm)
 
 {
   environment.systemPackages =
-    lib.optionals isAerospace [ pkgs.aerospace ]
-    ++ lib.optionals isYabai [ pkgs.yabai pkgs.skhd pkgs.jq ];
+    lib.optionals isYabai [ pkgs.yabai pkgs.skhd pkgs.jq ];
 
   # Expose the active backend to userland (e.g. sketchybar).
   environment.etc."window-manager-backend".text = "${windowManager}\n";
-
-  # Aerospace self-registers its own LaunchAgent when start-at-login=true in
-  # the TOML. We disable that and manage the agent here so switching backends
-  # via darwin-rebuild actually stops/starts the process.
-  launchd.user.agents.aerospace = lib.mkIf isAerospace {
-    serviceConfig = {
-      ProgramArguments = [ "${pkgs.aerospace}/Applications/AeroSpace.app/Contents/MacOS/AeroSpace" ];
-      KeepAlive = true;
-      RunAtLoad = true;
-      ProcessType = "Interactive";
-      StandardOutPath = "/tmp/aerospace.out.log";
-      StandardErrorPath = "/tmp/aerospace.err.log";
-    };
-  };
 
   # OmniWM is brew-installed (not nixpkgs), so we point the agent at the
   # /Applications app bundle. OmniWM's own login-item is disabled (see plan

@@ -27,6 +27,15 @@
     jon.gao ALL=(root) NOPASSWD: /run/current-system/sw/bin/darwin-rebuild
   '';
 
+  # Homebrew-managed casks (Homebrew itself is installed separately and unmanaged).
+  # onActivation.cleanup = "none" ensures darwin-rebuild does not remove packages
+  # the user installed manually outside this config.
+  homebrew = {
+    enable = true;
+    onActivation.cleanup = "none";
+    casks = [ "aerospace" ];
+  };
+
   # System-level defaults
   system.stateVersion = 5;
 }
