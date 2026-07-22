@@ -15,6 +15,7 @@ after-login-command = []
 after-startup-command = [
     'exec-and-forget /Users/jon.gao/dotfiles/.config/aerospace/balance-spaces.sh',
     'exec-and-forget sleep 2 && sketchybar --reload',
+    'exec-and-forget borders',
 ]
 exec-on-workspace-change = ['/bin/bash', '-c',
   'sketchybar --trigger wm_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE FOCUSED_DISPLAY=$(aerospace list-monitors --focused | cut -d" " -f1)',
@@ -29,9 +30,9 @@ on-focus-changed = [
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Start AeroSpace at login
-# Managed by nix-darwin launchd agent (nix/hosts/window-manager.nix); set to
-# false so aerospace doesn't register its own LaunchAgent.
-start-at-login = false
+# Aerospace registers its own LaunchAgent when true. The nix launchd agent has
+# been removed; this is now the single autostart mechanism.
+start-at-login = true
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
@@ -113,10 +114,10 @@ alt-j = 'focus down --boundaries all-monitors-outer-frame --boundaries-action st
 alt-k = 'focus up --boundaries all-monitors-outer-frame --boundaries-action stop'
 alt-l = 'focus right --boundaries all-monitors-outer-frame --boundaries-action stop'
 
-alt-ctrl-h = 'focus-monitor --wrap-around left'
-alt-ctrl-j = 'focus-monitor --wrap-around down'
-alt-ctrl-k = 'focus-monitor --wrap-around up'
-alt-ctrl-l = 'focus-monitor --wrap-around right'
+# alt-ctrl-h = 'focus-monitor --wrap-around left'
+# alt-ctrl-j = 'focus-monitor --wrap-around down'
+# alt-ctrl-k = 'focus-monitor --wrap-around up'
+# alt-ctrl-l = 'focus-monitor --wrap-around right'
 
 alt-ctrl-left = 'workspace --wrap-around prev'
 alt-ctrl-right = 'workspace --wrap-around next'
@@ -178,16 +179,16 @@ alt-0 = 'workspace 10'
 
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
-alt-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
-alt-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
-alt-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
-alt-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
-alt-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
-alt-shift-6 = ['move-node-to-workspace 6', 'workspace 6']
-alt-shift-7 = ['move-node-to-workspace 7', 'workspace 7']
-alt-shift-8 = ['move-node-to-workspace 8', 'workspace 8']
-alt-shift-9 = ['move-node-to-workspace 9', 'workspace 9']
-alt-shift-0 = ['move-node-to-workspace 10', 'workspace 10']
+alt-shift-1 = ['move-node-to-workspace 1', 'workspace 1', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-2 = ['move-node-to-workspace 2', 'workspace 2', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-3 = ['move-node-to-workspace 3', 'workspace 3', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-4 = ['move-node-to-workspace 4', 'workspace 4', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-5 = ['move-node-to-workspace 5', 'workspace 5', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-6 = ['move-node-to-workspace 6', 'workspace 6', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-7 = ['move-node-to-workspace 7', 'workspace 7', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-8 = ['move-node-to-workspace 8', 'workspace 8', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-9 = ['move-node-to-workspace 9', 'workspace 9', 'exec-and-forget sketchybar --trigger space_windows_change']
+alt-shift-0 = ['move-node-to-workspace 10', 'workspace 10', 'exec-and-forget sketchybar --trigger space_windows_change']
 # alt-shift-a = 'move-node-to-workspace A'
 # alt-shift-b = ['move-node-to-workspace B', 'workspace B']
 # alt-shift-c = ['move-node-to-workspace C', 'workspace C']
