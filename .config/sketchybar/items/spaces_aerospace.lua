@@ -6,74 +6,12 @@ local icons = require("icons")
 local settings = require("settings")
 local app_icons = require("helpers.app_icons")
 local display = require("helpers.display_settings")
+local aerospace = require("helpers.aerospace")
 
 local scale = display.get_scale()
 local icon_font_size = 16.0 * scale
 local scaled_icon_font = "sketchybar-app-font:Regular:" .. icon_font_size
 local spaces = {}
-
-local WORKSPACE_LIST_CMD = "aerospace list-workspaces --all"
-local FOCUSED_CMD = "aerospace list-workspaces --focused"
-
-local function popen_lines(cmd)
-    local f = io.popen(cmd)
-    if not f then return {} end
-    local out = f:read("*a")
-    f:close()
-    local lines = {}
-    for line in out:gmatch("([^\n]+)") do
-        table.insert(lines, line)
-    end
-    return lines
-end
-
--- Poll aerospace until it responds or we time out (~10s).
--- Returns true if aerospace is ready, false otherwise.
--- Checks immediately first (no sleep on healthy startup), then retries
--- with 0.5s delays up to 20 attempts total.
-local function wait_for_aerospace()
-    for attempt = 1, 20 do
-        local result = popen_lines(FOCUSED_CMD)
-        if result[1] and result[1] ~= "" then return true end
-        if attempt < 20 then os.execute("sleep 0.5") end
-    end
-    return false
-end
-
-local function list_windows_cmd(workspace)
-    return table.concat({
-        "aerospace list-windows --workspace ", workspace,
-        " --format '%{app-name}' --json",
-    })
-end
-
-local function focus_cmd(workspace)
-    return "aerospace workspace " .. workspace
-end
-
--- Wait for aerospace, then query workspaces. If aerospace never becomes
--- ready, fall back to empty lists so the rest of the bar still loads.
-local aerospace_ready = wait_for_aerospace()
-local workspaces = aerospace_ready and popen_lines(WORKSPACE_LIST_CMD) or {}
-local current_workspace = aerospace_ready and (popen_lines(FOCUSED_CMD)[1] or "") or ""
-
--- Build a workspace-name -> monitor-index map so each item draws on the
--- correct bar when multiple monitors are attached.
-local function build_ws_monitor_map()
-    if not aerospace_ready then return {} end
-    local raw = popen_lines("aerospace list-monitors --count")
-    local count = tonumber((raw[1] or "1")) or 1
-    local map = {}
-    for m = 1, count do
-        for _, ws in ipairs(popen_lines("aerospace list-workspaces --monitor " .. m)) do
-            map[ws] = m
-        end
-    end
-    return map
-end
-
-local items_by_ws = {}      -- workspace name -> space item
-local padding_by_ws = {}    -- workspace name -> padding item
 
 local function split(str, sep)
     local result = {}
@@ -98,6 +36,29 @@ local function update_space_label(space_item, apps)
         space_item:set({ label = icon_line })
     end)
 end
+
+-- Wait for aerospace, then query workspaces. If aerospace never becomes
+-- ready, fall back to empty lists so the rest of the bar still loads.
+local aerospace_ready = aerospace.wait_for_aerospace()
+local workspaces = aerospace_ready and aerospace.get_workspaces() or {}
+local current_workspace = aerospace_ready and aerospace.get_focused() or ""
+
+-- Build a workspace-name -> monitor-index map so each item draws on the
+-- correct bar when multiple monitors are attached.
+local function build_ws_monitor_map()
+    if not aerospace_ready then return {} end
+    local count = aerospace.get_monitors()
+    local map = {}
+    for m = 1, count do
+        for _, ws in ipairs(aerospace.get_workspaces_for_monitor(m)) do
+            map[ws] = m
+        end
+    end
+    return map
+end
+
+local items_by_ws = {}      -- workspace name -> space item
+local padding_by_ws = {}    -- workspace name -> padding item
 
 -- Build workspace items inside pcall so a failure here cannot abort the
 -- entire bar config (which would leave drawing:off, zero items).
@@ -144,7 +105,7 @@ local build_ok, build_err = pcall(function()
         spaces[i] = space
         items_by_ws[workspace] = space
 
-        sbar.exec(list_windows_cmd(workspace), function(apps)
+        aerospace.get_windows(workspace, function(apps)
             update_space_label(space, apps)
         end)
 
@@ -185,7 +146,7 @@ local build_ok, build_err = pcall(function()
                 space_popup:set({ background = { image = "item." .. SID } })
                 space:set({ popup = { drawing = "toggle" } })
             else
-                sbar.exec(focus_cmd(SID))
+                sbar.exec("aerospace workspace " .. SID)
             end
         end)
 
@@ -282,7 +243,7 @@ local spaces_indicator = sbar.add("item", {
 
 local function refresh_all_space_labels()
     for i, workspace in ipairs(workspaces) do
-        sbar.exec(list_windows_cmd(workspace), function(apps)
+        aerospace.get_windows(workspace, function(apps)
             update_space_label(spaces[i], apps)
         end)
     end
