@@ -18,6 +18,7 @@ local memory = sbar.add("graph", "widgets.memory", math.floor(42 * scale), {
         height = 22 * scale,
         color = { alpha = 0 },
         border_color = { alpha = 0 },
+        border_width = 0,
         drawing = true
     },
     icon = {

@@ -22,6 +22,7 @@ local cpu = sbar.add("graph", "widgets.cpu", math.floor(42 * scale), {
         border_color = {
             alpha = 0
         },
+        border_width = 0,
         drawing = true
     },
     icon = {
@@ -48,10 +49,10 @@ cpu:subscribe("cpu_update", function(env)
     cpu:push({load / 100.})
 
     local color = colors.blue
-    if load > 30 then
-        if load < 60 then
+    if load > 50 then
+        if load < 70 then
             color = colors.yellow
-        elseif load < 80 then
+        elseif load < 85 then
             color = colors.orange
         else
             color = colors.red
