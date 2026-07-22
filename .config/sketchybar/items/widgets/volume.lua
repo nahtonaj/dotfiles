@@ -46,7 +46,7 @@ local volume_icon = sbar.add("item", "widgets.volume2", {
 local volume_bracket = sbar.add("bracket", "widgets.volume.bracket", {volume_icon.name, volume_percent.name}, {
     background = {
         color = colors.bg1,
-        border_width = math.max(1, math.floor(1 * scale))
+        border_width = 0
     },
     popup = {
         align = "center"
@@ -138,33 +138,39 @@ local function volume_toggle_details(env)
                 drawing = true
             }
         })
-        sbar.exec("SwitchAudioSource -t output -c", function(result)
-            current_audio_device = result:sub(1, -2)
-            sbar.exec("SwitchAudioSource -a -t output", function(available)
-                current = current_audio_device
-                local color = colors.grey
-                local counter = 0
-
-                for device in string.gmatch(available, '[^\r\n]+') do
+        -- Guard: only enumerate devices if SwitchAudioSource is installed
+        sbar.exec("which SwitchAudioSource", function(which_result)
+            if which_result == nil or which_result:match("^%s*$") or which_result:match("not found") then
+                return
+            end
+            sbar.exec("SwitchAudioSource -t output -c", function(result)
+                current_audio_device = result:sub(1, -2)
+                sbar.exec("SwitchAudioSource -a -t output", function(available)
+                    current = current_audio_device
                     local color = colors.grey
-                    if current == device then
-                        color = colors.white
-                    end
-                    sbar.add("item", "volume.device." .. counter, {
-                        position = "popup." .. volume_bracket.name,
-                        width = popup_width,
-                        align = "center",
-                        label = {
-                            string = device,
-                            color = color
-                        },
-                        click_script = 'SwitchAudioSource -s "' .. device ..
-                            '" && sketchybar --set /volume.device\\.*/ label.color=' .. colors.grey ..
-                            ' --set $NAME label.color=' .. colors.white
+                    local counter = 0
 
-                    })
-                    counter = counter + 1
-                end
+                    for device in string.gmatch(available, '[^\r\n]+') do
+                        local color = colors.grey
+                        if current == device then
+                            color = colors.white
+                        end
+                        sbar.add("item", "volume.device." .. counter, {
+                            position = "popup." .. volume_bracket.name,
+                            width = popup_width,
+                            align = "center",
+                            label = {
+                                string = device,
+                                color = color
+                            },
+                            click_script = 'SwitchAudioSource -s "' .. device ..
+                                '" && sketchybar --set /volume.device\\.*/ label.color=' .. colors.grey ..
+                                ' --set $NAME label.color=' .. colors.white
+
+                        })
+                        counter = counter + 1
+                    end
+                end)
             end)
         end)
     else
@@ -173,8 +179,9 @@ local function volume_toggle_details(env)
 end
 
 local function volume_scroll(env)
-    local delta = env.SCROLL_DELTA
-    sbar.exec('osascript -e "set volume output volume (output volume of (get volume settings) + ' .. delta .. ')"')
+    local step = (env.MODIFIER == "shift" or env.MODIFIER == "option") and 10 or 1
+    local dir = (tonumber(env.SCROLL_DELTA) or 0) > 0 and step or -step
+    sbar.exec('osascript -e "set volume output volume (output volume of (get volume settings) + ' .. dir .. ')"')
 end
 
 volume_icon:subscribe("mouse.clicked", volume_toggle_details)

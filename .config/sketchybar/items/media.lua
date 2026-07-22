@@ -67,41 +67,49 @@ local media_title = sbar.add("item", {
     }
 })
 
-sbar.add("item", {
+local media_back = sbar.add("item", {
     position = "popup." .. media_cover.name,
     icon = {
         string = icons.media.back
     },
     label = {
         drawing = false
-    },
-    click_script = "nowplaying-cli previous"
+    }
 })
-sbar.add("item", {
+media_back:subscribe("mouse.clicked", function(_)
+    sbar.exec("nowplaying-cli previous")
+end)
+
+local media_play_pause = sbar.add("item", {
     position = "popup." .. media_cover.name,
     icon = {
         string = icons.media.play_pause
     },
     label = {
         drawing = false
-    },
-    click_script = "nowplaying-cli togglePlayPause"
+    }
 })
-sbar.add("item", {
+media_play_pause:subscribe("mouse.clicked", function(_)
+    sbar.exec("nowplaying-cli togglePlayPause")
+end)
+
+local media_forward = sbar.add("item", {
     position = "popup." .. media_cover.name,
     icon = {
         string = icons.media.forward
     },
     label = {
         drawing = false
-    },
-    click_script = "nowplaying-cli next"
+    }
 })
+media_forward:subscribe("mouse.clicked", function(_)
+    sbar.exec("nowplaying-cli next")
+end)
 
 local interrupt = 0
 local function animate_detail(detail)
     if (not detail) then
-        interrupt = interrupt - 1
+        interrupt = math.max(0, interrupt - 1)
     end
     if interrupt > 0 and (not detail) then
         return
@@ -122,6 +130,8 @@ local function animate_detail(detail)
 end
 
 media_cover:subscribe("media_change", function(env)
+    -- Guard: nowplaying-cli may not be installed; env.INFO may be nil
+    if not env.INFO then return end
     if whitelist[env.INFO.app] then
         local drawing = (env.INFO.state == "playing")
         media_artist:set({
