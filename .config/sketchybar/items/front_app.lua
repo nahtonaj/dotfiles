@@ -10,7 +10,9 @@ local front_app = sbar.add("item", "front_app", {
         font = {
             style = settings.font.style_map["Bold"],
             size = 13.0
-        }
+        },
+        max_chars = 20,
+        width = "dynamic"
     },
     updates = true
 })

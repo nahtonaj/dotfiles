@@ -33,7 +33,7 @@ local cal = sbar.add("item", {
     padding_right = math.max(1, math.floor(1 * scale)),
     background = {
         color = colors.bg2,
-        border_width = math.max(1, math.floor(1 * scale))
+        border_width = 0
     }
 })
 
