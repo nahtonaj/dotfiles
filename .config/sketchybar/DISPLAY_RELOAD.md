@@ -1,22 +1,27 @@
 # Automatic Display Reload Configuration
 
-This document describes the automatic reload setup for Sketchybar when display configurations change.
+This document describes the automatic display-change handler for Sketchybar and AeroSpace.
 
 ## Overview
 
-Sketchybar is configured to automatically reload when displays are connected, disconnected, or reconfigured. This ensures the bar adapts to different display setups without manual intervention.
+When displays are connected, disconnected, or reconfigured, the handler script:
+
+1. **Sets PATH explicitly** -- launchd runs with a minimal PATH (`/usr/bin:/bin:/usr/sbin:/sbin`), so `/opt/homebrew/bin` must be prepended for Homebrew-installed binaries (sketchybar, aerospace) to be found. This fixes the original exit-127 "command not found" failure.
+2. **Debounces** -- a single display reconfiguration fires multiple fsevents in quick succession. The script uses a PID-based lock file so only the last invocation does work.
+3. **Restarts the sketchybar service** via `launchctl kickstart -k` instead of `sketchybar --reload`, which is more reliable for rebuilding the bar against a new display topology.
+4. **Re-runs AeroSpace's balance-spaces.sh** for deterministic workspace redistribution across present monitors (AeroSpace 0.20.x has no native monitor connect/disconnect callback).
 
 ## Components
 
-### 1. Reload Script
+### 1. Handler Script
 **Location:** `~/.config/sketchybar/helpers/reload_on_display_change.sh`
 
-Simple script that reloads Sketchybar with a 1-second delay to ensure display changes are complete.
+Handles PATH setup, debounce, sketchybar service restart, and aerospace workspace rebalancing.
 
 ### 2. Launch Agent
 **Location:** `~/Library/LaunchAgents/com.sketchybar.display-reload.plist`
 
-A macOS Launch Agent that monitors the system display preferences file for changes and triggers the reload script automatically.
+A macOS Launch Agent that monitors the system display preferences file for changes and triggers the handler script automatically.
 
 **Monitored file:** `/Library/Preferences/com.apple.windowserver.displays.plist`
 
@@ -27,7 +32,7 @@ The Launch Agent uses macOS's `WatchPaths` feature to monitor the window server 
 - Change display resolution or arrangement
 - Enable/disable mirroring
 
-The system updates the preferences file, triggering the Launch Agent to run the reload script.
+The system updates the preferences file, triggering the Launch Agent to run the handler script.
 
 **Important:** This is event-driven, not a background process. The script only runs when actual display changes occur.
 
