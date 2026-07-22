@@ -11,15 +11,15 @@ return {
     transparent = 0x00000000,
 
     bar = {
-        bg = 0x502c2e34,           -- More transparent (~30% opacity)
-        border = 0x40ffffff        -- Light off-white border (~25% opacity)
+        bg = 0x282c2e34,           -- Glass transparent (~16% opacity)
+        border = 0x30ffffff        -- Light off-white border (~19% opacity)
     },
     popup = {
-        bg = 0xc02c2e34,
+        bg = 0xa02c2e34,
         border = 0xff7f8490
     },
-    bg1 = 0xff363944,
-    bg2 = 0xff414550,
+    bg1 = 0x50363944,
+    bg2 = 0x50414550,
 
     rainbow = {0xffff007c, 0xffc53b53, 0xffff757f, 0xff41a6b5, 0xff4fd6be, 0xffc3e88d, 0xffffc777, 0xff9d7cd8,
                0xffff9e64, 0xffbb9af7, 0xff7dcfff, 0xff7aa2f7},

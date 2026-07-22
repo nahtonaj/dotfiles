@@ -129,7 +129,7 @@ local build_ok, build_err = pcall(function()
             padding_left = math.max(1, math.floor(1 * scale)),
             background = {
                 color = settings.items.colors.background,
-                border_width = math.max(1, math.floor(1 * scale)),
+                border_width = 0,
                 height = settings.items.height * scale,
                 border_color = selected and settings.items.highlight_color(i) or settings.items.default_color(i)
             },

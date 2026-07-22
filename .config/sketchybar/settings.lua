@@ -38,7 +38,7 @@ return {
         },
         background = colors.bar.bg,
         -- Visual enhancements (floating glass style)
-        blur_radius = 35,              -- Glass blur effect
+        blur_radius = 40,              -- Glass blur effect
         corner_radius = 12,            -- Rounded corners
         margin = 10,                   -- Space around bar edges (padding below)
         y_offset = 2,                  -- Float below top edge (smaller = higher)

@@ -21,7 +21,7 @@ local apple = sbar.add("item", {
     background = {
         color = settings.items.colors.background,
         border_color = settings.modes.main.color,
-        border_width = math.max(1, math.floor(1 * scale))
+        border_width = 0
     },
 
     padding_left = math.max(1, math.floor(1 * scale)),
@@ -34,7 +34,7 @@ apple:subscribe("aerospace_enter_service_mode", function(_)
         apple:set({
             background = {
                 border_color = settings.modes.service.color,
-                border_width = 3 * scale
+                border_width = 0
             },
             icon = {
                 highlight = true,
@@ -50,7 +50,7 @@ apple:subscribe("aerospace_leave_service_mode", function(_)
         apple:set({
             background = {
                 border_color = settings.modes.main.color,
-                border_width = math.max(1, math.floor(1 * scale))
+                border_width = 0
             },
             icon = {
                 highlight = false,
