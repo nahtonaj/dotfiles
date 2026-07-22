@@ -628,6 +628,10 @@
                         "product_id": 24926,
                         "vendor_id": 7504
                     }
+                },
+                {
+                    "identifiers": { "is_keyboard": true },
+                    "ignore": true
                 }
             ],
             "name": "Default profile",

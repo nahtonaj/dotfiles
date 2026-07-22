@@ -3,21 +3,19 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.kanata</string>
+    <string>com.kanata.virtualhid-daemon</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/kanata</string>
-        <string>--cfg</string>
-        <string>/Users/jon.gao/.config/kanata/kanata.kbd</string>
+        <string>/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice/Applications/Karabiner-VirtualHIDDevice-Daemon.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Daemon</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/tmp/kanata.log</string>
+    <string>/tmp/kanata-virtualhid-daemon.log</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/kanata.error.log</string>
+    <string>/tmp/kanata-virtualhid-daemon.error.log</string>
     <key>UserName</key>
     <string>root</string>
 </dict>
