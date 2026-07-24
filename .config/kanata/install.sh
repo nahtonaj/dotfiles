@@ -1,6 +1,10 @@
 #!/bin/bash
 # Kanata installation script
-# This script sets up kanata as a LaunchDaemon with symlinked plist files
+# This script sets up kanata as a LaunchDaemon by COPYING the plist files into
+# /Library/LaunchDaemons/. launchd's system domain refuses to follow symlinks
+# that resolve into a user home directory (bootstrap fails with error 5), so
+# these must be real copies, not symlinks into the dotfiles checkout. Re-run
+# this script after editing the source plists to refresh the installed copies.
 
 set -e
 
@@ -33,23 +37,24 @@ echo "Installing Karabiner-VirtualHIDDevice-Daemon..."
 # Unload existing VirtualHID daemon if loaded
 if [ -e "$VHID_DAEMON_DEST" ]; then
     echo "Unloading existing VirtualHID LaunchDaemon..."
-    sudo launchctl unload "$VHID_DAEMON_DEST" 2>/dev/null || true
+    sudo launchctl bootout system "$VHID_DAEMON_DEST" 2>/dev/null || true
 
     echo "Removing old plist..."
     sudo rm -f "$VHID_DAEMON_DEST"
 fi
 
-# Create symlink
-echo "Creating symlink: $VHID_DAEMON_DEST -> $VHID_PLIST_SOURCE"
-sudo ln -s "$VHID_PLIST_SOURCE" "$VHID_DAEMON_DEST"
+# Copy the plist (NOT symlink — launchd system domain rejects homedir symlinks)
+echo "Copying: $VHID_PLIST_SOURCE -> $VHID_DAEMON_DEST"
+sudo cp "$VHID_PLIST_SOURCE" "$VHID_DAEMON_DEST"
 
 # Set correct permissions
 echo "Setting permissions..."
 sudo chown root:wheel "$VHID_DAEMON_DEST"
+sudo chmod 644 "$VHID_DAEMON_DEST"
 
 # Load the daemon
 echo "Loading VirtualHID LaunchDaemon..."
-sudo launchctl load "$VHID_DAEMON_DEST"
+sudo launchctl bootstrap system "$VHID_DAEMON_DEST"
 
 # Wait for VirtualHID daemon socket to come up before starting kanata
 sleep 2
@@ -68,24 +73,25 @@ fi
 # Unload existing LaunchDaemon if loaded
 if [ -e "$DAEMON_DEST" ]; then
     echo "Unloading existing Kanata LaunchDaemon..."
-    sudo launchctl unload "$DAEMON_DEST" 2>/dev/null || true
+    sudo launchctl bootout system "$DAEMON_DEST" 2>/dev/null || true
 
     # Remove old file (whether symlink or regular file)
     echo "Removing old plist..."
     sudo rm -f "$DAEMON_DEST"
 fi
 
-# Create symlink
-echo "Creating symlink: $DAEMON_DEST -> $PLIST_SOURCE"
-sudo ln -s "$PLIST_SOURCE" "$DAEMON_DEST"
+# Copy the plist (NOT symlink — launchd system domain rejects homedir symlinks)
+echo "Copying: $PLIST_SOURCE -> $DAEMON_DEST"
+sudo cp "$PLIST_SOURCE" "$DAEMON_DEST"
 
 # Set correct permissions
 echo "Setting permissions..."
 sudo chown root:wheel "$DAEMON_DEST"
+sudo chmod 644 "$DAEMON_DEST"
 
 # Load the daemon
 echo "Loading Kanata LaunchDaemon..."
-sudo launchctl load "$DAEMON_DEST"
+sudo launchctl bootstrap system "$DAEMON_DEST"
 
 # Wait a moment for it to start
 sleep 2
