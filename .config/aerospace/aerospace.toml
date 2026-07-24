@@ -119,8 +119,8 @@ alt-l = 'focus right --boundaries all-monitors-outer-frame --boundaries-action s
 # alt-ctrl-k = 'focus-monitor --wrap-around up'
 # alt-ctrl-l = 'focus-monitor --wrap-around right'
 
-alt-ctrl-left = 'workspace --wrap-around prev'
-alt-ctrl-right = 'workspace --wrap-around next'
+# alt-ctrl-h = 'workspace --wrap-around prev'
+# alt-ctrl-l = 'workspace --wrap-around next'
 
 alt-f = 'fullscreen'
 alt-u = 'focus-back-and-forth' 
