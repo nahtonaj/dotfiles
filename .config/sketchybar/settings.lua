@@ -29,8 +29,8 @@ return {
         }
     },
     bar = {
-        height = 36,                   -- External display height
-        notch_height = 37,             -- Height for notched MacBook displays (matches notch)
+        height = 31,                   -- External display height
+        notch_height = 32,             -- Height for notched MacBook displays (matches notch)
         notch_offset = 0,              -- Horizontal offset from notch center (0 = centered)
         padding = {
             x = 10,
